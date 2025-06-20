@@ -102,6 +102,8 @@ export default function KusamLeadFormPage() {
   const [name, setName] = useState('');
   const [whatsapp, setWhatsapp] = useState('');
   const [email, setEmail] = useState('');
+  const [customerType, setCustomerType] = useState(''); // New state for customer type
+
   const router = useRouter();
 
   const DEMO_PASSWORD = 'humberto'; 
@@ -230,7 +232,7 @@ export default function KusamLeadFormPage() {
               value={name}
               onChange={(e) => setName(e.target.value)}
               className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-gray-900 placeholder-gray-500"
-              placeholder="Ej. Juan Pérez"
+              placeholder="Ej. Mónica García"
               required
             />
           </div>
@@ -261,6 +263,37 @@ export default function KusamLeadFormPage() {
               placeholder="Ej. su.correo@ejemplo.com"
               required
             />
+          </div>
+
+          <div>
+            <label htmlFor="customerType" className="block text-sm font-medium text-gray-700">¿A qué te dedicas?</label>
+            <select
+              id="customerType"
+              name="customerType"
+              value={customerType}
+              onChange={(e) => setCustomerType(e.target.value)}
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-gray-900"
+              required
+            >
+        <option value="">Selecciona tu industria</option>
+              <option value="ArquitecturaDiseño">Despacho de Arquitectura/Diseño</option>
+              <option value="HoteleriaTurismo">Hotel / Resort / Turismo</option>
+              <option value="RestaurantesCafes">Restaurante / Cafetería</option>
+              <option value="DesarrolladorInmobiliario">Desarrollador Inmobiliario</option>
+              <option value="ConstructorContratista">Constructora / Contratista</option>
+              <option value="Inversionista">Inversionista</option>
+              <option value="SectorPublico">Sector Público (Gobierno)</option>
+              <option value="SpaBienestar">Spa / Centro de Bienestar</option>
+              <option value="ClubDeportivoSocial">Club Deportivo / Social</option>
+              <option value="ResidencialParticular">Cliente Residencial / Particular</option>
+              <option value="ComercioRetail">Comercio / Retail</option>
+              <option value="Educacion">Institución Educativa</option>
+              <option value="Industrial">Sector Industrial</option>
+              <option value="SaludMedicina">Salud / Medicina (Clínicas, Hospitales)</option>
+              <option value="Agroindustria">Agroindustria</option>
+              <option value="OtroNegocio">Otro Tipo de Negocio</option>
+              <option value="Estudiante">Estudiante / Académico</option>
+            </select>
           </div>
 
           <button
