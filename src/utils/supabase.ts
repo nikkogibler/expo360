@@ -1,11 +1,20 @@
 // src/utils/supabase.ts
 
+// CORRECT: Import createClient ONLY from the Supabase library
 import { createClient } from '@supabase/supabase-js';
 
 // Load these from your environment variables (e.g., .env.local)
 // They should be prefixed with NEXT_PUBLIC_ for client-side access in Next.js
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL; // Removed '!' for safety, add null check if needed
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY; // Removed '!' for safety, add null check if needed
+
+// --- IMPORTANT: Add checks for environment variables ---
+// This prevents runtime errors if the variables are not set,
+// which can happen during build time or in development if .env.local is missing.
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error('Supabase URL and Anon Key are required environment variables.');
+}
+
 
 // Create a custom fetch function to inject the X-Customer-ID header
 const customFetch = async (url: RequestInfo | URL, options?: RequestInit) => {

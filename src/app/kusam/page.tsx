@@ -1,327 +1,371 @@
-// src/app/kusam/page.tsx
-
-'use client'; // This directive is necessary for client-side components in Next.js App Router
+'use client'; // This component uses client-side interactivity
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation'; // Import usePathname for path checks
+import { v4 as uuidv4 } from 'uuid'; // Import uuid to generate unique IDs
 
-// IMPORT THE SUPABASE CLIENT FROM YOUR UTILS FILE
-// IMPORTANT: Confirm this path. If your utils folder is directly under 'src'
-// AND your app folder is directly under 'src', then `../../utils/supabase` is correct.
-// If you have configured path aliases like '@utils', you might use '@/utils/supabase'.
-import { supabase } from '../../utils/supabase'; // Using relative path
+// CORRECT import for Supabase client
+import { supabase } from '../../utils/supabase'; // <--- Import the already initialized 'supabase' client
 
-// -----------------------------------------------------------------------------
-// Existing PasswordModal component (remains unchanged)
-// -----------------------------------------------------------------------------
-interface PasswordModalProps {
-  onPasswordSubmit: (password: string) => void;
-}
+// --- REMOVED: PasswordModal Component (No longer needed) ---
 
-const PasswordModal: React.FC<PasswordModalProps> = ({ onPasswordSubmit }) => {
-  const [password, setPassword] = useState('');
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onPasswordSubmit(password);
-  };
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: -50 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-      className="bg-white p-6 rounded-lg shadow-xl max-w-sm w-full"
-    >
-      <h2 className="text-2xl font-bold text-gray-800 text-center mb-6">Accede al Demo</h2>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label htmlFor="password" className="block text-sm font-medium text-gray-700">Contraseña</label>
-          <input
-            type="password"
-            id="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-accent-500 focus:border-accent-500"
-          />
-        </div>
-        <button
-          type="submit"
-          className="w-full bg-accent-600 hover:bg-accent-700 text-white font-bold py-2 px-4 rounded-md transition duration-300 ease-in-out"
-        >
-          Entrar
-        </button>
-      </form>
-    </motion.div>
-  );
-};
-
-// -----------------------------------------------------------------------------
-// KusamLeadFormPage component (main component with all changes)
-// -----------------------------------------------------------------------------
 export default function KusamLeadFormPage() {
-  const [passwordEntered, setPasswordEntered] = useState(false);
-  // showPasswordModal state is no longer strictly necessary if rendering is conditional on passwordEntered
   const [name, setName] = useState('');
   const [whatsapp, setWhatsapp] = useState('');
   const [email, setEmail] = useState('');
-
-  // NEW STATE: To hold the selected Customer Type (CRITICAL for Phase 1 Deliverables)
-  const [customerType, setCustomerType] = useState(''); // Initialize with empty string
+  const [customerType, setCustomerType] = useState('');
+  const [currentCustomerId, setCurrentCustomerId] = useState<string | null>(null); // State to hold customer_id
 
   const router = useRouter();
-  const DEMO_PASSWORD = 'humberto';
+  const pathname = usePathname(); // Get the current path for conditional redirects
 
-  // NEW STATE: To hold the current customer's UUID persisted across sessions
-  const [currentCustomerId, setCurrentCustomerId] = useState<string | null>(null);
-
-  // NEW useEffect Hook: To check localStorage for an existing customer ID on component mount
+  // --- Customer ID and Redirect/Data Fetching Effect ---
+  // This useEffect now runs immediately on component mount.
   useEffect(() => {
-    // Ensure this code runs only in the browser environment (client-side)
-    if (typeof window !== 'undefined') {
-      const storedId = localStorage.getItem('kusam_customer_id');
-      if (storedId) {
-        setCurrentCustomerId(storedId); // Set the React state if an ID is found
-        console.log('Existing customer ID found in localStorage:', storedId);
-      } else {
-        console.log('No existing customer ID in localStorage. This is a new session or first visit.');
+    const urlParams = new URLSearchParams(window.location.search);
+    const sourceQrCode = urlParams.get('source_qr_code'); // Capture QR code from URL
+
+    let storedCustomerId = localStorage.getItem('customer_id');
+
+    // Scenario 1: Returning user with a stored customer_id
+    if (storedCustomerId) {
+      console.log('--- Found stored customer_id:', storedCustomerId); // Debug Log
+
+      // If customer_id exists AND we are currently on the main form page (/kusam), redirect immediately.
+      if (pathname === '/kusam') { 
+        router.replace(`/kusam/instructions?customer_id=${storedCustomerId}`);
+        return; // Stop further execution of this useEffect in the current render cycle
+      }
+
+      // If not redirecting, set customer ID and attempt to pre-fill form data
+      setCurrentCustomerId(storedCustomerId);
+      const fetchCustomerData = async () => {
+        const { data, error } = await supabase
+          .from('customers')
+          .select('*')
+          .eq('customer_id', storedCustomerId)
+          .single();
+
+        if (error) {
+          console.error('Error fetching customer data for returning user:', error);
+          localStorage.removeItem('customer_id'); // Clear invalid ID
+          setCurrentCustomerId(null); // Treat as new user
+        } else if (data) {
+          setName(data.name || '');
+          setWhatsapp(data.whatsapp || '');
+          setEmail(data.email || '');
+          setCustomerType(data.customer_type || '');
+          console.log('Returning customer data loaded for form pre-fill:', data);
+        }
+      };
+      fetchCustomerData();
+
+      // Log QR scan for returning user if applicable
+      if (sourceQrCode) {
+        const logQrScan = async () => {
+          const { error: logError } = await supabase
+            .from('customer_qr_scans')
+            .insert({ customer_id: storedCustomerId, source_qr_code: sourceQrCode });
+          if (logError) {
+            console.error('Error logging QR scan for returning user:', logError);
+          }
+        };
+        logQrScan();
+      }
+
+    } else {
+      // Scenario 2: New user (no stored customer_id found)
+      console.log('--- No stored customer_id found. Generating a new one.'); 
+      const newCustomerId = uuidv4(); // Generate a unique ID
+      localStorage.setItem('customer_id', newCustomerId); // Store it locally for persistence
+      setCurrentCustomerId(newCustomerId); // Update component state
+      console.log('New customer ID generated and stored:', newCustomerId); // Debug Log
+
+      // Log QR scan for new session initiated by QR code
+      if (sourceQrCode) {
+        const logQrScan = async () => {
+          const { error: logError } = await supabase
+            .from('customer_qr_scans')
+            .insert({ customer_id: newCustomerId, source_qr_code: sourceQrCode });
+          if (logError) {
+            console.error('Error logging QR scan for new customer on initial load:', logError);
+          }
+        };
+        logQrScan();
       }
     }
-  }, []); // Empty dependency array ensures this effect runs only once after the initial render
+  }, [pathname, router]); // Dependency array: Effect runs on mount and if pathname or router object changes
 
-  // Handler for password submission (remains unchanged)
-  const handlePasswordSubmit = (pw: string) => {
-    if (pw === DEMO_PASSWORD) {
-      setPasswordEntered(true);
-      // No need to set setShowPasswordModal(false) if it's not explicitly controlling the modal visibility
-    } else {
-      alert('Contraseña incorrecta');
-    }
-  };
-
-  // MODIFIED handleSubmit Function: Handles form submission and Supabase interaction
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+    e.preventDefault(); // Prevent default form submission behavior
 
-    // Basic validation for all required fields, including the new customerType dropdown
+    // Basic form validation
     if (!name || !whatsapp || !email || !customerType) {
-      alert('Por favor, complete todos los campos requeridos (Nombre, WhatsApp, Email y Tipo de Cliente).');
+      alert('Por favor, complete todos los campos.');
       return;
     }
 
-    // Data object to be sent to Supabase for insertion or update
-    const customerData = {
-      name: name,
-      whatsapp: whatsapp,
-      email: email,
-      customer_type: customerType, // Include the selected customer type
-      // Optional: Capture 'source_qr_code' from URL query parameter if available
-      // Assumes your QR code scanner might add '?qr=some_code' to the URL
-      source_qr_code: typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('qr') : null,
-    };
+    console.log('--- Kusam Lead Captured (DEMO) ---');
+    console.log('Nombre Completo:', name);
+    console.log('WhatsApp:', whatsapp);
+    console.log('Email:', email);
+    console.log('Tipo de Cliente:', customerType);
+    console.log('------------------------------------');
 
-    try {
-      // Use a local variable to guarantee it's a string before router.push
-      let customerIdToUse: string; 
+    const urlParams = new URLSearchParams(window.location.search);
+    const sourceQrCode = urlParams.get('source_qr_code'); // Capture QR code from URL
 
-      if (!currentCustomerId) {
-        // SCENARIO 1: No existing customer ID found (new user or cleared localStorage)
-        // -> INSERT a new record into the 'customers' table
-        console.log('Attempting to insert new customer record...');
-        const { data, error } = await supabase
-          .from('customers')
-          .insert([customerData])
-          .select('id') // Request the 'id' (UUID) generated by Supabase for the new record
-          .single(); // Expecting a single row back
+    // Safety check: currentCustomerId should never be null at this point if logic is correct
+    if (currentCustomerId === null) {
+      console.error('No customer ID available for submission. This should not happen.');
+      alert('Error de sesión. Por favor, recargue la página.');
+      return;
+    }
 
-        if (error || !data || !data.id) { // Check for error OR if data/id is unexpectedly null
-          console.error('Error inserting new customer:', error?.message || 'No data or ID returned from Supabase.');
-          alert(`Error al guardar su información: ${error?.message || 'No se pudo obtener el ID del cliente. Por favor, inténtelo de nuevo.'}`);
-          return; // Stop execution if there's an error
-        }
+    let customerIdToUse = currentCustomerId; // Use the ID already set in state/localStorage
 
-        // Successfully inserted: Capture the new ID and store it
-        customerIdToUse = data.id; // This is now guaranteed to be a string
-        setCurrentCustomerId(customerIdToUse); // Update React state
-        if (typeof window !== 'undefined') {
-          localStorage.setItem('kusam_customer_id', customerIdToUse); // Persist in localStorage
-        }
-        console.log('New customer successfully created with ID:', customerIdToUse);
+    // Attempt to find an existing customer record by the generated/stored ID
+    const { data: existingCustomer, error: fetchError } = await supabase
+        .from('customers')
+        .select('customer_id')
+        .eq('customer_id', customerIdToUse)
+        .maybeSingle(); 
 
-        // Optional: If a QR parameter was found, log it to 'customer_qr_scans' table
-        if (customerData.source_qr_code) {
-          const { error: qrError } = await supabase
-            .from('customer_qr_scans')
-            .insert([{
-              customer_id: customerIdToUse,
-              qr_code_scanned: customerData.source_qr_code,
-              scan_timestamp: new Date().toISOString() // Or use Supabase's default 'now()' for column
-            }]);
-          if (qrError) console.error('Error logging initial QR scan:', qrError.message);
-          else console.log('Initial QR scan logged successfully for:', customerData.source_qr_code);
-        }
+    // Handle any error during the existence check, except "No rows found" (PGRST116)
+    if (fetchError && fetchError.code !== 'PGRST116') { 
+        console.error('Error checking for existing customer:', fetchError);
+        alert('Hubo un error de base de datos. Por favor, intente de nuevo.');
+        return;
+    }
 
-      } else {
-        // SCENARIO 2: Existing customer ID found (returning user)
-        // -> UPDATE the existing customer record
-        customerIdToUse = currentCustomerId; // Assign the existing ID, which is guaranteed to be a string here
-        console.log('Existing customer ID found. Attempting to update existing data for ID:', customerIdToUse);
-        const { error } = await supabase
-          .from('customers')
-          .update(customerData) // Update the fields with the new form values
-          .eq('id', customerIdToUse); // Crucially, target the correct customer by their ID
+    // If an existing customer record was found for this customerIdToUse
+    if (existingCustomer) {
+      // Update the existing customer's data
+      const { data, error } = await supabase
+        .from('customers')
+        .update({
+          name,
+          whatsapp,
+          email,
+          customer_type: customerType,
+          updated_at: new Date().toISOString() // Update timestamp
+        })
+        .eq('customer_id', customerIdToUse) // Specify which row to update
+        .select(); // Return the updated data
 
-        if (error) {
-          console.error('Error updating customer:', error.message);
-          alert(`Error al actualizar su información: ${error.message}`);
-          return; // Stop execution if there's an error
-        }
-        console.log('Existing customer successfully updated for ID:', customerIdToUse);
+      if (error) {
+        console.error('Error updating customer:', error);
+        alert('Hubo un error al actualizar sus datos. Por favor, intente de nuevo.');
+        return; // Stop execution on error
+      }
+      console.log('Customer updated:', data);
 
-        // For returning users, check if a new QR was scanned during this visit
-        const currentQrParam = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('qr') : null;
-        if (currentQrParam && customerData.source_qr_code !== currentQrParam) {
-            // Only log if the QR code in the URL is different from what was previously stored (if any)
-            const { error: qrError } = await supabase
-                .from('customer_qr_scans')
-                .insert([{ customer_id: customerIdToUse, qr_code_scanned: currentQrParam, scan_timestamp: new Date().toISOString() }]);
-            if (qrError) console.error('Error logging new QR scan for existing user:', qrError.message);
-            else console.log('New QR scan logged for existing user:', currentQrParam);
+    } else {
+      // If no existing customer record was found for this customerIdToUse, insert a new one
+      const { data, error } = await supabase
+        .from('customers')
+        .insert({
+          customer_id: customerIdToUse, // Use the pre-generated ID
+          name,
+          whatsapp,
+          email,
+          customer_type: customerType
+        })
+        .select(); // Return the inserted data
+
+      if (error) {
+        console.error('Error inserting new customer:', error);
+        alert('Hubo un error al registrar sus datos. Por favor, intente de nuevo.');
+        return; // Stop execution on error
+      }
+      
+      const newCustomer = data[0]; // Get the first (and only) inserted record
+      console.log('New customer inserted:', newCustomer);
+
+      // Log the QR scan if present for a brand new customer
+      if (sourceQrCode) {
+        const { error: logError } = await supabase
+          .from('customer_qr_scans')
+          .insert({ customer_id: customerIdToUse, source_qr_code: sourceQrCode });
+        if (logError) {
+          console.error('Error logging QR scan for new customer on form submit:', logError);
         }
       }
-
-      // --- Success Path: Log and Redirect ---
-      // These logs are for your debugging; you might remove or refine them for production.
-      console.log('--- Kusam Lead Form Submission (DEBUG) ---');
-      console.log('Final Customer ID used for action:', customerIdToUse);
-      console.log('Nombre:', name);
-      console.log('WhatsApp:', whatsapp);
-      console.log('Email:', email);
-      console.log('Tipo de Cliente:', customerType);
-      console.log('------------------------------------');
-
-      // NOW, customerIdToUse is definitely a string, satisfying TypeScript
-      // Redirect to the next page, optionally passing the customerId in the URL
-      router.push(`/kusam/instructions?customerId=${customerIdToUse}`);
-
-    } catch (error) {
-      // Catch any unexpected errors that might occur during the try block
-      console.error('An unexpected error occurred during form submission:', error);
-      alert('Ocurrió un error inesperado durante el envío del formulario. Por favor, inténtelo de nuevo.');
     }
+
+    // After successful submission (insert or update), redirect to the instructions page
+    router.push(`/kusam/instructions?customer_id=${customerIdToUse}`);
   };
 
-  // -----------------------------------------------------------------------------
-  // JSX Rendering Logic (includes the new Customer Type dropdown)
-  // -----------------------------------------------------------------------------
-  return (
-    <div className="min-h-screen relative overflow-hidden flex items-center justify-center">
-      {/* Background Image */}
-      <Image
-        src="/Kusam-Expo.png" // Ensure this path is correct relative to your public folder
-        alt="Kusam Expo Background"
-        layout="fill"
-        objectFit="cover"
-        quality={100}
-        priority
-        className="z-0"
-      />
-      {/* Overlay */}
-      <div className="absolute inset-0 bg-black opacity-60 z-10"></div>
+  // --- Conditional Rendering Logic ---
+  // If currentCustomerId is null AND we are on the main form path (/kusam),
+  // it means the useEffect is still running to determine if it's a new or returning user.
+  // In this very brief initial phase, we render nothing (null) to avoid text flash.
+  if (currentCustomerId === null && pathname === '/kusam') {
+    return null; // Render nothing during initial loading
+  }
 
-      {/* Main Content (Modal/Form) */}
-      <div className="absolute inset-0 flex items-center justify-center p-4 z-20">
-        {passwordEntered ? (
-          <motion.div
-            initial={{ opacity: 0, y: 50 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="bg-white p-6 rounded-lg shadow-xl max-w-sm w-full"
-          >
-            {/* Logo container */}
-            <div className="mb-6 flex justify-center">
-              <Image
-                src="/Kusam-Noche-Logo-Web.png" // Path to your logo image in the public directory
-                alt="Kusam Logo"
-                width={150}
-                height={150}
-                className="object-contain"
-              />
+  // This block renders the main form. It will be displayed if:
+  // 1. currentCustomerId has been set (meaning an ID was generated for a new user, or found for an existing one)
+  //    AND the current pathname is '/kusam'. This is the new user path.
+  // 2. OR if the current pathname is NOT '/kusam' (meaning we're on the instructions page due to redirect,
+  //    this component would theoretically still render but return this part).
+  //    The redirect logic in the useEffect handles the actual navigation away from /kusam for returning users.
+  const containerVariants = {
+    hidden: { opacity: 0, y: 50 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        type: "spring",
+        stiffness: 100,
+        damping: 10,
+        delay: 0.2
+      }
+    },
+  };
+
+  // This is the primary return for the component. It renders the form or nothing if already redirected.
+  return (
+    <div className="relative min-h-screen flex flex-col items-center justify-center p-4 bg-white">
+      <video
+        className="absolute inset-0 w-full h-full object-cover"
+        src="/leaves1.mp4"
+        autoPlay
+        loop
+        muted
+        playsInline
+        style={{ opacity: 0.10 }}
+      />
+      
+      <motion.div
+        className="max-w-md w-full bg-white p-8 rounded-lg shadow-lg border border-gray-200 relative z-20"
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+      >
+        <div className="mb-6 text-center">
+          <Image
+            src="/kusam_main.webp"
+            alt="Kusam Outdoor Solutions Logo"
+            width={200}
+            height={50}
+            priority
+            className="mx-auto"
+          />
+        </div>
+        
+        <div className="mb-6 text-center">
+            <h1 className="text-3xl font-bold text-gray-800"></h1>
+            <p className="text-gray-600 mt-2 text-lg">
+                Su Experiencia en{' '}
+                <span className="inline-flex items-center align-middle mx-1">
+                    <Image
+                        src="/expo_mueble.png"
+                        alt="Expo Mueble Internacional Logo"
+                        width={90}
+                        height={18}
+                        className="inline-block"
+                    />
+                </span>{' '}
+                Comienza Aquí
+            </p>
+        </div>
+
+        <p className="text-gray-700 mb-6 text-center text-md">
+          ¡Bienvenido! Para iniciar su recorrido interactivo y obtener una cotización personalizada, por favor complete sus datos.
+        </p>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label htmlFor="name" className="block text-sm font-medium text-gray-700">Nombre Completo</label>
+            <input
+              type="text"
+              id="name"
+              name="name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-gray-900 placeholder-gray-500"
+              placeholder="Ej. Mónica García"
+              required
+            />
+          </div>
+
+          <div>
+            <label htmlFor="whatsapp" className="block text-sm font-medium text-gray-700">WhatsApp (Número de Celular)</label>
+            <input
+              type="tel"
+              id="whatsapp"
+              name="whatsapp"
+              value={whatsapp}
+              onChange={(e) => setWhatsapp(e.target.value)}
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-gray-900 placeholder-gray-500"
+              placeholder="Ej. +52 55 1234 5678"
+              required
+            />
+          </div>
+
+          <div>
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700">Email</label>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-gray-900 placeholder-gray-500"
+              placeholder="Ej. su.correo@ejemplo.com"
+              required
+            />
+          </div>
+
+          <div>
+            <label htmlFor="customerType" className="block text-sm font-medium text-gray-700">¿A qué te dedicas?</label>
+            <select
+              id="customerType"
+              name="customerType"
+              value={customerType}
+              onChange={(e) => setCustomerType(e.target.value)}
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-gray-900"
+              required
+            >
+          <option value="">Selecciona tu industria</option>
+                <option value="ArquitecturaDiseño">Despacho de Arquitectura/Diseño</option>
+                <option value="HoteleriaTurismo">Hotel / Resort / Turismo</option>
+                <option value="RestaurantesCafes">Restaurante / Cafetería</option>
+                <option value="DesarrolladorInmobiliario">Desarrollador Inmobiliario</option>
+                <option value="ConstructorContratista">Constructora / Contratista</option>
+                <option value="Inversionista">Inversionista</option>
+                <option value="SectorPublico">Sector Público (Gobierno)</option>
+                <option value="SpaBienestar">Spa / Centro de Bienestar</option>
+                <option value="ClubDeportivoSocial">Club Deportivo / Social</option>
+                <option value="ResidencialParticular">Cliente Residencial / Particular</option>
+                <option value="ComercioRetail">Comercio / Retail</option>
+                <option value="Educacion">Institución Educativa</option>
+                <option value="Industrial">Sector Industrial</option>
+                <option value="SaludMedicina">Salud / Medicina (Clínicas, Hospitales)</option>
+                <option value="Agroindustria">Agroindustria</option>
+                <option value="OtroNegocio">Otro Tipo de Negocio</option>
+                <option value="Estudiante">Estudiante / Académico</option>
+              </select>
             </div>
 
-            <h2 className="text-2xl font-bold text-gray-800 text-center mb-6">Regístrate para ver el catálogo</h2>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Name Input */}
-              <div>
-                <label htmlFor="name" className="block text-sm font-medium text-gray-700">Nombre Completo</label>
-                <input
-                  type="text"
-                  id="name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  required
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-accent-500 focus:border-accent-500"
-                />
-              </div>
-              {/* WhatsApp Input */}
-              <div>
-                <label htmlFor="whatsapp" className="block text-sm font-medium text-gray-700">WhatsApp</label>
-                <input
-                  type="tel"
-                  id="whatsapp"
-                  value={whatsapp}
-                  onChange={(e) => setWhatsapp(e.target.value)}
-                  required
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-accent-500 focus:border-accent-500"
-                />
-              </div>
-              {/* Email Input */}
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700">Email</label>
-                <input
-                  type="email"
-                  id="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-accent-500 focus:border-accent-500"
-                />
-              </div>
-              {/* CRITICAL NEW ELEMENT: Customer Type Dropdown */}
-              <div>
-                <label htmlFor="customerType" className="block text-sm font-medium text-gray-700">Tipo de Cliente</label>
-                <select
-                  id="customerType"
-                  value={customerType} // Binds to the customerType state
-                  onChange={(e) => setCustomerType(e.target.value)} // Updates state on change
-                  required // Make this field mandatory as per requirements
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-accent-500 focus:border-accent-500 bg-white"
-                >
-                  <option value="">Selecciona un tipo</option> {/* Default empty option */}
-                  <option value="Hospitality">Hospitality</option>
-                  <option value="Architecture">Architecture</option>
-                  <option value="Private Client">Private Client</option>
-                  <option value="SPA">SPA</option>
-                  <option value="Country Clubs">Country Clubs</option>
-                </select>
-              </div>
-              {/* Submit Button */}
-              <button
-                type="submit"
-                className="w-full bg-accent-600 hover:bg-accent-700 text-white font-bold py-2 px-4 rounded-md transition duration-300 ease-in-out"
-              >
-                Ver Catálogo
-              </button>
-            </form>
-          </motion.div>
-        ) : (
-          // Render PasswordModal if password hasn't been entered
-          <PasswordModal onPasswordSubmit={handlePasswordSubmit} />
-        )}
+            <button
+              type="submit"
+              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-lg font-semibold bg-stone-400 text-white hover:bg-stone-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-stone-600 transition duration-150 ease-in-out"
+              style={{
+                backgroundImage: `url('/wood/var4.png')`,
+                backgroundSize: '100px 100px',
+                backgroundRepeat: 'repeat',
+                backgroundBlendMode: 'multiply'
+              }}
+            >
+              Comienza A Explorar
+            </button>
+          </form>
+        </motion.div>
       </div>
-    </div>
-  );
-}
+    );
+  }
