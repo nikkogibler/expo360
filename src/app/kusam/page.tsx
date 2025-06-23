@@ -3,13 +3,11 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
-import { useRouter, usePathname } from 'next/navigation'; // Import usePathname for path checks
+import { useRouter, usePathname, useSearchParams } from 'next/navigation'; // Import usePathname AND useSearchParams
 import { v4 as uuidv4 } from 'uuid'; // Import uuid to generate unique IDs
 
 // CORRECT import for Supabase client
 import { supabase } from '../../utils/supabase'; // <--- Import the already initialized 'supabase' client
-
-// --- REMOVED: PasswordModal Component (No longer needed) ---
 
 export default function KusamLeadFormPage() {
   const [name, setName] = useState('');
@@ -20,26 +18,43 @@ export default function KusamLeadFormPage() {
 
   const router = useRouter();
   const pathname = usePathname(); // Get the current path for conditional redirects
+  const searchParams = useSearchParams(); // --- ADDED: Get URL search parameters from Next.js
+
 
   // --- Customer ID and Redirect/Data Fetching Effect ---
   // This useEffect now runs immediately on component mount.
   useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const sourceQrCode = urlParams.get('source_qr_code'); // Capture QR code from URL
+    // const urlParams = new URLSearchParams(window.location.search); // Not strictly needed with useSearchParams
+    const sourceQrCode = searchParams.get('source_qr_code'); // Capture QR code from URL using useSearchParams
+    const clearSessionFlag = searchParams.get('clear_session'); // Get the clear_session flag
 
-    let storedCustomerId = localStorage.getItem('customer_id');
+    let storedCustomerId = localStorage.getItem('kusam_customer_id');
 
-    // Scenario 1: Returning user with a stored customer_id
+    // --- CRITICAL ADDITION/MODIFICATION HERE ---
+    if (clearSessionFlag === 'true') {
+      console.log('KusamLeadFormPage: Detected clear_session=true in URL parameter. Forcing new session.');
+      localStorage.removeItem('kusam_customer_id'); // <--- THIS IS THE KEY LINE TO ADD/UNCOMMENT
+      storedCustomerId = null; // Ensure the rest of this useEffect treats it as cleared
+
+      // Optional: Redirect to clear the URL parameter for a cleaner state and prevent
+      // this logic from running unnecessarily on subsequent renders if user stays on /kusam
+      // If you are redirecting to /instructions anyway, this might not be critical.
+      // router.replace('/kusam');
+      // return; // Exit early if we are forcing clear and restarting the session
+    }
+
+    // Scenario 1: Returning user with a stored customer_id (and no actual clear operation happened)
     if (storedCustomerId) {
-      console.log('--- Found stored customer_id:', storedCustomerId); // Debug Log
+      console.log('--- Found stored kusam_customer_id:', storedCustomerId); // Debug Log
 
       // If customer_id exists AND we are currently on the main form page (/kusam), redirect immediately.
-      if (pathname === '/kusam') { 
+      if (pathname === '/kusam') { // Only redirect if on the landing page
         router.replace(`/kusam/instructions?customer_id=${storedCustomerId}`);
         return; // Stop further execution of this useEffect in the current render cycle
       }
 
-      // If not redirecting, set customer ID and attempt to pre-fill form data
+      // If not redirecting (i.e., we are already on instructions or another page, but this component remounted),
+      // set customer ID and attempt to pre-fill form data
       setCurrentCustomerId(storedCustomerId);
       const fetchCustomerData = async () => {
         const { data, error } = await supabase
@@ -50,7 +65,7 @@ export default function KusamLeadFormPage() {
 
         if (error) {
           console.error('Error fetching customer data for returning user:', error);
-          localStorage.removeItem('customer_id'); // Clear invalid ID
+          localStorage.removeItem('kusam_customer_id'); // Clear invalid ID
           setCurrentCustomerId(null); // Treat as new user
         } else if (data) {
           setName(data.name || '');
@@ -60,10 +75,14 @@ export default function KusamLeadFormPage() {
           console.log('Returning customer data loaded for form pre-fill:', data);
         }
       };
-      fetchCustomerData();
+      // Only call fetchCustomerData if we're not immediately redirecting out of /kusam
+      if (pathname === '/kusam') {
+          fetchCustomerData();
+      }
 
-      // Log QR scan for returning user if applicable
-      if (sourceQrCode) {
+
+      // Log QR scan for returning user if applicable and on the landing page
+      if (sourceQrCode && pathname === '/kusam') {
         const logQrScan = async () => {
           const { error: logError } = await supabase
             .from('customer_qr_scans')
@@ -76,10 +95,10 @@ export default function KusamLeadFormPage() {
       }
 
     } else {
-      // Scenario 2: New user (no stored customer_id found)
-      console.log('--- No stored customer_id found. Generating a new one.'); 
+      // Scenario 2: New user (no stored kusam_customer_id found or was just cleared by clear_session=true)
+      console.log('--- No stored kusam_customer_id found or clear_session=true was detected. Generating a new one.');
       const newCustomerId = uuidv4(); // Generate a unique ID
-      localStorage.setItem('customer_id', newCustomerId); // Store it locally for persistence
+      localStorage.setItem('kusam_customer_id', newCustomerId); // Store it locally for persistence
       setCurrentCustomerId(newCustomerId); // Update component state
       console.log('New customer ID generated and stored:', newCustomerId); // Debug Log
 
@@ -96,7 +115,7 @@ export default function KusamLeadFormPage() {
         logQrScan();
       }
     }
-  }, [pathname, router]); // Dependency array: Effect runs on mount and if pathname or router object changes
+  }, [pathname, router, searchParams]); // searchParams is crucial dependency here for clearSessionFlag
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault(); // Prevent default form submission behavior
@@ -114,8 +133,8 @@ export default function KusamLeadFormPage() {
     console.log('Tipo de Cliente:', customerType);
     console.log('------------------------------------');
 
-    const urlParams = new URLSearchParams(window.location.search);
-    const sourceQrCode = urlParams.get('source_qr_code'); // Capture QR code from URL
+    // const urlParams = new URLSearchParams(window.location.search); // Not strictly needed
+    const sourceQrCode = searchParams.get('source_qr_code'); // Capture QR code from URL
 
     // Safety check: currentCustomerId should never be null at this point if logic is correct
     if (currentCustomerId === null) {
@@ -131,10 +150,10 @@ export default function KusamLeadFormPage() {
         .from('customers')
         .select('customer_id')
         .eq('customer_id', customerIdToUse)
-        .maybeSingle(); 
+        .maybeSingle();
 
     // Handle any error during the existence check, except "No rows found" (PGRST116)
-    if (fetchError && fetchError.code !== 'PGRST116') { 
+    if (fetchError && fetchError.code !== 'PGRST116') {
         console.error('Error checking for existing customer:', fetchError);
         alert('Hubo un error de base de datos. Por favor, intente de nuevo.');
         return;
@@ -180,7 +199,7 @@ export default function KusamLeadFormPage() {
         alert('Hubo un error al registrar sus datos. Por favor, intente de nuevo.');
         return; // Stop execution on error
       }
-      
+
       const newCustomer = data[0]; // Get the first (and only) inserted record
       console.log('New customer inserted:', newCustomer);
 
@@ -239,7 +258,7 @@ export default function KusamLeadFormPage() {
         playsInline
         style={{ opacity: 0.10 }}
       />
-      
+
       <motion.div
         className="max-w-md w-full bg-white p-8 rounded-lg shadow-lg border border-gray-200 relative z-20"
         variants={containerVariants}
@@ -256,7 +275,7 @@ export default function KusamLeadFormPage() {
             className="mx-auto"
           />
         </div>
-        
+
         <div className="mb-6 text-center">
             <h1 className="text-3xl font-bold text-gray-800"></h1>
             <p className="text-gray-600 mt-2 text-lg">

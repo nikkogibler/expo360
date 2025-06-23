@@ -5,8 +5,8 @@ import { createClient } from '@supabase/supabase-js';
 
 // Load these from your environment variables (e.g., .env.local)
 // They should be prefixed with NEXT_PUBLIC_ for client-side access in Next.js
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL; // Removed '!' for safety, add null check if needed
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY; // Removed '!' for safety, add null check if needed
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 // --- IMPORTANT: Add checks for environment variables ---
 // This prevents runtime errors if the variables are not set,
@@ -15,7 +15,6 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Supabase URL and Anon Key are required environment variables.');
 }
 
-
 // Create a custom fetch function to inject the X-Customer-ID header
 const customFetch = async (url: RequestInfo | URL, options?: RequestInit) => {
   // Check if we are in a browser environment before accessing localStorage
@@ -23,8 +22,9 @@ const customFetch = async (url: RequestInfo | URL, options?: RequestInit) => {
   const headers = new Headers(options?.headers); // Keep existing headers
 
   if (customerId) {
-    // Set the X-Customer-ID header if a customerId exists in localStorage
-    headers.set('X-Customer-ID', customerId);
+    // Set the x-customer-id header to match the RLS policy's expectation,
+    // assuming 'x-customer-id' is how Postgres expects the 'customer_id' header.
+    headers.set('x-customer-id', customerId); // <--- THIS IS THE ONLY LINE THAT SHOULD HAVE CHANGED
   }
 
   // Make the actual fetch request with the modified headers

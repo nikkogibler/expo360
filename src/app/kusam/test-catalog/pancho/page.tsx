@@ -10,8 +10,21 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { v4 as uuidv4 } from 'uuid'; // For generating unique customer IDs
 import { supabase } from '@/utils/supabase'; // Correct Supabase import
 
+// Define the interface for Product Variants (from your Supabase schema)
+interface ProductVariant {
+  id: string; // UUID from Supabase (THIS IS WHAT WE'LL STORE IN DB FOR VARIANTS)
+  product_id: string; // Foreign key linking to products table
+  type: string; // 'packaging', 'accessory', 'fabric', 'frame' etc.
+  value: string; // e.g., 'Standard Edition Packaging', 'Red Fabric'
+  hex_code?: string; // Optional hex code for color representation
+  additional_price?: number; // Optional price impact
+  image_url?: string; // Optional image for the variant
+  created_at: string;
+  updated_at: string;
+}
+
 // Define the interface based on your Supabase 'products' table schema
-// Removed packagingVariants and accessoryOptions as they are not directly in your provided INSERT statement
+// This remains unchanged and describes the core product data.
 interface Product {
   id: string; // The UUID from Supabase's 'products' table
   sku: string;
@@ -23,35 +36,41 @@ interface Product {
   is_active: boolean;
   created_at: string;
   updated_at: string;
-  // If you later add 'variants' or 'accessories' as JSONB fields in Supabase,
-  // or fetch them from another table, you'll add them here.
 }
-
-// --- DUMMY_PRODUCT IS REMOVED ---
 
 export default function PanchoProductPage() {
   const router = useRouter();
-  // State for product fetched from Supabase
+  // State for core product data fetched from Supabase
   const [product, setProduct] = useState<Product | null>(null);
   const [loadingProduct, setLoadingProduct] = useState(true);
   const [productError, setProductError] = useState<string | null>(null);
 
-  // Initializing these with empty or default values *before* product loads
-  // We'll update the options dynamically once product data is available
-  const [selectedPackaging, setSelectedPackaging] = useState('');
-  const [selectedAccessory, setSelectedAccessory] = useState('');
+  // State for dynamically loaded variants
+  const [packagingVariants, setPackagingVariants] = useState<ProductVariant[]>([]);
+  const [accessoryOptions, setAccessoryOptions] = useState<ProductVariant[]>([]);
+
+  // State for selected options, NOW STORING THE ID, NOT THE VALUE
+  const [selectedPackagingId, setSelectedPackagingId] = useState<string>(''); // Stores ID of selected packaging variant
+  const [selectedAccessoryId, setSelectedAccessoryId] = useState<string>(''); // Stores ID of selected accessory variant
+
+  // Quantity
+  const [quantity, setQuantity] = useState<number>(1);
 
   const [isAddingToFavorites, setIsAddingToFavorites] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
   const [showPopUpHeart, setShowPopUpHeart] = useState(false);
   const [customerId, setCustomerId] = useState<string | null>(null);
 
+  // NEW/UPDATED: State to know if we are editing an existing item from the cart
+  const [editingFavoriteId, setEditingFavoriteId] = useState<string | null>(null);
+
+
   // Hardcoded Pancho Product ID - This is the ID from your INSERT statement
   const PANCHO_PRODUCT_ID = '0e9ad1fc-25cf-47f9-8e8a-a965f8a6edd4';
 
-  // Effect to get/set customerId from localStorage AND fetch product data
+  // Effect to get/set customerId from localStorage AND fetch all product-related data
   useEffect(() => {
-    // Customer ID logic
+    // Customer ID logic (remains the same)
     let currentCustomerId = localStorage.getItem('kusam_customer_id');
     if (!currentCustomerId) {
       currentCustomerId = uuidv4(); // Generate a new UUID
@@ -59,44 +78,110 @@ export default function PanchoProductPage() {
     }
     setCustomerId(currentCustomerId);
 
-    // Fetch Pancho product data from Supabase
-    async function fetchPanchoProduct() {
+    // Get favoriteId from URL query parameters
+    const searchParams = new URLSearchParams(window.location.search);
+    const favoriteIdFromUrl = searchParams.get('favoriteId');
+    if (favoriteIdFromUrl) {
+      setEditingFavoriteId(favoriteIdFromUrl);
+    }
+
+
+    // Async function to fetch both product and its variants
+    async function fetchData() {
       try {
         setLoadingProduct(true);
-        const { data, error } = await supabase
+        setProductError(null); // Clear any previous errors
+
+        // 1. Fetch Pancho's core product data
+        const { data: productData, error: productFetchError } = await supabase
           .from('products')
           .select('*')
-          .eq('id', PANCHO_PRODUCT_ID) // Query using the hardcoded ID
-          .single(); // Expecting one product
+          .eq('id', PANCHO_PRODUCT_ID)
+          .single();
 
-        if (error) {
-          throw error;
+        if (productFetchError) {
+          throw productFetchError;
         }
 
-        if (data) {
-          setProduct(data as Product); // Cast to our interface
-          // Initialize selections with dummy/default data if product has loaded
-          // YOU WILL NEED TO ADAPT THIS WHEN YOU HAVE REAL VARIANT LOGIC
-          setSelectedPackaging('Standard Edition Packaging'); // Default for now
-          setSelectedAccessory('With Molotov & Protest Sign'); // Default for now
+        if (productData) {
+          setProduct(productData as Product);
+
+          // 2. Fetch specific variants for Pancho
+          const { data: variantsData, error: variantsFetchError } = await supabase
+            .from('product_variants')
+            .select('*') // Select all columns
+            .eq('product_id', PANCHO_PRODUCT_ID); // Filter by Pancho's product ID
+
+          if (variantsFetchError) {
+            throw variantsFetchError;
+          }
+
+          let fetchedPackaging: ProductVariant[] = [];
+          let fetchedAccessories: ProductVariant[] = [];
+
+          if (variantsData) {
+            fetchedPackaging = variantsData.filter(v => v.type.toLowerCase() === 'packaging');
+            fetchedAccessories = variantsData.filter(v => v.type.toLowerCase() === 'accessory');
+            setPackagingVariants(fetchedPackaging);
+            setAccessoryOptions(fetchedAccessories);
+          }
+
+          // --- NEW/UPDATED LOGIC: Pre-fill if editing existing favorite OR set sane defaults ---
+          if (favoriteIdFromUrl && currentCustomerId) {
+            // If we are editing, fetch the specific favorite item
+            const { data: existingFavorite, error: favoriteError } = await supabase
+              .from('customer_favorites')
+              .select('*')
+              .eq('id', favoriteIdFromUrl)
+              .eq('customer_id', currentCustomerId) // Crucial: ensure current user owns this favorite
+              .single();
+
+            if (favoriteError) {
+              console.error("Error fetching existing favorite for pre-fill:", favoriteError.message);
+              setProductError('Could not load existing selection. Please try again.');
+              setEditingFavoriteId(null); // Clear editing state if error
+              // Fallback to defaults or clear selections if existing cannot be loaded
+              setSelectedPackagingId(fetchedPackaging.length > 0 ? fetchedPackaging[0].id : '');
+              setSelectedAccessoryId(fetchedAccessories.length > 0 ? fetchedAccessories[0].id : '');
+              setQuantity(1);
+              setIsLiked(false);
+            } else if (existingFavorite) {
+              // PRE-FILL UI WITH DATA FROM EXISTING FAVORITE
+              setSelectedPackagingId(existingFavorite.fabric_color_id || '');
+              setSelectedAccessoryId(existingFavorite.frame_color_id || '');
+              setQuantity(existingFavorite.quantity || 1);
+              setIsLiked(existingFavorite.is_liked || false);
+              console.log("Successfully pre-filled form for editing favorite:", existingFavorite);
+            }
+          } else {
+            // NOT editing, set default options (first available for each, or clear if none)
+            setSelectedPackagingId(fetchedPackaging.length > 0 ? fetchedPackaging[0].id : '');
+            setSelectedAccessoryId(fetchedAccessories.length > 0 ? fetchedAccessories[0].id : '');
+            setQuantity(1); // Default quantity for new items
+            setIsLiked(false); // Default liked state for new items
+          }
+           // --- END NEW/UPDATED LOGIC ---
+
         } else {
           setProductError('Pancho product not found in database.');
         }
       } catch (err: any) {
-        setProductError(`Error fetching Pancho: ${err.message}`);
-        console.error('Error fetching Pancho product:', err.message);
+        setProductError(`Error fetching Pancho's details or variants: ${err.message}`);
+        console.error('Error in fetchData:', err.message);
       } finally {
         setLoadingProduct(false);
       }
     }
 
-    fetchPanchoProduct(); // Call the product fetch function
+    fetchData();
   }, []); // Run once on component mount for both customer ID and product data
+
 
   // Function to ensure customer exists in 'customers' table or create them if not
   const ensureCustomerExists = async (cId: string): Promise<string> => {
+    console.log("ensureCustomerExists: Checking/Creating customer with ID", cId);
     if (!cId) {
-      console.error("Attempted to ensure customer existence with null customer ID.");
+      console.error("ensureCustomerExists: Attempted to ensure customer existence with null customer ID.");
       return "";
     }
     const { data: existingCustomer, error: selectError } = await supabase
@@ -106,93 +191,178 @@ export default function PanchoProductPage() {
       .limit(1);
 
     if (selectError) {
-      console.error("Error checking for existing customer:", selectError.message);
+      console.error("ensureCustomerExists: Error checking for existing customer:", selectError.message);
       return cId;
     }
 
     if (!existingCustomer || existingCustomer.length === 0) {
-      // Customer does not exist, insert a basic record
+      console.log("ensureCustomerExists: Customer not found, attempting to insert new customer.");
       const { data: newCustomer, error: insertError } = await supabase
         .from('customers')
         .insert({ customer_id: cId, email: `${cId}@temp.com`, name: 'Anonymous Expo Visitor' })
-        .select(); // Use .select() to return the inserted data
+        .select();
 
       if (insertError) {
-        console.error("Error inserting new customer:", insertError.message);
+        console.error("ensureCustomerExists: Error inserting new customer:", insertError.message);
       } else {
-        console.log("New customer created in Supabase:", newCustomer);
+        console.log("ensureCustomerExists: New customer created in Supabase:", newCustomer);
       }
+    } else {
+        console.log("ensureCustomerExists: Customer already exists:", existingCustomer);
     }
     return cId;
   };
 
   // Function to log product favorite/interest into the 'customer_favorites' table
-  const logProductFavorite = async (isLike: boolean, isInterested: boolean) => {
+  const logProductFavorite = async (
+    isLikeAction: boolean,
+    isInterestedAction: boolean,
+    configQuantity: number = 1,
+    existingFavId: string | null = null // This is the ID of the customer_favorites entry we might be updating
+  ) => {
+    console.log("logProductFavorite: Attempting to log favorite...");
     if (!product || !customerId) {
-        console.error("Product or Customer ID not available. Cannot log product favorite.");
+        console.error("logProductFavorite: Product or Customer ID not available. Cannot log product favorite.");
         return;
     }
 
     const currentCustomerId = await ensureCustomerExists(customerId);
     if (!currentCustomerId) {
-      console.error("Could not obtain a valid customer ID for logging favorite.");
+      console.error("logProductFavorite: Could not obtain a valid customer ID for logging favorite.");
       return;
     }
 
-    const { data, error } = await supabase
-      .from('customer_favorites')
-      .insert([
-        {
-          customer_id: currentCustomerId,
-          product_id: product.id, // Now using the fetched product's ID
-          // YOU WILL NEED TO ADAPT THESE LINES WHEN YOU HAVE REAL VARIANT LOGIC
-          fabric_color: selectedPackaging,
-          frame_color: selectedAccessory,
-          notes: isLike ? 'User liked this product' : (isInterested ? 'User expressed interest' : 'Interaction recorded'),
-        },
-      ]);
+    // Determine the data to be inserted/updated
+    let favoriteData: any = {
+      customer_id: currentCustomerId,
+      product_id: product.id,
+      quantity: configQuantity,
+      is_liked: isLikeAction,
+      fabric_color_id: selectedPackagingId || null, // Ensure to store ID, default to null
+      frame_color_id: selectedAccessoryId || null,   // Ensure to store ID, default to null
+    };
 
-    if (error) {
-      console.error('Error logging product favorite into Supabase:', error.message);
-      console.trace();
-    } else {
-      console.log('Product favorite successfully logged to Supabase:', data);
+    // If it's a "like" action, variant IDs should be NULL, quantity 1
+    if (isLikeAction) {
+      favoriteData.fabric_color_id = null;
+      favoriteData.frame_color_id = null;
+      favoriteData.quantity = 1;
+    }
+
+    try {
+        if (existingFavId && isInterestedAction) {
+            // SCENARIO: We are EDITING an existing fully configured favorite item
+            console.log('Updating existing favorite item:', existingFavId);
+            const { data, error } = await supabase
+                .from('customer_favorites')
+                .update(favoriteData) // Use the prepared favoriteData object
+                .eq('id', existingFavId) // TARGET THE SPECIFIC ROW
+                .select();
+
+            if (error) throw error;
+            console.log('Favorite successfully UPDATED in Supabase:', data);
+        } else if (isInterestedAction) {
+            // SCENARIO: Adding a new configured item OR upgrading a 'liked' placeholder
+            // Check for existing 'is_liked: true' placeholder for this product
+            const { data: existingLikedItem, error: selectError } = await supabase
+                .from('customer_favorites')
+                .select('id')
+                .eq('customer_id', currentCustomerId)
+                .eq('product_id', product.id)
+                .eq('is_liked', true)
+                .maybeSingle();
+
+            if (selectError) {
+                console.error('Error checking for existing liked item:', selectError.message);
+            }
+
+            if (existingLikedItem) {
+                // Found a 'liked' placeholder AND this is a configuring action, so update it
+                console.log('Upgrading existing liked item to configured item:', existingLikedItem.id);
+                const { data, error } = await supabase
+                    .from('customer_favorites')
+                    .update(favoriteData) // Use the prepared favoriteData object
+                    .eq('id', existingLikedItem.id) // Update by the specific row ID
+                    .select();
+                if (error) throw error;
+                console.log('Product favorite (upgraded) successfully logged to Supabase:', data);
+            } else {
+                // No existing 'liked' placeholder, so insert a new configured item
+                console.log('Inserting new configured item.');
+                const { data, error } = await supabase
+                    .from('customer_favorites')
+                    .insert([favoriteData])
+                    .select();
+                if (error) throw error;
+                console.log('Product favorite (new configured) successfully logged to Supabase:', data);
+            }
+        } else if (isLikeAction) {
+            // SCENARIO: Handling the LIKE/UNLIKE action (heart button)
+            if (isLiked) { // UI state 'isLiked' means user is clicking to UNLIKE
+                // Delete the simple liked item for this product for this customer
+                const { data: deletedData, error: deleteError } = await supabase
+                    .from('customer_favorites')
+                    .delete()
+                    .eq('customer_id', currentCustomerId)
+                    .eq('product_id', product.id)
+                    .eq('is_liked', true)
+                    .is('fabric_color_id', null)
+                    .is('frame_color_id', null);
+
+                if (deleteError) throw deleteError;
+                console.log('Product favorite (unliked) successfully deleted:', deletedData);
+            } else { // UI state 'isLiked' is false, meaning user clicking to LIKE
+                // Insert the simple liked item
+                const { data, error } = await supabase
+                    .from('customer_favorites')
+                    .insert([favoriteData])
+                    .select();
+
+                if (error) throw error;
+                console.log('Product favorite (liked) successfully logged to Supabase:', data);
+            }
+        }
+    } catch (error: any) {
+      console.error('logProductFavorite: Supabase Operation Error:', error);
+      console.error('logProductFavorite: Error message:', error.message);
+      console.error('logProductFavorite: Error code:', error.code);
+      console.error('logProductFavorite: Error hint:', error.hint);
     }
   };
 
 
   const handleImInterested = async () => {
     setIsAddingToFavorites(true);
-    await logProductFavorite(false, true);
-    console.log('Customer interested in:', {
-      productId: product?.id, // Use optional chaining in case product is null
-      packagingVariant: selectedPackaging,
-      accessoryOption: selectedAccessory,
-      customerId: customerId,
-    });
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    router.push('/kusam/my-favorite-pieces');
+    console.log("handleImInterested: Button clicked. Logging configured item...");
+    await logProductFavorite(false, true, quantity, editingFavoriteId); // Pass editingFavoriteId
+    console.log('handleImInterested: Logging complete. Redirecting to cart.');
+    router.push('/kusam/cart');
   };
 
   const handleLikeToggle = async () => {
     const newLikedState = !isLiked;
-    setIsLiked(newLikedState);
-    console.log(`Product ${product?.name} ${newLikedState ? 'liked' : 'unliked'}!`);
-    await logProductFavorite(newLikedState, false);
+    setIsLiked(newLikedState); // Update UI immediately
 
-    if (newLikedState) {
+    if (newLikedState) { // If user is liking
       setShowPopUpHeart(true);
       setTimeout(() => {
         setShowPopUpHeart(false);
       }, 1000);
     }
+    // For liked item, quantity is always 1, variants are null. editingFavoriteId is irrelevant here.
+    await logProductFavorite(true, false, 1, null);
+  };
+
+  // Helper to get the value for display from an ID
+  const getVariantValueById = (id: string, variants: ProductVariant[]) => {
+    return variants.find(v => v.id === id)?.value || 'N/A';
   };
 
   // --- Loading and Error States for Product Data ---
   if (loadingProduct) {
     return (
       <div className="flex justify-center items-center h-screen bg-gray-50">
-        <p className="text-gray-700 text-lg">Loading Pancho's awesome figure details...</p>
+        <p className="text-gray-700 text-lg">Cargando Pancho's awesome figure details...</p>
       </div>
     );
   }
@@ -205,7 +375,6 @@ export default function PanchoProductPage() {
     );
   }
 
-  // If product is null after loading, something went wrong
   if (!product) {
     return (
       <div className="flex justify-center items-center h-screen bg-gray-50">
@@ -226,7 +395,7 @@ export default function PanchoProductPage() {
       <div className="w-full max-w-sm bg-white rounded-lg shadow-lg overflow-hidden mb-6">
         <div className="relative w-full pt-[177.77%] bg-gray-200">
           <Image
-            src={product.image_url} // Use product.image_url from fetched data
+            src={product.image_url}
             alt={product.name}
             layout="fill"
             objectFit="contain"
@@ -237,7 +406,7 @@ export default function PanchoProductPage() {
           <button
             onClick={handleLikeToggle}
             className={`absolute top-4 right-4 p-2 rounded-full shadow-lg transition-all duration-200 ease-in-out
-              ${isLiked ? 'bg-red-500 text-white transform scale-110' : 'bg-white text-gray-400 hover:text-red-500 hover:scale-110'}`}
+              ${isLiked ? 'bg-red-500 text-white transform scale-110' : 'bg-white text-gray-400 hover:text-red-500 hover:hover:text-red-500 hover:scale-110'}`}
             aria-label={isLiked ? "Unlike product" : "Like product"}
             onMouseDown={(e) => e.stopPropagation()}
             onTouchStart={(e) => e.stopPropagation()}
@@ -281,72 +450,78 @@ export default function PanchoProductPage() {
       </div>
 
       {/* Product Details Section */}
-      <div className="w-full max_w_sm bg-white rounded-lg shadow-xl p-6">
+      <div className="w-full max-w-sm bg-white rounded-lg shadow-xl p-6">
         <h1 className="text-3xl font-extrabold text-blue-600 mb-2 text-center">
-          {product.name} {/* Use product.name from fetched data */}
+          {product.name}
         </h1>
         <p className="text-lg font-semibold text-gray-700 mb-4 text-center">
-          ${product.price.toFixed(2)} {/* Use product.price from fetched data */}
+          ${product.price.toFixed(2)}
         </p>
         <p className="text-base text-gray-600 mb-6 text-center leading-relaxed">
-          {product.description} {/* Use product.description from fetched data */}
+          {product.description}
         </p>
 
-        {/* Customization Options: Packaging Variants - TEMPORARY HARDCODING */}
-        {/* IMPORTANT: YOU WILL NEED TO REPLACE THESE WITH REAL DATA OR LOGIC */}
-        <div className="mb-6">
-          <h2 className="text-lg font-semibold text-gray-700 mb-3">Collector Packaging Variant</h2>
-          <div className="flex flex-wrap gap-3 justify-center">
-             {[
-                { name: 'Standard Edition Packaging', hex: '#EAEAEA' },
-                { name: 'Variant Cover (Comic Style)', hex: '#FFD700' },
-                { name: 'Glow-in-the-Dark Box Accents', hex: '#00FF00' },
-             ].map((variant) => (
-              <button
-                key={variant.name}
-                onClick={() => setSelectedPackaging(variant.name)}
-                className={`w-10 h-10 rounded-full border-2 focus:outline-none transition-all duration-200
-                  ${selectedPackaging === variant.name ? 'border-blue-500 ring-2 ring-blue-300' : 'border-gray-300 hover:border-blue-300'}`}
-                style={{ backgroundColor: variant.hex }}
-                title={variant.name}
-              >
-                  {selectedPackaging === variant.name && (
+        {/* Customization Options: Packaging Variants */}
+        {packagingVariants.length > 0 && (
+          <div className="mb-6">
+            <h2 className="text-lg font-semibold text-gray-700 mb-3">Collector Packaging Variant</h2>
+            <div className="flex flex-wrap gap-3 justify-center">
+              {packagingVariants.map((variant) => (
+                <button
+                  key={variant.id}
+                  onClick={() => setSelectedPackagingId(variant.id)}
+                  className={`w-10 h-10 rounded-full border-2 focus:outline-none transition-all duration-200
+                    ${selectedPackagingId === variant.id ? 'border-blue-500 ring-2 ring-blue-300' : 'border-gray-300 hover:border-blue-300'}`}
+                  style={{ backgroundColor: variant.hex_code || '#CCCCCC' }}
+                  title={variant.value}
+                >
+                    {selectedPackagingId === variant.id && (
+                      <span className="flex justify-center items-center text-white text-xl">✓</span>
+                    )}
+                </button>
+              ))}
+            </div>
+            <p className="text-sm text-center text-gray-500 mt-2">Selected: <span className="font-medium text-gray-700">{getVariantValueById(selectedPackagingId, packagingVariants)}</span></p>
+          </div>
+        )}
+
+        {/* Customization Options: Accessory Options */}
+        {accessoryOptions.length > 0 && (
+          <div className="mb-8">
+            <h2 className="text-lg font-semibold text-gray-700 mb-3">Accessory Options</h2>
+            <div className="flex flex-wrap gap-3 justify-center">
+              {accessoryOptions.map((option) => (
+                <button
+                  key={option.id}
+                  onClick={() => setSelectedAccessoryId(option.id)}
+                  className={`w-10 h-10 rounded-full border-2 focus:outline-none transition-all duration-200
+                    ${selectedAccessoryId === option.id ? 'border-blue-500 ring-2 ring-blue-300' : 'border-gray-300 hover:border-blue-300'}`}
+                  style={{ backgroundColor: option.hex_code || '#DDDDDD' }}
+                  title={option.value}
+                >
+                  {selectedAccessoryId === option.id && (
                     <span className="flex justify-center items-center text-white text-xl">✓</span>
                   )}
-              </button>
-            ))}
+                </button>
+              ))}
+            </div>
+            <p className="text-sm text-center text-gray-500 mt-2">Selected: <span className="font-medium text-gray-700">{getVariantValueById(selectedAccessoryId, accessoryOptions)}</span></p>
           </div>
-          <p className="text-sm text-center text-gray-500 mt-2">Selected: <span className="font-medium text-gray-700">{selectedPackaging}</span></p>
-        </div>
-
-        {/* Customization Options: Accessory Options - TEMPORARY HARDCODING */}
-        {/* IMPORTANT: YOU WILL NEED TO REPLACE THESE WITH REAL DATA OR LOGIC */}
+        )}
+        
+        {/* Quantity Selector */}
         <div className="mb-8">
-          <h2 className="text-lg font-semibold text-gray-700 mb-3">Accessory Options</h2>
-          <div className="flex flex-wrap gap-3 justify-center">
-            {[
-                { name: 'With Molotov & Protest Sign', hex: '#FF6347' },
-                { name: 'With Walkie-Talkie & Frijol', hex: '#8A2BE2' },
-                { name: 'Limited Edition "Desert Standoff" Diorama Base', hex: '#D2B48C' },
-            ].map((option) => (
-              <button
-                key={option.name}
-                onClick={() => setSelectedAccessory(option.name)}
-                className={`w-10 h-10 rounded-full border-2 focus:outline-none transition-all duration-200
-                  ${selectedAccessory === option.name ? 'border-blue-500 ring-2 ring-blue-300' : 'border-gray-300 hover:border-blue-300'}`}
-                style={{ backgroundColor: option.hex }}
-                title={option.name}
-              >
-                {selectedAccessory === option.name && (
-                  <span className="flex justify-center items-center text-white text-xl">✓</span>
-                )}
-              </button>
-            ))}
-          </div>
-          <p className="text-sm text-center text-gray-500 mt-2">Selected: <span className="font-medium text-gray-700">{selectedAccessory}</span></p>
+            <h2 className="text-lg font-semibold text-gray-700 mb-3">Quantity</h2>
+            <input
+                type="number"
+                min="1"
+                value={quantity}
+                onChange={(e) => setQuantity(Number(e.target.value))}
+                className="w-full p-2 border border-gray-300 rounded-md text-center text-gray-900 text-xl font-bold"
+            />
         </div>
 
-        {/* "I'm Interested" Button */}
+        {/* "I'm Interested" / "Update Selection" Button */}
         <motion.button
           onClick={handleImInterested}
           whileTap={{ scale: 0.98 }}
@@ -355,16 +530,20 @@ export default function PanchoProductPage() {
           }
           disabled={isAddingToFavorites}
         >
-          {isAddingToFavorites ? 'Adding to Favorites...' : "I'm Interested in Pancho!"}
+          {isAddingToFavorites
+            ? 'Guardando cambios...'
+            : editingFavoriteId // Check if we are editing an existing item
+              ? 'Actualizar Selección' // If editing, show "Update Selection"
+              : "¡Interesado en Pancho!"} {/* Otherwise, show "I'm Interested" */}
         </motion.button>
       </div>
 
-      {/* Back to Products/Home button */}
+      {/* Back to Products/Home / Back to Cart button */}
       <button
-        onClick={() => router.push('/kusam/catalog')}
+        onClick={() => router.push(editingFavoriteId ? '/kusam/cart' : '/kusam/catalog')}
         className="mt-6 text-blue-600 hover:text-blue-800 text-sm font-semibold transition-colors duration-200"
       >
-        ← Back to all products
+        {editingFavoriteId ? '← Regresar a Mis Favoritos' : '← Regresar al catálogo'}
       </button>
     </motion.div>
   );
