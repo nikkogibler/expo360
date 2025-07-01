@@ -1,60 +1,100 @@
 'use client'; // This component uses client-side interactivity
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
-import { useRouter, usePathname, useSearchParams } from 'next/navigation'; // Import usePathname AND useSearchParams
-import { v4 as uuidv4 } from 'uuid'; // Import uuid to generate unique IDs
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
+import { v4 as uuidv4 } from 'uuid';
 
-// CORRECT import for Supabase client
-import { supabase } from '../../utils/supabase'; // <--- Import the already initialized 'supabase' client
+import { supabase } from '../../utils/supabase';
+
+// Helper function to convert ISO country code to flag emoji
+const getFlagEmoji = (countryCode: string) => {
+  if (countryCode === 'OT') return '🌐'; // Use a globe emoji for "Otro"
+  if (!countryCode) return ''; // Handle empty code
+
+  const codePoints = countryCode
+    .toUpperCase()
+    .split('')
+    .map((char) => 0x1f1e6 + (char.charCodeAt(0) - 'A'.charCodeAt(0)));
+  return String.fromCodePoint(...codePoints);
+};
+
+interface CountryCode {
+  name: string;
+  dial_code: string;
+  code: string; // ISO 2-letter code
+  emoji?: string; // Optional: to store the pre-computed emoji for performance
+}
+
+// Expanded list of country codes with associated emoji
+const countryCodes: CountryCode[] = [
+  { name: 'México', dial_code: '+52', code: 'MX' },
+  { name: 'Estados Unidos', dial_code: '+1', code: 'US' },
+  { name: 'Canadá', dial_code: '+1', code: 'CA' },
+  { name: 'Argentina', dial_code: '+54', code: 'AR' },
+  { name: 'Colombia', dial_code: '+57', code: 'CO' },
+  { name: 'España', dial_code: '+34', code: 'ES' },
+  { name: 'Brasil', dial_code: '+55', code: 'BR' },
+  { name: 'Chile', dial_code: '+56', code: 'CL' },
+  { name: 'Perú', dial_code: '+51', code: 'PE' },
+  // Add more as needed
+  { name: 'Otro', dial_code: '', code: 'OT' }
+];
+
+// Pre-compute emojis for constant `countryCodes` array
+countryCodes.forEach(country => {
+  country.emoji = getFlagEmoji(country.code);
+});
+
 
 export default function KusamLeadFormPage() {
   const [name, setName] = useState('');
-  const [whatsapp, setWhatsapp] = useState('');
+  const [localWhatsapp, setLocalWhatsapp] = useState('');
+  const [selectedCountry, setSelectedCountry] = useState<CountryCode>(countryCodes[0]); // Default to Mexico
   const [email, setEmail] = useState('');
   const [customerType, setCustomerType] = useState('');
-  const [currentCustomerId, setCurrentCustomerId] = useState<string | null>(null); // State to hold customer_id
+  const [currentCustomerId, setCurrentCustomerId] = useState<string | null>(null);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   const router = useRouter();
-  const pathname = usePathname(); // Get the current path for conditional redirects
-  const searchParams = useSearchParams(); // --- ADDED: Get URL search parameters from Next.js
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
-
-  // --- Customer ID and Redirect/Data Fetching Effect ---
-  // This useEffect now runs immediately on component mount.
+  // Close dropdown when clicking outside
   useEffect(() => {
-    // const urlParams = new URLSearchParams(window.location.search); // Not strictly needed with useSearchParams
-    const sourceQrCode = searchParams.get('source_qr_code'); // Capture QR code from URL using useSearchParams
-    const clearSessionFlag = searchParams.get('clear_session'); // Get the clear_session flag
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [dropdownRef]);
+
+  useEffect(() => {
+    const sourceQrCode = searchParams.get('source_qr_code');
+    const clearSessionFlag = searchParams.get('clear_session');
 
     let storedCustomerId = localStorage.getItem('kusam_customer_id');
 
-    // --- CRITICAL ADDITION/MODIFICATION HERE ---
     if (clearSessionFlag === 'true') {
       console.log('KusamLeadFormPage: Detected clear_session=true in URL parameter. Forcing new session.');
-      localStorage.removeItem('kusam_customer_id'); // <--- THIS IS THE KEY LINE TO ADD/UNCOMMENT
-      storedCustomerId = null; // Ensure the rest of this useEffect treats it as cleared
-
-      // Optional: Redirect to clear the URL parameter for a cleaner state and prevent
-      // this logic from running unnecessarily on subsequent renders if user stays on /kusam
-      // If you are redirecting to /instructions anyway, this might not be critical.
-      // router.replace('/kusam');
-      // return; // Exit early if we are forcing clear and restarting the session
+      localStorage.removeItem('kusam_customer_id');
+      storedCustomerId = null;
     }
 
-    // Scenario 1: Returning user with a stored customer_id (and no actual clear operation happened)
     if (storedCustomerId) {
-      console.log('--- Found stored kusam_customer_id:', storedCustomerId); // Debug Log
+      console.log('--- Found stored kusam_customer_id:', storedCustomerId);
 
-      // If customer_id exists AND we are currently on the main form page (/kusam), redirect immediately.
-      if (pathname === '/kusam') { // Only redirect if on the landing page
+      if (pathname === '/kusam') {
         router.replace(`/kusam/instructions?customer_id=${storedCustomerId}`);
-        return; // Stop further execution of this useEffect in the current render cycle
+        return;
       }
 
-      // If not redirecting (i.e., we are already on instructions or another page, but this component remounted),
-      // set customer ID and attempt to pre-fill form data
       setCurrentCustomerId(storedCustomerId);
       const fetchCustomerData = async () => {
         const { data, error } = await supabase
@@ -65,23 +105,32 @@ export default function KusamLeadFormPage() {
 
         if (error) {
           console.error('Error fetching customer data for returning user:', error);
-          localStorage.removeItem('kusam_customer_id'); // Clear invalid ID
-          setCurrentCustomerId(null); // Treat as new user
+          localStorage.removeItem('kusam_customer_id');
+          setCurrentCustomerId(null);
         } else if (data) {
           setName(data.name || '');
-          setWhatsapp(data.whatsapp || '');
           setEmail(data.email || '');
           setCustomerType(data.customer_type || '');
+          
+          const existingWhatsapp = data.whatsapp || '';
+          
+          let foundCountry = countryCodes.find(c => existingWhatsapp.startsWith(c.dial_code));
+          
+          if (foundCountry) {
+            setSelectedCountry(foundCountry);
+            setLocalWhatsapp(existingWhatsapp.substring(foundCountry.dial_code.length));
+          } else {
+            setSelectedCountry(countryCodes[0]); // Default to Mexico or a sensible default
+            setLocalWhatsapp(existingWhatsapp);
+          }
           console.log('Returning customer data loaded for form pre-fill:', data);
         }
       };
-      // Only call fetchCustomerData if we're not immediately redirecting out of /kusam
       if (pathname === '/kusam') {
           fetchCustomerData();
       }
 
 
-      // Log QR scan for returning user if applicable and on the landing page
       if (sourceQrCode && pathname === '/kusam') {
         const logQrScan = async () => {
           const { error: logError } = await supabase
@@ -95,115 +144,106 @@ export default function KusamLeadFormPage() {
       }
 
     } else {
-      // Scenario 2: New user (no stored kusam_customer_id found or was just cleared by clear_session=true)
       console.log('--- No stored kusam_customer_id found or clear_session=true was detected. Generating a new one.');
-      const newCustomerId = uuidv4(); // Generate a unique ID
-      localStorage.setItem('kusam_customer_id', newCustomerId); // Store it locally for persistence
-      setCurrentCustomerId(newCustomerId); // Update component state
-      console.log('New customer ID generated and stored:', newCustomerId); // Debug Log
+      const newCustomerId = uuidv4();
+      localStorage.setItem('kusam_customer_id', newCustomerId);
+      setCurrentCustomerId(newCustomerId);
+      console.log('New customer ID generated and stored:', newCustomerId);
 
-      // Log QR scan for new session initiated by QR code
       if (sourceQrCode) {
         const logQrScan = async () => {
           const { error: logError } = await supabase
             .from('customer_qr_scans')
             .insert({ customer_id: newCustomerId, source_qr_code: sourceQrCode });
-          if (logError) {
+        if (logError) {
             console.error('Error logging QR scan for new customer on initial load:', logError);
           }
         };
         logQrScan();
       }
     }
-  }, [pathname, router, searchParams]); // searchParams is crucial dependency here for clearSessionFlag
+  }, [pathname, router, searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault(); // Prevent default form submission behavior
+    e.preventDefault();
 
-    // Basic form validation
-    if (!name || !whatsapp || !email || !customerType) {
+    const fullWhatsappNumber = selectedCountry.dial_code === '' ? localWhatsapp : `${selectedCountry.dial_code}${localWhatsapp}`;
+
+    if (!name || !fullWhatsappNumber || !email || !customerType) {
       alert('Por favor, complete todos los campos.');
       return;
     }
 
     console.log('--- Kusam Lead Captured (DEMO) ---');
     console.log('Nombre Completo:', name);
-    console.log('WhatsApp:', whatsapp);
+    console.log('WhatsApp:', fullWhatsappNumber);
     console.log('Email:', email);
     console.log('Tipo de Cliente:', customerType);
     console.log('------------------------------------');
 
-    // const urlParams = new URLSearchParams(window.location.search); // Not strictly needed
-    const sourceQrCode = searchParams.get('source_qr_code'); // Capture QR code from URL
+    const sourceQrCode = searchParams.get('source_qr_code');
 
-    // Safety check: currentCustomerId should never be null at this point if logic is correct
     if (currentCustomerId === null) {
       console.error('No customer ID available for submission. This should not happen.');
       alert('Error de sesión. Por favor, recargue la página.');
       return;
     }
 
-    let customerIdToUse = currentCustomerId; // Use the ID already set in state/localStorage
+    let customerIdToUse = currentCustomerId;
 
-    // Attempt to find an existing customer record by the generated/stored ID
     const { data: existingCustomer, error: fetchError } = await supabase
         .from('customers')
         .select('customer_id')
         .eq('customer_id', customerIdToUse)
         .maybeSingle();
 
-    // Handle any error during the existence check, except "No rows found" (PGRST116)
     if (fetchError && fetchError.code !== 'PGRST116') {
         console.error('Error checking for existing customer:', fetchError);
         alert('Hubo un error de base de datos. Por favor, intente de nuevo.');
         return;
     }
 
-    // If an existing customer record was found for this customerIdToUse
     if (existingCustomer) {
-      // Update the existing customer's data
       const { data, error } = await supabase
         .from('customers')
         .update({
           name,
-          whatsapp,
+          whatsapp: fullWhatsappNumber,
           email,
           customer_type: customerType,
-          updated_at: new Date().toISOString() // Update timestamp
+          updated_at: new Date().toISOString()
         })
-        .eq('customer_id', customerIdToUse) // Specify which row to update
-        .select(); // Return the updated data
+        .eq('customer_id', customerIdToUse)
+        .select();
 
       if (error) {
         console.error('Error updating customer:', error);
         alert('Hubo un error al actualizar sus datos. Por favor, intente de nuevo.');
-        return; // Stop execution on error
+        return;
       }
       console.log('Customer updated:', data);
 
     } else {
-      // If no existing customer record was found for this customerIdToUse, insert a new one
       const { data, error } = await supabase
         .from('customers')
         .insert({
-          customer_id: customerIdToUse, // Use the pre-generated ID
+          customer_id: customerIdToUse,
           name,
-          whatsapp,
+          whatsapp: fullWhatsappNumber,
           email,
           customer_type: customerType
         })
-        .select(); // Return the inserted data
+        .select();
 
       if (error) {
         console.error('Error inserting new customer:', error);
         alert('Hubo un error al registrar sus datos. Por favor, intente de nuevo.');
-        return; // Stop execution on error
+        return;
       }
 
-      const newCustomer = data[0]; // Get the first (and only) inserted record
+      const newCustomer = data[0];
       console.log('New customer inserted:', newCustomer);
 
-      // Log the QR scan if present for a brand new customer
       if (sourceQrCode) {
         const { error: logError } = await supabase
           .from('customer_qr_scans')
@@ -214,24 +254,13 @@ export default function KusamLeadFormPage() {
       }
     }
 
-    // After successful submission (insert or update), redirect to the instructions page
     router.push(`/kusam/instructions?customer_id=${customerIdToUse}`);
   };
 
-  // --- Conditional Rendering Logic ---
-  // If currentCustomerId is null AND we are on the main form path (/kusam),
-  // it means the useEffect is still running to determine if it's a new or returning user.
-  // In this very brief initial phase, we render nothing (null) to avoid text flash.
   if (currentCustomerId === null && pathname === '/kusam') {
-    return null; // Render nothing during initial loading
+    return null;
   }
 
-  // This block renders the main form. It will be displayed if:
-  // 1. currentCustomerId has been set (meaning an ID was generated for a new user, or found for an existing one)
-  //    AND the current pathname is '/kusam'. This is the new user path.
-  // 2. OR if the current pathname is NOT '/kusam' (meaning we're on the instructions page due to redirect,
-  //    this component would theoretically still render but return this part).
-  //    The redirect logic in the useEffect handles the actual navigation away from /kusam for returning users.
   const containerVariants = {
     hidden: { opacity: 0, y: 50 },
     visible: {
@@ -246,7 +275,6 @@ export default function KusamLeadFormPage() {
     },
   };
 
-  // This is the primary return for the component. It renders the form or nothing if already redirected.
   return (
     <div className="relative min-h-screen flex flex-col items-center justify-center p-4 bg-white">
       <video
@@ -313,17 +341,61 @@ export default function KusamLeadFormPage() {
           </div>
 
           <div>
-            <label htmlFor="whatsapp" className="block text-sm font-medium text-gray-700">WhatsApp (Número de Celular)</label>
-            <input
-              type="tel"
-              id="whatsapp"
-              name="whatsapp"
-              value={whatsapp}
-              onChange={(e) => setWhatsapp(e.target.value)}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-gray-900 placeholder-gray-500"
-              placeholder="Ej. +52 55 1234 5678"
-              required
-            />
+            <label htmlFor="whatsapp" className="block text-sm font-medium text-gray-700">WhatsApp</label>
+            <div className="relative mt-1 flex rounded-md shadow-sm" ref={dropdownRef}>
+              {/* Flag and Dial Code Display */}
+              <button
+                type="button"
+                className="relative z-10 inline-flex items-center space-x-2 px-3 py-2 border border-r-0 border-gray-300 rounded-l-md bg-gray-50 text-gray-900 text-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+              >
+                <span className="text-xl leading-none">{selectedCountry.emoji}</span> {/* Flag Emoji */}
+                <span className="hidden sm:inline">{selectedCountry.dial_code}</span>
+                <svg className="-mr-1 h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.25 4.25a.75.75 0 01-1.06 0L5.23 8.29a.75.75 0 01.02-1.06z" clipRule="evenodd" />
+                </svg>
+              </button>
+
+              {/* Country Dropdown (Hidden by default) */}
+              {isDropdownOpen && (
+                <div className="absolute left-0 mt-12 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-20 max-h-60 overflow-y-auto">
+                  <div className="py-1" role="menu" aria-orientation="vertical" aria-labelledby="country-select-button">
+                    {countryCodes.map((country) => (
+                      <a
+                        key={country.code}
+                        href="#"
+                        className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                        role="menuitem"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          setSelectedCountry(country);
+                          if (country.dial_code === '') { // If "Otro" is selected
+                            setLocalWhatsapp(''); // Clear local, user manually enters full number
+                          }
+                          setIsDropdownOpen(false);
+                        }}
+                      >
+
+                        <span className="mr-2 text-lg leading-none">{country.emoji}</span> {/* Flag Emoji */}
+                        {country.name} ({country.dial_code})
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Local WhatsApp Number Input */}
+              <input
+                type="tel"
+                id="localWhatsapp"
+                name="localWhatsapp"
+                value={localWhatsapp}
+                onChange={(e) => setLocalWhatsapp(e.target.value)}
+                className="flex-1 block w-full px-3 py-2 border border-gray-300 rounded-r-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-gray-900 placeholder-gray-500"
+                placeholder={selectedCountry.dial_code === '' ? "Ej. +YY XXXXXXXXXX" : "Ej. 55 1234 5678"}
+                required
+              />
+            </div>
           </div>
 
           <div>
