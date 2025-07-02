@@ -1,22 +1,33 @@
 // src/components/CustomerIdInitializer.tsx
-'use client'; // This component MUST be a Client Component
+'use client';
 
 import { useEffect } from 'react';
-import { v4 as uuidv4 } from 'uuid';
+// REMOVE: import { v4 as uuidv4 } from 'uuid';
+import { useSearchParams } from 'next/navigation';
 
 export default function CustomerIdInitializer() {
+  const searchParams = useSearchParams();
+
   useEffect(() => {
-    let currentCustomerId = localStorage.getItem('kusam_customer_id');
+    const clearSessionFlag = searchParams.get('clear_session');
 
-    if (!currentCustomerId) {
-      currentCustomerId = uuidv4();
-      localStorage.setItem('kusam_customer_id', currentCustomerId);
-      console.log('CustomerIdInitializer: Generated and set a new kusam_customer_id in localStorage:', currentCustomerId);
-    } else {
-      console.log('CustomerIdInitializer: Found existing kusam_customer_id in localStorage:', currentCustomerId);
+    if (clearSessionFlag === 'true') {
+      console.log('CustomerIdInitializer: Detected clear_session=true. Clearing existing kusam_customer_id.');
+      localStorage.removeItem('kusam_customer_id');
+      // OPTIONAL: Clean the URL after clearing, to prevent re-clearing on refresh.
+      // This will cause a navigation though, so consider if that's desired.
+      // if (window.location.search.includes('clear_session')) {
+      //   window.history.replaceState({}, document.title, window.location.pathname);
+      // }
     }
-  }, []); // Run only once on mount
 
-  // This component doesn't render any UI, it's purely for side effects
-  return null;
+    // IMPORTANT: REMOVED the logic to generate a new uuidv4 if currentCustomerId is null.
+    // This component will no longer automatically create IDs for new visitors.
+    // The main KusamLeadFormPage will now be responsible for this.
+
+    console.log('CustomerIdInitializer: Finished execution. localStorage kusam_customer_id after initializer:', localStorage.getItem('kusam_customer_id'));
+
+  }, [searchParams]); // Depend on searchParams
+
+  return null; // This component doesn't render any UI
 }

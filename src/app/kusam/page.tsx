@@ -1,10 +1,11 @@
+// src/app/kusam/page.tsx (KusamLeadFormPage)
 'use client'; // This component uses client-side interactivity
 
 import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
-import { v4 as uuidv4 } from 'uuid';
+import { v4 as uuidv4 } from 'uuid'; // Keep uuidv4 here!
 import type { Variants } from 'framer-motion';
 
 import { supabase } from '../../utils/supabase';
@@ -49,7 +50,7 @@ countryCodes.forEach(country => {
 });
 
 
-export default function KusamLeadFormPage() {
+const KusamLeadFormPage = () => { // Changed to const for export default as React.FC<any>
   const [name, setName] = useState('');
   const [localWhatsapp, setLocalWhatsapp] = useState('');
   const [selectedCountry, setSelectedCountry] = useState<CountryCode>(countryCodes[0]); // Default to Mexico
@@ -57,6 +58,7 @@ export default function KusamLeadFormPage() {
   const [customerType, setCustomerType] = useState('');
   const [currentCustomerId, setCurrentCustomerId] = useState<string | null>(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isLoadingCustomerStatus, setIsLoadingCustomerStatus] = useState(true); // NEW: Loading state for customer check
 
   const router = useRouter();
   const pathname = usePathname();
@@ -82,89 +84,82 @@ export default function KusamLeadFormPage() {
 
     let storedCustomerId = localStorage.getItem('kusam_customer_id');
 
-    if (clearSessionFlag === 'true') {
-      console.log('KusamLeadFormPage: Detected clear_session=true in URL parameter. Forcing new session.');
-      localStorage.removeItem('kusam_customer_id');
-      storedCustomerId = null;
-    }
+    const initializeCustomer = async () => {
+      setIsLoadingCustomerStatus(true); // Start loading
 
-    if (storedCustomerId) {
-      console.log('--- Found stored kusam_customer_id:', storedCustomerId);
-
-      if (pathname === '/kusam') {
-        router.replace(`/kusam/instructions?customer_id=${storedCustomerId}`);
-        return;
+      if (clearSessionFlag === 'true') {
+        console.log('KusamLeadFormPage: Detected clear_session=true. Forcing new session by clearing localStorage.');
+        localStorage.removeItem('kusam_customer_id');
+        storedCustomerId = null; // Ensure logic below sees it as null
+        // Optionally, clean the URL here to avoid repeated clearing on refresh
+        // if (window.location.search.includes('clear_session')) {
+        //   window.history.replaceState({}, document.title, window.location.pathname);
+        // }
       }
 
-      setCurrentCustomerId(storedCustomerId);
-      const fetchCustomerData = async () => {
-        const { data, error } = await supabase
+      if (storedCustomerId) {
+        console.log('--- Found stored kusam_customer_id:', storedCustomerId, 'in KusamLeadFormPage. Verifying with Supabase.');
+
+        const { data: customerData, error } = await supabase
           .from('customers')
           .select('*')
           .eq('customer_id', storedCustomerId)
           .single();
 
-        if (error) {
-          console.error('Error fetching customer data for returning user:', error);
-          localStorage.removeItem('kusam_customer_id');
-          setCurrentCustomerId(null);
-        } else if (data) {
-          setName(data.name || '');
-          setEmail(data.email || '');
-          setCustomerType(data.customer_type || '');
+        if (error || !customerData) {
+          console.error('Error fetching customer data or customer not found in DB:', error?.message || 'Not found');
+          localStorage.removeItem('kusam_customer_id'); // Invalidate stored ID if not in DB
+          setCurrentCustomerId(null); // Clear state
+          // Fall through to generate new ID or show form if not found
+        } else {
+          // Customer ID found and validated in Supabase! -> User is "signed up"
+          setCurrentCustomerId(storedCustomerId); // Set state with valid ID
+          setName(customerData.name || '');
+          setEmail(customerData.email || '');
+          setCustomerType(customerData.customer_type || '');
 
-          // Moved declaration of existingWhatsapp here, outside the 'if (data)' block
-          const existingWhatsapp = data.whatsapp || ''; // Declare it here
-
+          const existingWhatsapp = customerData.whatsapp || '';
           const foundCountry = countryCodes.find(c => existingWhatsapp.startsWith(c.dial_code));
-
           if (foundCountry) {
             setSelectedCountry(foundCountry);
             setLocalWhatsapp(existingWhatsapp.substring(foundCountry.dial_code.length));
           } else {
-            setSelectedCountry(countryCodes[0]); // Default to Mexico or a sensible default
+            setSelectedCountry(countryCodes[0]); // Default to Mexico
             setLocalWhatsapp(existingWhatsapp);
           }
-          console.log('Returning customer data loaded for form pre-fill:', data);
-        }
-      };
-      if (pathname === '/kusam') {
-          fetchCustomerData();
-      }
+          console.log('Returning customer data loaded for form pre-fill and redirect:', customerData);
 
-
-      if (sourceQrCode && pathname === '/kusam') {
-        const logQrScan = async () => {
-          const { error: logError } = await supabase
-            .from('customer_qr_scans')
-            .insert({ customer_id: storedCustomerId, source_qr_code: sourceQrCode });
-          if (logError) {
-            console.error('Error logging QR scan for returning user:', logError);
+          // REDIRECT ONLY IF ON THE ROOT KUSAM PAGE AND CONFIRMED SIGNED UP
+          if (pathname === '/kusam') {
+            router.replace(`/kusam/instructions?customer_id=${storedCustomerId}`);
+            return; // Exit early as we are redirecting
           }
-        };
-        logQrScan();
+        }
       }
 
-    } else {
-      console.log('--- No stored kusam_customer_id found or clear_session=true was detected. Generating a new one.');
-      const newCustomerId = uuidv4();
-      localStorage.setItem('kusam_customer_id', newCustomerId);
-      setCurrentCustomerId(newCustomerId);
-      console.log('New customer ID generated and stored:', newCustomerId);
+      // This block only runs if storedCustomerId was null OR was invalidated above
+      if (!storedCustomerId || localStorage.getItem('kusam_customer_id') === null) { // Double check localStorage after potential clearing/invalidation
+        console.log('--- No valid kusam_customer_id found. Generating a new one for current session.');
+        const newCustomerId = uuidv4();
+        localStorage.setItem('kusam_customer_id', newCustomerId); // Store new ID
+        setCurrentCustomerId(newCustomerId); // Set state with new ID
+        console.log('New customer ID generated and stored for this session:', newCustomerId);
 
-      if (sourceQrCode) {
-        const logQrScan = async () => {
+        // Log QR scan for truly new customer at this stage
+        if (sourceQrCode) {
           const { error: logError } = await supabase
             .from('customer_qr_scans')
             .insert({ customer_id: newCustomerId, source_qr_code: sourceQrCode });
-        if (logError) {
+          if (logError) {
             console.error('Error logging QR scan for new customer on initial load:', logError);
           }
-        };
-        logQrScan();
+        }
       }
-    }
-  }, [pathname, router, searchParams]);
+      setIsLoadingCustomerStatus(false); // End loading
+    };
+
+    initializeCustomer();
+  }, [pathname, router, searchParams]); // Depend on relevant states/props
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -186,26 +181,28 @@ export default function KusamLeadFormPage() {
     const sourceQrCode = searchParams.get('source_qr_code');
 
     if (currentCustomerId === null) {
-      console.error('No customer ID available for submission. This should not happen.');
+      console.error('No customer ID available for submission. This should not happen if currentCustomerId state is managed correctly.');
       alert('Error de sesión. Por favor, recargue la página.');
       return;
     }
 
-    const customerIdToUse = currentCustomerId;
+    const customerIdToUse = currentCustomerId; // Use the ID from state
 
-    const { data: existingCustomer, error: fetchError } = await supabase
+    // Check if customer exists or insert
+    const { data: existingCustomerCheck, error: fetchError } = await supabase
         .from('customers')
         .select('customer_id')
         .eq('customer_id', customerIdToUse)
         .maybeSingle();
 
-    if (fetchError && fetchError.code !== 'PGRST116') {
-        console.error('Error checking for existing customer:', fetchError);
+    if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116 is 'No rows found'
+        console.error('Error checking for existing customer during submit:', fetchError);
         alert('Hubo un error de base de datos. Por favor, intente de nuevo.');
         return;
     }
 
-    if (existingCustomer) {
+    if (existingCustomerCheck) {
+      // Update existing customer
       const { data, error } = await supabase
         .from('customers')
         .update({
@@ -226,6 +223,7 @@ export default function KusamLeadFormPage() {
       console.log('Customer updated:', data);
 
     } else {
+      // Insert new customer
       const { data, error } = await supabase
         .from('customers')
         .insert({
@@ -256,20 +254,44 @@ export default function KusamLeadFormPage() {
       }
     }
 
+    // Redirect to instructions page after successful form submission (signup or update)
     router.push(`/kusam/instructions?customer_id=${customerIdToUse}`);
   };
 
-  if (currentCustomerId === null && pathname === '/kusam') {
-    return null;
+  // NEW: Render loading state based on isLoadingCustomerStatus
+  if (isLoadingCustomerStatus) {
+    return (
+      <div className="relative min-h-screen flex items-center justify-center p-4 bg-white">
+         <video
+            className="absolute inset-0 w-full h-full object-cover"
+            src="/leaves1.mp4"
+            autoPlay
+            loop
+            muted
+            playsInline
+            style={{ opacity: 0.10 }}
+        />
+        <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5 }}
+            className="relative z-20 text-center"
+        >
+            <p className="text-xl text-gray-700 font-semibold">Cargando experiencia Kusam...</p>
+            <Image src="/kusam_main.webp" alt="Loading Logo" width={100} height={25} className="mx-auto mt-4 animate-pulse" />
+        </motion.div>
+      </div>
+    );
   }
 
+  // --- Framer Motion Variants ---
   const containerVariants: Variants = {
     hidden: { opacity: 0, y: 50 },
     visible: {
       opacity: 1,
       y: 0,
       transition: {
-        type: "spring" as const,
+        type: "spring", // Removed 'as const' as it's not needed for string literal types
         stiffness: 100,
         damping: 10,
         delay: 0.2
@@ -462,3 +484,6 @@ export default function KusamLeadFormPage() {
       </div>
     );
   }
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export default KusamLeadFormPage as React.FunctionComponent<any>;

@@ -4,7 +4,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import CustomerIdInitializer from '../components/CustomerIdInitializer'; // Import the new component
+import CustomerIdInitializer from '../components/CustomerIdInitializer'; // This is the correct import location
+import { Suspense } from 'react'; // <--- NEW: Import Suspense
 
 export const metadata: Metadata = {
   title: "Kusam Expo App",
@@ -31,7 +32,10 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <CustomerIdInitializer /> {/* Render the new Client Component here */}
+        {/* CORRECT LOCATION for Suspense: Wrap CustomerIdInitializer here */}
+        <Suspense fallback={null}> {/* `null` for fallback as this component renders no UI */}
+          <CustomerIdInitializer /> 
+        </Suspense>
         {children}
       </body>
     </html>
