@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { v4 as uuidv4 } from 'uuid';
-import type { Variants } from 'framer-motion'; // MOVED THIS IMPORT TO THE TOP
+import type { Variants } from 'framer-motion';
 
 import { supabase } from '../../utils/supabase';
 
@@ -112,11 +112,12 @@ export default function KusamLeadFormPage() {
           setName(data.name || '');
           setEmail(data.email || '');
           setCustomerType(data.customer_type || '');
-          
-          const existingWhatsapp = data.whatsapp || '';
-          
-          let foundCountry = countryCodes.find(c => existingWhatsapp.startsWith(c.dial_code));
-          
+
+          // Moved declaration of existingWhatsapp here, outside the 'if (data)' block
+          const existingWhatsapp = data.whatsapp || ''; // Declare it here
+
+          const foundCountry = countryCodes.find(c => existingWhatsapp.startsWith(c.dial_code));
+
           if (foundCountry) {
             setSelectedCountry(foundCountry);
             setLocalWhatsapp(existingWhatsapp.substring(foundCountry.dial_code.length));
@@ -190,7 +191,7 @@ export default function KusamLeadFormPage() {
       return;
     }
 
-    let customerIdToUse = currentCustomerId;
+    const customerIdToUse = currentCustomerId;
 
     const { data: existingCustomer, error: fetchError } = await supabase
         .from('customers')

@@ -59,6 +59,25 @@ const colorNameToHex: { [key: string]: string } = {
 };
 
 // --- CartItemCard Component (WRAPPED IN React.memo) ---
+
+// NEW INTERFACE: This was the missing piece causing all the 'any' errors
+interface RawFavorite {
+  id: string; // From fav.id in the map
+  product_id: string; // From fav.product_id
+  quantity: number; // From fav.quantity
+  customer_id: string; // Assuming this is part of the Supabase record
+
+  // These are the specific fields accessed via fav['property'] that need to be typed
+  fabric_color?: string; // Made optional as it might be null or undefined
+  frame_color?: string; // Made optional
+  is_liked?: boolean; // Made optional
+
+  // These are accessed by ID, ensure they are also selected from Supabase
+  fabric_color_id?: string; // Made optional
+  frame_color_id?: string; // Made optional
+}
+
+
 interface ItemProps {
   id: string; 
   productId: string; 
@@ -79,12 +98,12 @@ interface ProductVariant {
   value: string;
 }
 
-interface GlobalProductOption {
-  value: string; 
-  value_data: { 
-    hex_code?: string; 
-  };
-}
+// interface GlobalProductOption { // This was correctly commented out previously
+// value: string; 
+// value_data: { 
+// hex_code?: string; 
+// };
+// }
 
 const CartItemCard = memo(function CartItemCard({ item, index }: CartItemCardProps) {
   const itemVariants: Variants = {
@@ -174,7 +193,7 @@ interface ConfirmationModalProps {
 }
 
 const ConfirmationModal: React.FC<ConfirmationModalProps> = ({ onClose, onSubmitOrder }) => {
-  const router = useRouter(); 
+// const router = useRouter(); 
 
   const modalVariants: Variants = {
     hidden: { opacity: 0, scale: 0.8 },
@@ -267,7 +286,8 @@ export default function KusamCartPage() {
   
   const hasFetchedData = useRef(false);
 
-  const getVariantValue = useCallback((variantId: string | null): string => {
+  // FIX APPLIED HERE: Changed variantId parameter to allow `undefined`
+  const getVariantValue = useCallback((variantId: string | null | undefined): string => { 
     if (!variantId) return '';
     const variant = allVariantsMap.get(variantId);
     return variant ? variant.value : 'Unknown';
@@ -348,14 +368,14 @@ export default function KusamCartPage() {
           productMap.set(product.id, product);
         });
 
-        const combinedItems: ItemProps[] = rawFavorites.map(fav => {
+        const combinedItems: ItemProps[] = (rawFavorites as RawFavorite[]).map((fav: RawFavorite) => {
           const product = productMap.get(fav.product_id);
           if (product) {
             let notesString = '';
 
-            const directFabricColor = (fav as any)['fabric_color'] ?? ''; 
-            const directFrameColor = (fav as any)['frame_color'] ?? '';   
-            const isLikedFav = (fav as any)['is_liked'] ?? false; 
+            const directFabricColor = fav.fabric_color ?? ''; 
+            const directFrameColor = fav.frame_color ?? '';   
+            const isLikedFav = fav.is_liked ?? false; 
 
             console.log(`--- Item: ${product.name} (Fav ID: ${fav.id}) ---`);
             console.log(`  directFabricColor (raw): '${directFabricColor}'`);
@@ -373,8 +393,8 @@ export default function KusamCartPage() {
             if (variationParts.length > 0) {
               notesString = variationParts.join(', '); 
             } else {
-              const fabric = getVariantValue((fav as any)['fabric_color_id']); 
-              const frame = getVariantValue((fav as any)['frame_color_id']);   
+              const fabric = getVariantValue(fav.fabric_color_id); 
+              const frame = getVariantValue(fav.frame_color_id);   
               
               const idResolvedParts: string[] = [];
               if (fabric) idResolvedParts.push(fabric);
@@ -403,9 +423,9 @@ export default function KusamCartPage() {
 
         setFavoriteItems(combinedItems);
         console.log('All data processed and favorite items set.'); 
-      } catch (err: any) {
-        console.error('Error in initCustomerAndFetchFavorites:', err.message);
-        setFavoritesError(`Could not load your favorite items: ${err.message}`);
+      } catch (err: unknown) { // Changed from 'any' to 'unknown'
+        console.error('Error in initCustomerAndFetchFavorites:', (err as Error).message); // Safely accessed message
+        setFavoritesError(`Could not load your favorite items: ${(err as Error).message}`);
       } finally {
         setLoadingFavorites(false);
         console.log('--- initCustomerAndFetchFavorites completed ---'); 

@@ -1,41 +1,41 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import { motion, Variants, Transition } from 'framer-motion'; // Import Variants and Transition types
 import Image from 'next/image';
 import Link from 'next/link'; // Import Link for navigation
 
 export default function KusamInstructionsPage() {
-  const containerVariants = {
+  // Explicitly type containerVariants as Variants
+  const containerVariants: Variants = {
     hidden: { opacity: 0, y: 50 },
     visible: {
       opacity: 1,
       y: 0,
       transition: {
-        type: "spring",
+        type: "spring", // This is correctly inferred as 'spring' literal now
         stiffness: 100,
         damping: 10,
         delay: 0.2
-      }
+      } as Transition // Explicitly cast the transition object to Framer Motion's Transition type
     },
   };
 
   return (
     // Main container with white background
-    <div className="relative min-h-screen flex flex-col items-center justify-center p-4 bg-white"> {/* ADDED: relative and bg-white */}
+    <div className="relative min-h-screen flex flex-col items-center justify-center p-4 bg-white">
       {/* Background Video */}
       <video
         className="absolute inset-0 w-full h-full object-cover"
-        src="/leaves1.mp4" // Use the working video
+        src="/leaves1.mp4"
         autoPlay
         loop
         muted
         playsInline
-        style={{ opacity: 0.1 }} // Set opacity for subtle effect
+        style={{ opacity: 0.1 }}
       />
-      {/* No separate overlay div needed here */}
 
       <motion.div
-        className="max-w-md w-full bg-white p-8 rounded-lg shadow-lg border border-gray-200 text-center relative z-20" /* ADDED: relative z-20 */
+        className="max-w-md w-full bg-white p-8 rounded-lg shadow-lg border border-gray-200 text-center relative z-20"
         variants={containerVariants}
         initial="hidden"
         animate="visible"
@@ -66,7 +66,7 @@ export default function KusamInstructionsPage() {
             1. Usa la cámara de tu smartphone para escanear los Códigos QR sobre cada pieza de mobiliario.
           </p>
           <p className="text-gray-700 text-lg">
-            2. Haz click sobre "Me Interesa" en la página de cada producto para añadirlo a tu lista de favoritos.
+            2. Haz click sobre &quot;Me Interesa&quot; en la página de cada producto para añadirlo a tu lista de favoritos.
           </p>
         </div>
 
@@ -92,7 +92,6 @@ export default function KusamInstructionsPage() {
               backgroundImage: `url('/wood/var4.png')`,
               backgroundSize: '100px 100px',
               backgroundRepeat: 'repeat',
-              // Removed backgroundBlendMode: 'multiply' in previous fix
             }}
           >
             Ir A Mis Favoritos
