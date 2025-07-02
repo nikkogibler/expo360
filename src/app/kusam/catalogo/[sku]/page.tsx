@@ -900,10 +900,20 @@ stroke="none"
 
 <div className="w-full max-w-sm bg-white rounded-lg shadow-xl p-6">
 
-<h1 className="text-3xl font-extrabold text-blue-600 mb-2 text-center">
-
-{product.name}
-
+<h1
+  className="text-3xl font-extrabold mb-2 text-center"
+  style={{
+    backgroundImage: `url('/wood/var8.png')`, // Uses your wood image
+    backgroundSize: 'cover', // Ensures the image covers the text area
+    backgroundRepeat: 'no-repeat', // Prevents the image from repeating
+    backgroundPosition: 'center', // Centers the image within the text
+    WebkitBackgroundClip: 'text', // Clips the background to the text shape for Webkit browsers
+    backgroundClip: 'text', // Standard property for clipping background to text
+    color: 'transparent', // Makes the text itself transparent so the background image shows through
+    WebkitTextFillColor: 'transparent', // For older Webkit browsers to make text transparent
+  }}
+>
+  {product.name}
 </h1>
 
 <p className="text-lg font-semibold text-gray-700 mb-4 text-center">
@@ -1096,35 +1106,30 @@ aria-label="Aumentar cantidad"
 
 
 {/* "I'm Interested" / "Update Selection" Button */}
-
 <motion.button
-
-onClick={handleImInterested}
-
-whileTap={{ scale: 0.98 }}
-
-className={`w-full py-3 px-6 rounded-lg font-semibold text-white transition-all duration-300
-
-${isAddingToFavorites ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-300'}`
-
-}
-
-disabled={isAddingToFavorites}
-
+  onClick={handleImInterested}
+  whileTap={{ scale: 0.98 }}
+  className={`w-full py-3 px-6 rounded-lg font-semibold text-white transition-all duration-300
+    ${isAddingToFavorites 
+      ? 'bg-gray-400 cursor-not-allowed' 
+      : 'hover:bg-opacity-90 focus:outline-none focus:ring-4 focus:ring-stone-400' 
+    }`
+  }
+  style={{
+    backgroundImage: `url('/wood/var3.png')`,
+    backgroundSize: 'cover', // Changed from '100px 100px' to 'cover'
+    backgroundRepeat: 'no-repeat', // Ensure it doesn't repeat
+    backgroundPosition: 'center', // Center the image within the button
+    backgroundColor: '#6b7280', // Fallback or base color
+  }}
+  disabled={isAddingToFavorites}
 >
-
-{isAddingToFavorites
-
-? 'Guardando cambios...'
-
-: editingFavoriteId
-
-? 'Actualizar Selección'
-
-: `¡Interesado en ${product.name}!`}
-
+  {isAddingToFavorites
+    ? 'Guardando cambios...'
+    : editingFavoriteId
+    ? 'Actualizar Selección'
+    : `¡Interesado en ${product.name}!`}
 </motion.button>
-
 </div>
 
 

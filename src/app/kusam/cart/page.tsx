@@ -1,51 +1,146 @@
 'use client';
 
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, Variants } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef, memo } from 'react';
 import { useRouter } from 'next/navigation';
+
 import { supabase } from '@/utils/supabase';
 
-// --- CartItemCard Component (MODIFIED) ---
+// --- Color Name to Hex Code Mapping (Hardcoded for now) ---
+const colorNameToHex: { [key: string]: string } = {
+  'Gris Acero': '#4682B4',
+  'Dorado Sol': '#FFD700',
+  'Verde Oscuro': '#006400',
+  'Blanco Nube': '#F8F8F8',
+  'Bronce Oxidado': '#CD7F32',
+  'Amarillo Limón': '#FFF44F',
+  'Rosa Chicle': '#FFC0CB',
+  'Verde Lima': '#32CD32',
+  'Morado Profundo': '#6A0DAD',
+  'Magenta Vibrante': '#FF00FF',
+  'Naranja Calabaza': '#FF7518',
+  'Rojo Ferrari': '#FF2400',
+  'Naranja Quemado': '#CC5500',
+  'Azul Bebé': '#89CFF0',
+  'Plata Metálico': '#C0C0C0',
+  'Verde Esmeralda': '#50C878',
+  'Negro Carbón': '#36454F',
+  'Beige Suave': '#F5F5DC',
+  'Azul Marino': '#000080',
+  'Rojo Vino': '#800020',
+  'Azul Cielo': '#87CEEB',
+  'Cian Brillante': '#00FFFF',
+  'Turquesa Claro': '#AFEEEE',
+  'Púrpura Lavanda': '#B57EDC',
+  'Amarillo Mostaza': '#FFDB58',
+  'Gris Pizarra': '#708090',
+  'Marrón Chocolate': '#7B3F00',
+  'Marrón Tierra': '#8A430F',
+  'Verde Olivo': '#6B8E23',
+  'Rosa Coral': '#FF7F50',
+  // Finishes
+  'Titanio': '#8D8D8D',
+  'Mármol Blanco': '#F2F0F0',
+  'Níquel Cepillado': '#B5B5B5',
+  'Plástico Blanco': '#FDFDFD',
+  'Madera Clara': '#D2B48C',
+  'Cobre Pulido': '#B87333',
+  'Madera Oscura': '#8B4513',
+  'Bronce Antiguo': '#A97142',
+  'Mármol Negro': '#333333',
+  'Mimbre Natural': '#D1BC8A',
+  'Cristal Transparente': '#E0FFFF', // Using a light color to represent transparent
+  'Acero Inoxidable': '#C0C0C0',
+  'Grafito': '#36454F',
+  'Fibra de Carbono': '#2F2F2F',
+  'Oro Mate': '#D4AF37',
+};
+
+// --- CartItemCard Component (WRAPPED IN React.memo) ---
 interface ItemProps {
-  // id here represents the customer_favorites.id (the row ID in the cart)
-  id: string; // The ID of the customer_favorites entry
-  productId: string; // The product_id from the customer_favorites entry
+  id: string; 
+  productId: string; 
   name: string;
   imageUrl: string;
-  notes: string; // Formatted string for display (e.g., config details, liked status)
-  quantity: number; // The quantity of this item
-  isLiked: boolean; // Denotes if it's just a 'liked' placeholder
+  notes: string; 
+  quantity: number; 
+  isLiked: boolean; 
 }
 
 interface CartItemCardProps {
   item: ItemProps;
-  index: number; // For staggered animation
+  index: number; 
 }
 
-const CartItemCard: React.FC<CartItemCardProps> = ({ item, index }) => {
-  const itemVariants = {
+interface ProductVariant {
+  id: string; 
+  value: string;
+}
+
+interface GlobalProductOption {
+  value: string; 
+  value_data: { 
+    hex_code?: string; 
+  };
+}
+
+const CartItemCard = memo(function CartItemCard({ item, index }: CartItemCardProps) {
+  const itemVariants: Variants = {
     hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0, transition: { delay: index * 0.1, type: 'spring', stiffness: 100 } },
+    visible: { opacity: 1, y: 0, transition: { delay: index * 0.1, type: 'spring' as const, stiffness: 100 } },
   };
 
-  // Determine the product page URL. For Pancho, it's specific.
-  // For a real app, you'd likely have a product slug or dynamic route.
-  // Assuming 'pancho' is a placeholder path for any product detail page.
-  const productDetailPath = `/kusam/test-catalog/pancho?favoriteId=${item.id}`;
+  const productDetailPath = `/kusam/catalogo/${item.productId}`;
+
+  const renderNotesWithColors = (notes: string) => {
+    const parts = notes.split(',').map(part => part.trim()).filter(part => part);
+    
+    return (
+      // Added `overflow-y-auto` to allow scrolling if notes exceed max height
+      // Adjusted scrollbar classes for better visual (tailwind-scrollbar plugin needed if not already installed)
+      <div className="flex flex-col items-center text-xs text-gray-600 mt-1 w-full overflow-y-auto scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-200 pr-1">
+        {parts.map((part, i) => {
+          const colorHex = colorNameToHex[part]; 
+          const isTransparent = part.toLowerCase().includes('transparente') || part.toLowerCase().includes('clear');
+
+          return (
+            // Ensure each part stays on one line and centers horizontally
+            <div key={i} className="flex items-center mb-0.5 last:mb-0 w-full justify-center flex-shrink-0 whitespace-nowrap"> 
+              {colorHex ? (
+                <span
+                  className="w-3 h-3 rounded-full mr-1 border border-gray-300 flex-shrink-0"
+                  style={{ backgroundColor: colorHex }}
+                ></span>
+              ) : isTransparent ? ( 
+                <span
+                  className="w-3 h-3 rounded-full mr-1 border border-gray-300 flex-shrink-0 bg-white" 
+                ></span>
+              ) : null}
+              {/* Added `overflow-hidden text-ellipsis` for single line overflow */}
+              <span className="overflow-hidden text-ellipsis">{part}</span> 
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
 
   return (
-    <Link href={productDetailPath} passHref> {/* Wrap the card in a Link */}
+    <Link href={productDetailPath} passHref>
       <motion.div
-        className="bg-white p-4 rounded-lg shadow-md border border-gray-100 flex flex-col items-center text-center cursor-pointer" // Add cursor-pointer
+        className="bg-white p-2 rounded-lg shadow-md border border-gray-100 flex flex-col items-center text-center cursor-pointer overflow-hidden
+                   w-full" // Use w-full to make it responsive to grid column size
         variants={itemVariants}
         initial="hidden"
         animate="visible"
         whileHover={{ scale: 1.05 }}
-        transition={{ type: 'spring', stiffness: 300, damping: 10 }}
+        transition={{ type: 'spring' as const, stiffness: 300, damping: 10 }}
+        // Set a fixed height for the entire card. Width will be controlled by the grid.
+        style={{ height: '280px' }} // Adjusted height, slightly smaller
       >
-        <div className="relative w-32 h-32 mb-3">
+        <div className="relative w-28 h-28 mb-2 flex-shrink-0"> {/* Slightly smaller image area */}
           <Image
             src={item.imageUrl}
             alt={item.name}
@@ -54,37 +149,36 @@ const CartItemCard: React.FC<CartItemCardProps> = ({ item, index }) => {
             className="rounded-md"
           />
         </div>
-        <h3 className="text-base font-semibold text-gray-800 line-clamp-2">{item.name}</h3>
-        {/* Display Quantity if it's more than 1 */}
+        {/* Adjusted h3: fixed height with vertical centering and multi-line overflow handling */}
+        <h3 className="text-sm font-semibold text-gray-800 text-center mt-auto flex-shrink-0 flex items-center justify-center px-1" // Reduced font size, added px-1
+            style={{ minHeight: '40px', maxHeight: '40px', overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
+            {item.name}
+        </h3>
         {item.quantity > 1 && (
-          <p className="text-sm font-bold text-gray-700 mt-1">Cantidad: {item.quantity}</p>
+          <p className="text-xs font-bold text-gray-700 mt-1 flex-shrink-0">Cantidad: {item.quantity}</p> // Reduced font size
         )}
-        {item.notes && (
-          <p className="text-xs text-gray-600 mt-1 line-clamp-2">
-            {item.notes}
-          </p>
-        )}
-        {/* Optional: Add an "Edit" button that performs the same navigation */}
-        {/* <button className="mt-2 text-blue-500 text-xs">Edit</button> */}
+        {/* Fixed height container for notes with scroll */}
+        <div className="flex-shrink-0" style={{ minHeight: '50px', maxHeight: '70px', flexGrow: 1 }}> {/* Adjusted notes height */}
+            {item.notes && renderNotesWithColors(item.notes)} 
+        </div>
       </motion.div>
     </Link>
   );
-};
-// --- End CartItemCard Component ---
+});
 
 
-// --- ConfirmationModal Component (unchanged) ---
+// --- ConfirmationModal Component (No changes needed) ---
 interface ConfirmationModalProps {
   onClose: () => void;
   onSubmitOrder: () => void;
 }
 
 const ConfirmationModal: React.FC<ConfirmationModalProps> = ({ onClose, onSubmitOrder }) => {
-  const router = useRouter();
+  const router = useRouter(); 
 
-  const modalVariants = {
+  const modalVariants: Variants = {
     hidden: { opacity: 0, scale: 0.8 },
-    visible: { opacity: 1, scale: 1, transition: { type: 'spring', stiffness: 200, damping: 20 } },
+    visible: { opacity: 1, scale: 1, transition: { type: 'spring' as const, stiffness: 200, damping: 20 } },
     exit: { opacity: 0, scale: 0.8 }
   };
 
@@ -102,6 +196,8 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({ onClose, onSubmit
         loop
         muted
         playsInline
+        disablePictureInPicture={true}
+        preload="auto"
         style={{ opacity: 0.1 }}
       />
       
@@ -112,6 +208,17 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({ onClose, onSubmit
         animate="visible"
         exit="exit"
       >
+        {/* ADDED: Close button (X icon) */}
+        <button
+          onClick={onClose}
+          className="absolute top-3 right-3 text-gray-400 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-300 rounded-full p-1"
+          aria-label="Cerrar modal"
+        >
+          <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+
         <h2 className="text-3xl font-bold text-gray-800 mb-4">
           ¡Qué excelente selección!
         </h2>
@@ -133,7 +240,6 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({ onClose, onSubmit
             backgroundImage: `url('/wood/var5.png')`,
             backgroundSize: '100px 100px',
             backgroundRepeat: 'repeat',
-            backgroundBlendMode: 'normal',
             backgroundColor: '#6b7280',
           }}
         >
@@ -146,75 +252,91 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({ onClose, onSubmit
     </div>
   );
 };
-// --- End ConfirmationModal Component ---
 
 
 export default function KusamCartPage() {
   const [showConfirmationModal, setShowConfirmationModal] = useState(false);
-  const router = useRouter();
+  const router = useRouter(); 
 
   const [favoriteItems, setFavoriteItems] = useState<ItemProps[]>([]);
   const [loadingFavorites, setLoadingFavorites] = useState(true);
   const [favoritesError, setFavoritesError] = useState<string | null>(null);
+  const [hasCustomerId, setHasCustomerId] = useState<boolean | null>(null);
 
-  // NEW: State to store variants for lookup
-  const [allVariants, setAllVariants] = useState<any[]>([]);
+  const [allVariantsMap, setAllVariantsMap] = useState<Map<string, ProductVariant>>(new Map());
+  
+  const hasFetchedData = useRef(false);
 
-  // NEW: Helper function to get variant value from ID
-  const getVariantValue = (variantId: string | null): string => {
+  const getVariantValue = useCallback((variantId: string | null): string => {
     if (!variantId) return '';
-    const variant = allVariants.find(v => v.id === variantId);
+    const variant = allVariantsMap.get(variantId);
     return variant ? variant.value : 'Unknown';
-  };
+  }, [allVariantsMap]);
 
   useEffect(() => {
-    async function fetchFavorites() {
+    // Only proceed if data hasn't been fetched yet
+    if (hasFetchedData.current) {
+      console.log('--- useEffect (initCustomerAndFetchFavorites) skipped: Data already fetched ---');
+      return; 
+    }
+    hasFetchedData.current = true; // Mark as fetched
+
+    console.log('--- useEffect (initCustomerAndFetchFavorites) triggered ---'); 
+
+    async function initCustomerAndFetchFavorites() {
       setLoadingFavorites(true);
       setFavoritesError(null);
+      setFavoriteItems([]);
+
+      const customerId = typeof window !== 'undefined' ? localStorage.getItem('kusam_customer_id') : null;
+
+      if (!customerId) {
+        setHasCustomerId(false); 
+        setLoadingFavorites(false); 
+        console.log('No Customer ID found, stopping fetch.'); 
+        return; 
+      }
+
+      setHasCustomerId(true);
+      
       try {
-        const customerId = typeof window !== 'undefined' ? localStorage.getItem('kusam_customer_id') : null;
-
-        if (!customerId) {
-          setFavoritesError('No customer ID found in local storage. Please visit a product page first.');
-          setLoadingFavorites(false);
-          return;
-        }
-
-        // 1. Fetch ALL product variants first to use for lookup
+        console.log('Fetching product_variants...'); 
         const { data: allVariantsData, error: variantsError } = await supabase
           .from('product_variants')
-          .select('id, value'); // Only need ID and value for lookup
+          .select('id, value');
 
         if (variantsError) {
           throw variantsError;
         }
-        setAllVariants(allVariantsData || []);
+        const newVariantsMap = new Map<string, ProductVariant>();
+        (allVariantsData || []).forEach(v => newVariantsMap.set(v.id, v));
+        setAllVariantsMap(newVariantsMap);
+        console.log('Product_variants fetched and mapped.'); 
 
-
-        // 2. Fetch favorite entries for the current customer
+        console.log('Fetching customer_favorites...'); 
         const { data: rawFavorites, error: favoritesError } = await supabase
           .from('customer_favorites')
-          .select('*')
+          .select('*') 
           .eq('customer_id', customerId);
 
         if (favoritesError) {
           throw favoritesError;
         }
 
+        console.log('Raw Favorites Data from Supabase (after select \'*\' ):', rawFavorites);
+
         if (!rawFavorites || rawFavorites.length === 0) {
           console.log('No favorite items found for this customer.');
           setFavoriteItems([]);
-          setLoadingFavorites(false);
-          return;
+          return; 
         }
-
-        // 3. Extract unique product_ids to fetch product details efficiently
+        console.log('Processing combined items...'); 
         const uniqueProductIds = [...new Set(rawFavorites.map(fav => fav.product_id))];
 
-        // 4. Fetch product details for all unique product_ids
+        console.log('Fetching products...'); 
         const { data: productsData, error: productsError } = await supabase
           .from('products')
-          .select('*')
+          .select('id, sku, name, image_url') 
           .in('id', uniqueProductIds);
 
         if (productsError) {
@@ -222,66 +344,85 @@ export default function KusamCartPage() {
         }
 
         const productMap = new Map();
-        if (productsData) {
-          productsData.forEach(product => {
-            productMap.set(product.id, product);
-          });
-        }
+        (productsData || []).forEach(product => {
+          productMap.set(product.id, product);
+        });
 
-        // 5. Combine favorite data with product data and format notes
         const combinedItems: ItemProps[] = rawFavorites.map(fav => {
           const product = productMap.get(fav.product_id);
           if (product) {
             let notesString = '';
-            if (fav.is_liked) {
-              notesString = 'Solo "Me Gusta"'; // If it's just a liked item
+
+            const directFabricColor = (fav as any)['fabric_color'] ?? ''; 
+            const directFrameColor = (fav as any)['frame_color'] ?? '';   
+            const isLikedFav = (fav as any)['is_liked'] ?? false; 
+
+            console.log(`--- Item: ${product.name} (Fav ID: ${fav.id}) ---`);
+            console.log(`  directFabricColor (raw): '${directFabricColor}'`);
+            console.log(`  directFrameColor (raw): '${directFrameColor}'`);
+            console.log(`  isLikedFav: ${isLikedFav}`);
+
+            const variationParts: string[] = [];
+            if (directFabricColor) {
+              variationParts.push(directFabricColor);
+            }
+            if (directFrameColor) {
+              variationParts.push(directFrameColor);
+            }
+
+            if (variationParts.length > 0) {
+              notesString = variationParts.join(', '); 
             } else {
-              // Format notes string with fabric/frame/quantity
-              const fabric = getVariantValue(fav.fabric_color_id);
-              const frame = getVariantValue(fav.frame_color_id);
+              const fabric = getVariantValue((fav as any)['fabric_color_id']); 
+              const frame = getVariantValue((fav as any)['frame_color_id']);   
               
-              if (fabric && frame) {
-                notesString = `${fabric}, ${frame}`;
-              } else if (fabric) { // Fallback if only one is selected
-                notesString = `${fabric}`;
-              } else if (frame) {
-                notesString = `${frame}`;
+              const idResolvedParts: string[] = [];
+              if (fabric) idResolvedParts.push(fabric);
+              if (frame) idResolvedParts.push(frame);
+
+              if (idResolvedParts.length > 0) {
+                notesString = idResolvedParts.join(', ');
               }
             }
 
+            // 'Solo "Me Gusta"' is definitively removed from notesString.
+            // The `isLikedFav` property remains in the item object for other potential uses.
+
             return {
-              id: fav.id, // Pass the ID of THIS specific customer_favorites entry
-              productId: product.id, // Also pass the product ID
+              id: fav.id,
+              productId: product.sku,
               name: product.name,
               imageUrl: product.image_url,
-              notes: notesString,
+              notes: notesString, // This will contain variations only, or be empty
               quantity: fav.quantity,
-              isLiked: fav.is_liked,
+              isLiked: isLikedFav,
             };
           }
           return null;
         }).filter(item => item !== null) as ItemProps[];
 
         setFavoriteItems(combinedItems);
+        console.log('All data processed and favorite items set.'); 
       } catch (err: any) {
-        console.error('Error fetching favorite items:', err.message);
+        console.error('Error in initCustomerAndFetchFavorites:', err.message);
         setFavoritesError(`Could not load your favorite items: ${err.message}`);
       } finally {
         setLoadingFavorites(false);
+        console.log('--- initCustomerAndFetchFavorites completed ---'); 
       }
     }
 
-    fetchFavorites();
-  }, []); // Re-run when customerId changes (if you add customer login, etc.)
+    initCustomerAndFetchFavorites();
+  }, [getVariantValue]); 
 
 
-  const containerVariants = {
+  const containerVariants: Variants = {
     hidden: { opacity: 0, y: 50 },
     visible: {
       opacity: 1,
       y: 0,
       transition: {
-        type: "spring",
+        type: "spring" as const,
         stiffness: 100,
         damping: 10,
         delay: 0.2
@@ -298,7 +439,7 @@ export default function KusamCartPage() {
   };
 
   return (
-    <div className="relative min-h-screen flex flex-col items-center p-4 pt-10 pb-10 bg-white">
+    <div className="relative min-h-screen flex flex-col items-center p-4 pt-10 pb-10 bg-white" style={{ minHeight: '800px' }}>
       <video
         className="absolute inset-0 w-full h-full object-cover"
         src="/leaves1.mp4"
@@ -306,6 +447,8 @@ export default function KusamCartPage() {
         loop
         muted
         playsInline
+        disablePictureInPicture={true}
+        preload="auto"
         style={{ opacity: 0.1 }}
       />
       
@@ -342,30 +485,46 @@ export default function KusamCartPage() {
           </span>.
         </p>
 
-        {loadingFavorites ? (
-          <div className="text-center py-10">
-            <p className="text-gray-600 text-lg">Cargando tus favoritos...</p>
-          </div>
-        ) : favoritesError ? (
-          <div className="text-center py-10 text-red-600 text-lg">
-            <p>Error: {favoritesError}</p>
-          </div>
-        ) : favoriteItems.length === 0 ? (
-          <div className="text-center py-10">
-            <p className="text-gray-600 text-lg">Aún no tienes piezas favoritas. ¡Acércate a un producto para marcarlo!</p>
-            <Link href="/kusam/catalog">
-              <p className="mt-4 text-blue-600 hover:underline">Ver catálogo</p>
-            </Link>
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mb-8">
-            {favoriteItems.map((item, index) => (
-              <CartItemCard key={item.id} item={item} index={index} />
-            ))}
-          </div>
-        )}
+        {/* Updated Grid Container:
+            - gap-x-4: Horizontal gap for desktop
+            - gap-y-6: Vertical gap for more breathing room
+            - grid-cols-2: On mobile, always 2 columns
+            - sm:grid-cols-3 md:grid-cols-4: More columns on larger screens
+            - px-2 sm:px-4 md:px-6: Responsive horizontal padding
+            - justify-items-center: Centers items within their grid cells
+        */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-x-4 gap-y-6 mb-8 min-h-[400px] px-2 sm:px-4 md:px-6 justify-items-center"> 
+            {loadingFavorites ? (
+                <div className="text-center py-10 col-span-full">
+                    <p className="text-gray-600 text-lg">Cargando tus favoritos...</p>
+                </div>
+            ) : favoritesError ? (
+                <div className="text-center py-10 text-red-600 text-lg col-span-full">
+                    <p>Error: {favoritesError}</p>
+                </div>
+            ) : hasCustomerId === false ? (
+                <div className="text-center py-10 col-span-full">
+                    <p className="text-gray-600 text-lg">No hay sesión activa. Por favor, <Link href="/kusam"><span className="text-blue-600 hover:underline cursor-pointer">inicie una sesión aquí</span></Link>.</p>
+                </div>
+            ) : favoriteItems.length === 0 ? (
+                <div className="text-center py-10 col-span-full">
+                    <p className="text-gray-600 text-lg">Aún no tienes piezas favoritas. ¡Acércate a un producto para marcarlo!</p>
+                    <Link href="/kusam/catalog">
+                        <p className="mt-4 text-blue-600 hover:underline">Ver catálogo</p>
+                    </Link>
+                </div>
+            ) : (
+                favoriteItems.map((item, index) => (
+                    <CartItemCard 
+                      key={item.id} 
+                      item={item} 
+                      index={index} 
+                    />
+                ))
+            )}
+        </div>
 
-        <div className="mb-8 text-center p-4 bg-blue-50 rounded-md border-blue-200 border">
+        <div className="mb-8 text-center p-4 bg-blue-50 rounded-md border-blue-200 border" style={{ minHeight: '100px' }}>
             <p className="text-blue-800 text-lg font-semibold">
                 OFERTA EXCLUSIVA: Todas las compras completadas en <span className="inline-flex items-center align-middle mx-1">
                     <Image
@@ -376,9 +535,6 @@ export default function KusamCartPage() {
                         className="inline-block"
                     />
                 </span> reciben un <span className="font-bold text-xl">DESCUENTO ESPECIAL de 5%</span>.
-            </p>
-            <p className="text-blue-700 text-sm mt-1">
-                Acércate a uno de nuestros asesores si tienes dudas o necesitas más información. <br></br>**En Kusam Outdoor Solutions estamos para servirte.**
             </p>
         </div>
 

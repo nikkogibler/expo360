@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { v4 as uuidv4 } from 'uuid';
+import type { Variants } from 'framer-motion'; // MOVED THIS IMPORT TO THE TOP
 
 import { supabase } from '../../utils/supabase';
 
@@ -261,13 +262,13 @@ export default function KusamLeadFormPage() {
     return null;
   }
 
-  const containerVariants = {
+  const containerVariants: Variants = {
     hidden: { opacity: 0, y: 50 },
     visible: {
       opacity: 1,
       y: 0,
       transition: {
-        type: "spring",
+        type: "spring" as const,
         stiffness: 100,
         damping: 10,
         delay: 0.2
