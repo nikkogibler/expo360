@@ -1,7 +1,9 @@
+// src/app/kusam/payment/page.tsx
+
 'use client';
 
 import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, Variants } from 'framer-motion'; // Ensure Variants is imported
 import Image from 'next/image';
 import Link from 'next/link';
 
@@ -14,16 +16,17 @@ export default function KusamPaymentPage() {
   const [cvc, setCvc] = useState('');
   const [cardName, setCardName] = useState('');
 
-  const containerVariants = {
+  const containerVariants: Variants = { // Explicitly type containerVariants as Variants
     hidden: { opacity: 0, y: 50 },
     visible: {
       opacity: 1,
       y: 0,
       transition: {
-        type: "spring",
+        // --- THE FIX IS HERE: REMOVE THE 'type' PROPERTY ---
         stiffness: 100,
         damping: 10,
         delay: 0.2
+        // Framer Motion will infer 'type: "spring"' because of 'stiffness' and 'damping'
       }
     },
   };
