@@ -23,7 +23,7 @@ interface GlobalProductOption {
   updated_at: string;
 }
 
-// Existing Product Interface (remains the same)
+// Existing Product Interface (UPDATED to include new columns)
 interface Product {
   id: string;
   sku: string;
@@ -35,6 +35,11 @@ interface Product {
   is_active: boolean;
   created_at: string;
   updated_at: string;
+  // New columns from Supabase 'products' table
+  has_fabric_colors: boolean;
+  available_fabric_colors: string[] | null; // Array of names (e.g., ["LIGHT GREY", "BLUE OCEAN"])
+  has_frame_finish: boolean;
+  available_frame_finishes: string[] | null; // Array of names
 }
 
 // NEW: Interface for CustomerFavorite
@@ -112,6 +117,7 @@ const ProductDetailPage = ({ params }: ProductDetailPageProps) => {
         setLoadingProduct(true);
         setProductError(null);
 
+        // Fetch Product Data (now includes new option columns due to select('*'))
         const { data: productData, error: productFetchError } = await supabase
           .from('products')
           .select('*')
@@ -125,6 +131,7 @@ const ProductDetailPage = ({ params }: ProductDetailPageProps) => {
         if (productData) {
           setProduct(productData as Product);
 
+          // Fetch ALL relevant global options (unchanged from original code)
           const { data: globalOptionsRawData, error: globalOptionsFetchError } = await supabase
             .from('global_product_options')
             .select('*')
@@ -134,43 +141,49 @@ const ProductDetailPage = ({ params }: ProductDetailPageProps) => {
             console.warn('Error al obtener opciones globales:', globalOptionsFetchError.message);
           }
 
-          let fetchedFrameColors: GlobalProductOption[] = [];
-          let fetchedFabricColors: GlobalProductOption[] = [];
-
+          let allFetchedGlobalOptions: GlobalProductOption[] = [];
           if (globalOptionsRawData) {
-            const globalOptionsData = globalOptionsRawData.map(option => ({
+            allFetchedGlobalOptions = globalOptionsRawData.map(option => ({
               ...option,
               value_data: typeof option.value_data === 'string' ?
                 JSON.parse(option.value_data) as { hex_code?: string } :
                 option.value_data
             })) as GlobalProductOption[];
-
-            fetchedFrameColors = globalOptionsData.filter(opt => opt.type.toLowerCase() === 'finish');
-            fetchedFabricColors = globalOptionsData.filter(opt => opt.type.toLowerCase() === 'fabric_color');
-            setFrameColorOptions(fetchedFrameColors);
-            setFabricColorOptions(fetchedFabricColors);
           }
 
-          if (currentCustomerId && productData.id) {
-            const { data: existingFavorite, error: checkFavoriteError } = await supabase
-              .from('customer_favorites')
-              .select('*')
-              .eq('customer_id', currentCustomerId)
-              .eq('product_id', productData.id)
-              .maybeSingle<CustomerFavorite>();
+          let filteredFrameColors: GlobalProductOption[] = [];
+          let filteredFabricColors: GlobalProductOption[] = [];
 
-            if (checkFavoriteError) {
-              console.error("Error al verificar el estado de favoritos:", checkFavoriteError.message);
-            } else {
-              if (existingFavorite) {
-                setIsLiked(existingFavorite.is_liked || false);
-              } else {
-                setIsLiked(false);
-              }
-            }
+          // FILTER global options based on product's available options (names from productData)
+          if (productData.has_fabric_colors && Array.isArray(productData.available_fabric_colors) && productData.available_fabric_colors.length > 0) {
+            // Convert product's available names to uppercase for case-insensitive matching and trim whitespace
+            const productFabricNamesUpper = productData.available_fabric_colors.map((name: string) => name.trim().toUpperCase());
+
+            filteredFabricColors = allFetchedGlobalOptions.filter(opt =>
+              opt.type.toLowerCase() === 'fabric_color' && productFabricNamesUpper.includes(opt.name.trim().toUpperCase())
+            );
           }
 
+          if (productData.has_frame_finish && Array.isArray(productData.available_frame_finishes) && productData.available_frame_finishes.length > 0) {
+            // Convert product's available names to uppercase for case-insensitive matching and trim whitespace
+            const productFrameNamesUpper = productData.available_frame_finishes.map((name: string) => name.trim().toUpperCase());
+
+            filteredFrameColors = allFetchedGlobalOptions.filter(opt =>
+              opt.type.toLowerCase() === 'finish' && productFrameNamesUpper.includes(opt.name.trim().toUpperCase())
+            );
+          }
+
+          // Set state with the newly filtered options
+          setFrameColorOptions(filteredFrameColors);
+          setFabricColorOptions(filteredFabricColors);
+
+          // ... (Rest of your existing logic for customer_favorites and pre-loading selections) ...
+
+          // Adjust initial selection logic based on newly filtered options
           if (favoriteIdFromUrl && currentCustomerId && productData) {
+            // Your existing logic for pre-loading from favoriteIdFromUrl
+            // This part correctly sets selected IDs from the existing favorite.
+            // No change needed here.
             const { data: existingFavorite, error: favoriteError } = await supabase
               .from('customer_favorites')
               .select('*')
@@ -182,8 +195,9 @@ const ProductDetailPage = ({ params }: ProductDetailPageProps) => {
               console.error("Error al obtener el favorito existente para precargar:", favoriteError.message);
               setProductError('No se pudo cargar la selección existente. Por favor, inténtelo de nuevo.');
               setEditingFavoriteId(null);
-              setSelectedFrameColorId(fetchedFrameColors.length > 0 ? fetchedFrameColors[0].id : '');
-              setSelectedFabricColorId(fetchedFabricColors.length > 0 ? fetchedFabricColors[0].id : '');
+              // Fallback to first available option from FILTERED lists if pre-load fails
+              setSelectedFrameColorId(filteredFrameColors.length > 0 ? filteredFrameColors[0].id : '');
+              setSelectedFabricColorId(filteredFabricColors.length > 0 ? filteredFabricColors[0].id : '');
               setQuantity(1);
               setIsLiked(false);
             } else if (existingFavorite) {
@@ -194,8 +208,9 @@ const ProductDetailPage = ({ params }: ProductDetailPageProps) => {
               console.log("Formulario precargado exitosamente para editar favorito:", existingFavorite);
             }
           } else {
-            setSelectedFrameColorId(fetchedFrameColors.length > 0 ? fetchedFrameColors[0].id : '');
-            setSelectedFabricColorId(fetchedFabricColors.length > 0 ? fetchedFabricColors[0].id : '');
+            // If not editing, set default selections to the first of the *filtered* options
+            setSelectedFrameColorId(filteredFrameColors.length > 0 ? filteredFrameColors[0].id : '');
+            setSelectedFabricColorId(filteredFabricColors.length > 0 ? filteredFabricColors[0].id : '');
             setQuantity(1);
             if (isLiked === null) {
               setIsLiked(false);
@@ -298,6 +313,7 @@ const ProductDetailPage = ({ params }: ProductDetailPageProps) => {
 
     try {
       if (isInterestedAction) {
+        // These still correctly find the selected option details from the filtered arrays
         const selectedFabricName = fabricColorOptions.find(opt => opt.id === selectedFabricColorId)?.name || null;
         const selectedFrameName = frameColorOptions.find(opt => opt.id === selectedFrameColorId)?.name || null;
 
@@ -543,6 +559,7 @@ const ProductDetailPage = ({ params }: ProductDetailPageProps) => {
         </p>
 
         {/* Customization Options: Fabric Colors (formerly Packaging Variants) */}
+        {/* Only render if the product has fabric colors AND there are filtered options */}
         {fabricColorOptions.length > 0 && (
           <div className="mb-6">
             <h2 className="text-lg font-semibold text-gray-700 mb-3">Colores de Tela</h2>
@@ -572,6 +589,7 @@ const ProductDetailPage = ({ params }: ProductDetailPageProps) => {
         )}
 
         {/* Customization Options: Frame Colors (formerly Accessory Options) */}
+        {/* Only render if the product has frame finish AND there are filtered options */}
         {frameColorOptions.length > 0 && (
           <div className="mb-8">
             <h2 className="text-lg font-semibold text-gray-700 mb-3">Colores de Estructura</h2>

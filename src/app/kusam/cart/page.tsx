@@ -41,21 +41,12 @@ const colorNameToHex: { [key: string]: string } = {
   'Verde Olivo': '#6B8E23',
   'Rosa Coral': '#FF7F50',
   // Finishes
-  'Titanio': '#8D8D8D',
-  'Mármol Blanco': '#F2F0F0',
-  'Níquel Cepillado': '#B5B5B5',
-  'Plástico Blanco': '#FDFDFD',
-  'Madera Clara': '#D2B48C',
-  'Cobre Pulido': '#B87333',
-  'Madera Oscura': '#8B4513',
-  'Bronce Antiguo': '#A97142',
-  'Mármol Negro': '#333333',
-  'Mimbre Natural': '#D1BC8A',
-  'Cristal Transparente': '#E0FFFF', // Using a light color to represent transparent
-  'Acero Inoxidable': '#C0C0C0',
   'Grafito': '#36454F',
-  'Fibra de Carbono': '#2F2F2F',
-  'Oro Mate': '#D4AF37',
+  'River': '#0072BB',
+  'Arena': '#C2B280',
+  'Gris Tormenta': '#536878',
+  'Blanco': '#FFFFFF',
+  'Scoria': '#65000B',
 };
 
 // --- CartItemCard Component (WRAPPED IN React.memo) ---
