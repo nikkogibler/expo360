@@ -1,8 +1,9 @@
-// src/app/kusam/catalogo/[sku]/page.tsx
+// This file must be named 'page.tsx' and be located inside a folder like 'src/app/kusam/catalogo/[sku]/
+// for Next.js App Router to recognize it as a dynamic route. `[sku]` will capture the SKU from the URL.
 
 'use client';
 
-import { useState, useEffect } from 'react'; // 'use' is removed again
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -71,10 +72,7 @@ const ProductDetailPage = ({ params }: ProductDetailPageProps) => {
   const router = useRouter();
   const currentSearchParams = useSearchParams();
 
-  // FIX: Cast params to its known type when destructuring.
-  // This tells TypeScript what `params` is, resolving the 'unknown' error.
-  // It also keeps the direct access that Next.js currently supports (with warning).
-  const { sku } = params as ProductPageParams; // <-- MODIFIED LINE
+  const { sku } = params;
 
   const [product, setProduct] = useState<Product | null>(null);
   const [loadingProduct, setLoadingProduct] = useState(true);
@@ -475,7 +473,7 @@ const ProductDetailPage = ({ params }: ProductDetailPageProps) => {
     >
       {/* Product Image Section */}
       <div className="w-full max-w-sm bg-white rounded-lg shadow-lg overflow-hidden mb-6">
-        <div className="relative w-full pt-[177.77%] bg-gray-200">
+        <div className="relative w-full pt-[177.77%] bg-white">
           <Image
             src={product.image_url}
             alt={product.name}
