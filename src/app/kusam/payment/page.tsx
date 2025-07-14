@@ -2,45 +2,150 @@
 
 'use client';
 
-import { useState } from 'react';
-import { motion, Variants } from 'framer-motion'; // Ensure Variants is imported
+import { useState, useEffect, useCallback } from 'react';
+import { motion, Variants } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
+import { supabase } from '@/utils/supabase';
+
+// Interface for Product (needs price and id)
+interface Product {
+  id: string;
+  price: number;
+}
+
+// Interface for CustomerFavorite (needs product_id and quantity)
+interface CustomerFavorite {
+  product_id: string;
+  quantity: number;
+  is_liked: boolean; // We'll rely on this being true
+  fabric_color_id: string | null; // Keep for context, but not for filtering the sum
+  frame_color_id: string | null; // Keep for context, but not for filtering the sum
+}
+
 
 export default function KusamPaymentPage() {
-  const [selectedMethod, setSelectedMethod] = useState('credit_card'); // State to manage selected payment method
+  const [selectedMethod, setSelectedMethod] = useState('credit_card');
+  const [loadingTotal, setLoadingTotal] = useState(true);
+  const [calculatedTotal, setCalculatedTotal] = useState<number>(0);
+  const [paymentError, setPaymentError] = useState<string | null>(null);
 
-  // Mock data for card inputs (for controlled components)
   const [cardNumber, setCardNumber] = useState('');
   const [expiryDate, setExpiryDate] = useState('');
   const [cvc, setCvc] = useState('');
   const [cardName, setCardName] = useState('');
 
-  const containerVariants: Variants = { // Explicitly type containerVariants as Variants
+  const formatCurrency = useCallback((amount: number) => {
+    return `$${new Intl.NumberFormat('es-MX', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(amount)} MXN`;
+  }, []);
+
+  useEffect(() => {
+    async function fetchAndCalculateTotal() {
+      setLoadingTotal(true);
+      setPaymentError(null);
+      setCalculatedTotal(0);
+
+      const customerId = typeof window !== 'undefined' ? localStorage.getItem('kusam_customer_id') : null;
+
+      if (!customerId) {
+        setPaymentError('No se encontró el ID de cliente. Por favor, inicie sesión o regrese al carrito.');
+        setLoadingTotal(false);
+        return;
+      }
+
+      try {
+        // 1. Fetch all customer favorites that are marked as 'is_liked'
+        // This implicitly includes items configured with options, as they also set is_liked to true
+        const { data: likedFavorites, error: favoritesError } = await supabase
+          .from('customer_favorites')
+          .select('product_id, quantity') // Only need these for calculation
+          .eq('customer_id', customerId)
+          .eq('is_liked', true); // <-- Filter only by is_liked = true
+
+        if (favoritesError) {
+          throw favoritesError;
+        }
+
+        if (!likedFavorites || likedFavorites.length === 0) {
+          setPaymentError('No tienes productos favoritos para calcular un total.');
+          setLoadingTotal(false);
+          return;
+        }
+
+        // 2. Extract unique product IDs from the liked items
+        const uniqueProductIds = [...new Set(likedFavorites.map(fav => fav.product_id))];
+
+        // 3. Fetch product prices for these IDs
+        const { data: productsData, error: productsError } = await supabase
+          .from('products')
+          .select('id, price')
+          .in('id', uniqueProductIds);
+
+        if (productsError) {
+          throw productsError;
+        }
+
+        const productPriceMap = new Map<string, number>();
+        (productsData || []).forEach(product => {
+          productPriceMap.set(product.id, product.price);
+        });
+
+        // 4. Calculate total based on liked favorites and their prices
+        let total = 0;
+        (likedFavorites as CustomerFavorite[]).forEach(fav => { // Iterate over 'likedFavorites'
+          const productPrice = productPriceMap.get(fav.product_id);
+          if (productPrice !== undefined) {
+            total += productPrice * fav.quantity;
+          } else {
+            console.warn(`Product price not found for ID: ${fav.product_id}`);
+          }
+        });
+
+        setCalculatedTotal(total);
+
+      } catch (err: any) {
+        console.error('Error calculating total:', err);
+        setPaymentError(`Error al calcular el total: ${err.message || 'Error desconocido'}`);
+      } finally {
+        setLoadingTotal(false);
+      }
+    }
+
+    fetchAndCalculateTotal();
+  }, [formatCurrency]);
+
+
+  const containerVariants: Variants = {
     hidden: { opacity: 0, y: 50 },
     visible: {
       opacity: 1,
       y: 0,
       transition: {
-        // --- THE FIX IS HERE: REMOVE THE 'type' PROPERTY ---
         stiffness: 100,
         damping: 10,
         delay: 0.2
-        // Framer Motion will infer 'type: "spring"' because of 'stiffness' and 'damping'
       }
     },
   };
 
- const handlePaymentSubmit = (e: React.FormEvent) => {
-  e.preventDefault();
-  const paymentMethodText = selectedMethod === 'credit_card' ? 'Tarjeta de Crédito' :
-                            selectedMethod === 'direct_deposit' ? 'Depósito Directo' :
-                            selectedMethod === 'mercadopago' ? 'MercadoPago' :
-                            'Transferencia Bancaria';
+  const handlePaymentSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (calculatedTotal <= 0) {
+      alert('No hay productos en el carrito para procesar el pago o el total es cero.');
+      return;
+    }
 
-  alert(`Procesando su pago con ${paymentMethodText}. ¡Gracias por su compra. Su comprobante de transacción y los datos de envío serán enviadas a su correo electrónico. ¡Hasta luego! 👋`);
-  // In a real app, this would integrate with payment gateways
-};
+    const paymentMethodText = selectedMethod === 'credit_card' ? 'Tarjeta de Crédito' :
+                              selectedMethod === 'direct_deposit' ? 'Depósito Directo' :
+                              selectedMethod === 'mercadopago' ? 'MercadoPago' :
+                              'Transferencia Bancaria';
+
+    alert(`Procesando su pago de ${formatCurrency(calculatedTotal)} con ${paymentMethodText}. ¡Gracias por su compra. Su comprobante de transacción y los datos de envío serán enviadas a su correo electrónico. ¡Hasta luego! 👋`);
+    // In a real app, this would integrate with payment gateways
+  };
 
   return (
     <div className="relative min-h-screen flex flex-col items-center justify-center p-4 bg-white">
@@ -54,7 +159,7 @@ export default function KusamPaymentPage() {
         playsInline
         style={{ opacity: 0.1 }}
       />
-      
+
       <motion.div
         className="max-w-md w-full bg-white p-8 rounded-lg shadow-lg border border-gray-200 relative z-20"
         variants={containerVariants}
@@ -75,9 +180,17 @@ export default function KusamPaymentPage() {
         <h1 className="text-3xl font-bold text-gray-800 mb-6 text-center">
           Confirmar Compra
         </h1>
-        <p className="text-xl font-semibold text-gray-800 mb-4 text-center">
-            Total a Pagar: <span className="text-green-600">$24,750.00 MXN</span>
-        </p>
+
+        {loadingTotal ? (
+          <p className="text-center text-gray-600 text-lg mb-4">Calculando total...</p>
+        ) : paymentError ? (
+          <p className="text-center text-red-600 text-lg mb-4">{paymentError}</p>
+        ) : (
+          <p className="text-xl font-semibold text-gray-800 mb-4 text-center">
+              Total a Pagar: <span className="text-green-600">{formatCurrency(calculatedTotal)}</span>
+          </p>
+        )}
+
 
         {/* Payment Method Tabs */}
         <div className="flex justify-center flex-wrap gap-2 mb-6 border-b border-gray-200 pb-2">
@@ -166,8 +279,9 @@ export default function KusamPaymentPage() {
             <button
               type="submit"
               className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-xl font-semibold text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out"
+              disabled={loadingTotal || calculatedTotal === 0}
             >
-              Pagar $24,750 MXN
+              {loadingTotal ? 'Calculando...' : `Pagar ${formatCurrency(calculatedTotal)}`}
             </button>
           </form>
         )}
@@ -182,8 +296,9 @@ export default function KusamPaymentPage() {
             <button
               onClick={handlePaymentSubmit}
               className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out"
+              disabled={loadingTotal || calculatedTotal === 0}
             >
-              Proceder a MercadoPago 
+              {loadingTotal ? 'Calculando...' : `Proceder a MercadoPago (${formatCurrency(calculatedTotal)})`}
             </button>
           </div>
         )}
@@ -193,33 +308,38 @@ export default function KusamPaymentPage() {
             <h3 className="text-lg font-semibold text-gray-800 mb-3">Transferencia Bancaria</h3>
             <div className="flex justify-center items-center space-x-4 mb-4">
                 <Image src="/payments/banorte.svg" alt="Banorte Logo" width={90} height={30} />
-                {/* Adjusted width and height for BBVA */}
                 <Image src="/payments/bbva.svg" alt="BBVA Logo" width={63} height={21} />
                 <Image src="/payments/citi.svg" alt="CitiBanamex Logo" width={90} height={30} />
-                {/* Adjusted width and height for Banregio */}
                 <Image src="/payments/banregio.svg" alt="Banregio Logo" width={63} height={21} />
             </div>
-            <p className="text-gray-700 mb-2">
-              **Banco:** Banco Kusam Mx<br/>
-              **Cuenta CLABE:** 012345678901234567<br/>
-              **Beneficiario:** Kusam Outdoor S.A. de C.V.<br/>
-              **Monto:** $24,750 MXN
-            </p>
+            {loadingTotal ? (
+               <p className="text-gray-700 mb-2">Calculando monto...</p>
+            ) : paymentError ? (
+               <p className="text-red-700 mb-2">{paymentError}</p>
+            ) : (
+                <p className="text-gray-700 mb-2">
+                    **Banco:** Banco Kusam Mx<br/>
+                    **Cuenta CLABE:** 012345678901234567<br/>
+                    **Beneficiario:** Kusam Outdoor S.A. de C.V.<br/>
+                    **Monto:** {formatCurrency(calculatedTotal)}
+                </p>
+            )}
             <p className="text-sm text-gray-600 mt-4">
               Por favor, realice la transferencia y envíe el comprobante a <span className="font-semibold">ventas01@kusam.com.mx</span> para confirmar su orden.
             </p>
             <button
               onClick={handlePaymentSubmit}
               className="mt-6 w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out"
+              disabled={loadingTotal || calculatedTotal === 0}
             >
-              Completa Tu Pago
+              {loadingTotal ? 'Calculando...' : 'Completa Tu Pago'}
             </button>
           </div>
         )}
-        
+
         <Link href="/kusam/cart" passHref>
             <p className="text-center text-sm text-blue-600 hover:underline mt-6 cursor-pointer">
-                Regresar al carrito
+                Regresar a "Mis Favoritos"
             </p>
         </Link>
       </motion.div>

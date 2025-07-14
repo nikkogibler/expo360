@@ -1,9 +1,8 @@
-// This file must be named 'page.tsx' and be located inside a folder like 'src/app/kusam/catalogo/[sku]/
-// for Next.js App Router to recognize it as a dynamic route. `[sku]` will capture the SKU from the URL.
+// src/app/kusam/catalogo/[sku]/page.tsx
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react'; // 'use' is removed again
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -72,7 +71,10 @@ const ProductDetailPage = ({ params }: ProductDetailPageProps) => {
   const router = useRouter();
   const currentSearchParams = useSearchParams();
 
-  const { sku } = params;
+  // FIX: Cast params to its known type when destructuring.
+  // This tells TypeScript what `params` is, resolving the 'unknown' error.
+  // It also keeps the direct access that Next.js currently supports (with warning).
+  const { sku } = params as ProductPageParams; // <-- MODIFIED LINE
 
   const [product, setProduct] = useState<Product | null>(null);
   const [loadingProduct, setLoadingProduct] = useState(true);
@@ -550,9 +552,13 @@ const ProductDetailPage = ({ params }: ProductDetailPageProps) => {
           {product.name}
         </h1>
 
-        <p className="text-lg font-semibold text-gray-700 mb-4 text-center">
-          ${product.price.toFixed(2)}
-        </p>
+<p className="text-lg font-semibold text-gray-700 mb-4 text-center">
+  {/* Format the number with a comma and two decimal places */}
+  ${new Intl.NumberFormat('es-MX', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(product.price)}{' '}MXN
+</p>
 
         <p className="text-base text-gray-600 mb-6 text-center leading-relaxed">
           {product.description}
