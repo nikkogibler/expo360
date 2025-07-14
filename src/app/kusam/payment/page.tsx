@@ -7,6 +7,10 @@ import { motion, Variants } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
 import { supabase } from '@/utils/supabase';
+// Import PostgrestError for type narrowing in catch blocks if needed,
+// though it might not be explicitly used in this particular catch for err: unknown
+import { PostgrestError } from '@supabase/supabase-js';
+
 
 // Interface for Product (needs price and id)
 interface Product {
@@ -88,8 +92,11 @@ export default function KusamPaymentPage() {
           throw productsError;
         }
 
+        // FIX 1: Explicitly cast productsData to Product[] to satisfy no-unused-vars for Product interface
+        const typedProductsData: Product[] = productsData as Product[];
+
         const productPriceMap = new Map<string, number>();
-        (productsData || []).forEach(product => {
+        (typedProductsData || []).forEach(product => { // Use typedProductsData here
           productPriceMap.set(product.id, product.price);
         });
 
@@ -106,9 +113,16 @@ export default function KusamPaymentPage() {
 
         setCalculatedTotal(total);
 
-      } catch (err: any) {
+      } catch (err: unknown) { // FIX 2: Changed `any` to `unknown`
         console.error('Error calculating total:', err);
-        setPaymentError(`Error al calcular el total: ${err.message || 'Error desconocido'}`);
+        // Optional: add more robust error message extraction if needed, similar to product page
+        let errorMessage = 'Error desconocido al calcular el total.';
+        if (err instanceof Error) {
+          errorMessage = err.message;
+        } else if (typeof err === 'object' && err !== null && 'message' in err && typeof (err as PostgrestError).message === 'string') {
+          errorMessage = (err as PostgrestError).message;
+        }
+        setPaymentError(`Error al calcular el total: ${errorMessage}`);
       } finally {
         setLoadingTotal(false);
       }
@@ -339,7 +353,7 @@ export default function KusamPaymentPage() {
 
         <Link href="/kusam/cart" passHref>
             <p className="text-center text-sm text-blue-600 hover:underline mt-6 cursor-pointer">
-                Regresar a "Mis Favoritos"
+                Regresar a &quot;Mis Favoritos&quot;
             </p>
         </Link>
       </motion.div>
