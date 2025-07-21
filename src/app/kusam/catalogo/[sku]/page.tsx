@@ -471,10 +471,11 @@ const ProductDetailPage = ({ params }: ProductDetailPageProps) => {
       transition={{ duration: 0.5 }}
       className="min-h-screen bg-gray-50 text-gray-800 flex flex-col items-center py-8 px-4"
     >
-      {/* Kusam Logo */}
+
+         {/* Kusam Logo */}
       <div className="mb-6">
         <Image
-          src="/kusam_main.webp" // Update this path to match your logo file location
+          src="/kusam_main.webp"
           alt="Kusam Logo"
           width={120}
           height={40}
@@ -483,9 +484,9 @@ const ProductDetailPage = ({ params }: ProductDetailPageProps) => {
         />
       </div>
 
+      
       {/* Product Image Section */}
       <div className="w-full max-w-sm bg-white rounded-lg shadow-lg overflow-hidden mb-6">
-        {/* ...existing product image code... */}
         <div className="relative w-full pt-[177.77%] bg-white">
           <Image
             src={product.image_url}
@@ -495,9 +496,54 @@ const ProductDetailPage = ({ params }: ProductDetailPageProps) => {
             className="absolute inset-0 rounded-t-lg cursor-pointer"
             onClick={handleLikeToggle}
           />
-          {/* ...existing heart button and animation code... */}
+
+          {isLiked !== null && (
+            <button
+              onClick={handleLikeToggle}
+              className={`absolute top-4 right-4 p-2 rounded-full shadow-lg transition-all duration-200 ease-in-out
+                ${isLiked ? 'bg-red-500 text-white transform scale-110' : 'bg-white text-gray-400 hover:text-red-500 hover:scale-110'}`}
+              aria-label={isLiked ? "Quitar 'Me gusta' al producto" : "'Me gusta' al producto"}
+              onMouseDown={(e) => e.stopPropagation()}
+              onTouchStart={(e) => e.stopPropagation()}
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-6 w-6"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+                stroke="none"
+              >
+                <path d="M12 21.35l-1.84-1.68C4.54 14.07 2 12.01 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.51-2.54 5.57-8.16 11.17L12 21.35z" />
+              </svg>
+            </button>
+          )}
+
+
+          <AnimatePresence>
+            {showPopUpHeart && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.5 }}
+                animate={{ opacity: 1, scale: 1.5 }}
+                exit={{ opacity: 0, scale: 2.0 }}
+                transition={{ duration: 0.5, ease: "easeOut" }}
+                className="absolute inset-0 flex justify-center items-center pointer-events-none"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-24 w-24 text-gray-400"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  stroke="none"
+                >
+                  <path d="M12 21.35l-1.84-1.68C4.54 14.07 2 12.01 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.51-2.54 5.57-8.16 11.17L12 21.35z" />
+                </svg>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
-        {/* ...existing gray bar code... */}
+        <div className="p-4 bg-gray-100 flex justify-center items-center">
+          <span className="text-sm text-gray-600">¡Mira {product.name} en todo su esplendor!</span>
+        </div>
       </div>
 
       {/* Product Details Section */}
