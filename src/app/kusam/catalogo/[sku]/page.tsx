@@ -234,8 +234,7 @@ const ProductDetailPage = ({ params }: ProductDetailPageProps) => {
     }
 
     fetchData();
-  }, [sku, currentSearchParams, customerId, isLiked]);
-
+  }, [sku, currentSearchParams, customerId]); // removed isLiked
   const ensureCustomerExists = async (cId: string): Promise<string> => {
     console.log("ensureCustomerExists: Verificando/Creando cliente con ID", cId);
     if (!cId) {
@@ -484,7 +483,7 @@ const ProductDetailPage = ({ params }: ProductDetailPageProps) => {
         />
       </div>
 
-      
+
       {/* Product Image Section */}
       <div className="w-full max-w-sm bg-white rounded-lg shadow-lg overflow-hidden mb-6">
         <div className="relative w-full pt-[177.77%] bg-white">
