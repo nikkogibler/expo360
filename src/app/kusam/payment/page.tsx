@@ -10,7 +10,7 @@ import { supabase } from '@/utils/supabase';
 import { PostgrestError } from '@supabase/supabase-js';
 
 // --- NEW: Import initMercadoPago and Wallet components from Mercado Pago SDK for React ---
-import { initMercadoPago, Wallet } from '@mercadopago/sdk-react'; 
+import { initMercadoPago, Wallet } from '@mercadopago/sdk-react';
 
 // Interface for Product (needs price, id, and name for Mercado Pago title)
 interface Product {
@@ -99,7 +99,7 @@ export default function KusamPaymentPage() {
           return;
         }
 
-        const uniqueProductIds = [...new Set(likedFavorites.map(fav => fav.product_id))];
+        // --- REMOVED: const uniqueProductIds = [...new Set(likedFavorites.map(fav => fav.product_id))]; ---
 
         // Make sure to select 'name' here for the Mercado Pago item title
         const { data: productsData, error: productsError } = await supabase
@@ -209,7 +209,7 @@ export default function KusamPaymentPage() {
         return;
       }
 
-      const uniqueProductIds = [...new Set(likedFavorites.map(fav => fav.product_id))];
+      // --- REMOVED: const uniqueProductIds = [...new Set(likedFavorites.map(fav => fav.product_id))]; ---
       const { data: productsData, error: productsError } = await supabase
         .from('products')
         .select('id, price, name'); // Ensure 'name' is selected for the item title
