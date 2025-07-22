@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@mercadopago/sdk-react": "^1.0.3",
     "@supabase/supabase-js": "^2.50.0",
     "framer-motion": "^12.22.0",
     "mercadopago": "^2.8.0",
