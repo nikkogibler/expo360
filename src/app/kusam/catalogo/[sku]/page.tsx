@@ -485,7 +485,7 @@ const ProductDetailPage = ({ params }: ProductDetailPageProps) => {
       </div>
 
 
-      {/* Product Image Section */}
+      {/* Product Image Section And stuff */}
       <div className="w-full max-w-sm bg-white rounded-lg shadow-lg overflow-hidden mb-6">
         <div className="relative w-full pt-[177.77%] bg-white">
           <Image
@@ -634,10 +634,10 @@ const ProductDetailPage = ({ params }: ProductDetailPageProps) => {
                   {/* Default background if no image */}
                   {option.value_data.image_url ? (
                     <Image
-                      src={option.value_data.image_url}
+                      src={option.value_data.image_url} 
                       alt={option.name}
                       layout="fill"
-                      objectFit="cover"
+                      objectFit="cover" 
                       className="rounded-full"
                       sizes="40px"
                     />
