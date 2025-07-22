@@ -7,26 +7,26 @@ import { motion, Variants } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
 import { supabase } from '@/utils/supabase';
-// Import PostgrestError for type narrowing in catch blocks if needed,
-// though it might not be explicitly used in this particular catch for err: unknown
 import { PostgrestError } from '@supabase/supabase-js';
 
+// --- NEW: Import initMercadoPago and Wallet components from Mercado Pago SDK for React ---
+import { initMercadoPago, Wallet } from '@mercadopago/sdk-react'; 
 
-// Interface for Product (needs price and id)
+// Interface for Product (needs price, id, and name for Mercado Pago title)
 interface Product {
   id: string;
   price: number;
+  name: string; // --- CHANGE: ADD name here for Mercado Pago item title ---
 }
 
 // Interface for CustomerFavorite (needs product_id and quantity)
 interface CustomerFavorite {
   product_id: string;
   quantity: number;
-  is_liked: boolean; // We'll rely on this being true
-  fabric_color_id: string | null; // Keep for context, but not for filtering the sum
-  frame_color_id: string | null; // Keep for context, but not for filtering the sum
+  is_liked: boolean;
+  fabric_color_id: string | null;
+  frame_color_id: string | null;
 }
-
 
 export default function KusamPaymentPage() {
   const [selectedMethod, setSelectedMethod] = useState('credit_card');
@@ -39,6 +39,11 @@ export default function KusamPaymentPage() {
   const [cvc, setCvc] = useState('');
   const [cardName, setCardName] = useState('');
 
+  // --- NEW: State for Mercado Pago Preference ID ---
+  const [preferenceId, setPreferenceId] = useState<string | null>(null);
+  // --- NEW: State for customer email, assumed to be available from session or DB ---
+  const [customerEmail, setCustomerEmail] = useState<string | null>(null);
+
   const formatCurrency = useCallback((amount: number) => {
     return `$${new Intl.NumberFormat('es-MX', {
       minimumFractionDigits: 2,
@@ -46,13 +51,30 @@ export default function KusamPaymentPage() {
     }).format(amount)} MXN`;
   }, []);
 
+  // --- NEW: Initialize Mercado Pago SDK with your Public Key ---
+  useEffect(() => {
+    // REPLACE 'YOUR_MERCADO_PAGO_PUBLIC_KEY' with your actual Mercado Pago Public Key
+    initMercadoPago('TEST-7ff29468-76a2-44c3-93ee-33c64819c4d6', { locale: 'es-MX' });
+  }, []);
+
   useEffect(() => {
     async function fetchAndCalculateTotal() {
       setLoadingTotal(true);
       setPaymentError(null);
       setCalculatedTotal(0);
+      setPreferenceId(null); // Reset preference ID on total recalculation
 
       const customerId = typeof window !== 'undefined' ? localStorage.getItem('kusam_customer_id') : null;
+      // --- NEW: Fetch customer email (example: from supabase auth session or DB) ---
+      // If you have Supabase auth session and the user is logged in:
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user?.email) {
+        setCustomerEmail(user.email);
+      } else {
+        // Fallback or handle case where email isn't readily available
+        setCustomerEmail('guest@example.com'); // --- CHANGE THIS TO A MORE APPROPRIATE FALLBACK OR FETCH FROM YOUR CRM/DB ---
+      }
+
 
       if (!customerId) {
         setPaymentError('No se encontró el ID de cliente. Por favor, inicie sesión o regrese al carrito.');
@@ -61,13 +83,11 @@ export default function KusamPaymentPage() {
       }
 
       try {
-        // 1. Fetch all customer favorites that are marked as 'is_liked'
-        // This implicitly includes items configured with options, as they also set is_liked to true
         const { data: likedFavorites, error: favoritesError } = await supabase
           .from('customer_favorites')
-          .select('product_id, quantity') // Only need these for calculation
+          .select('product_id, quantity')
           .eq('customer_id', customerId)
-          .eq('is_liked', true); // <-- Filter only by is_liked = true
+          .eq('is_liked', true);
 
         if (favoritesError) {
           throw favoritesError;
@@ -79,43 +99,38 @@ export default function KusamPaymentPage() {
           return;
         }
 
-        // 2. Extract unique product IDs from the liked items
         const uniqueProductIds = [...new Set(likedFavorites.map(fav => fav.product_id))];
 
-        // 3. Fetch product prices for these IDs
+        // Make sure to select 'name' here for the Mercado Pago item title
         const { data: productsData, error: productsError } = await supabase
           .from('products')
-          .select('id, price')
-          .in('id', uniqueProductIds);
+          .select('id, price, name'); // --- CHANGE: ADD 'name' here ---
 
         if (productsError) {
           throw productsError;
         }
 
-        // FIX 1: Explicitly cast productsData to Product[] to satisfy no-unused-vars for Product interface
         const typedProductsData: Product[] = productsData as Product[];
 
-        const productPriceMap = new Map<string, number>();
-        (typedProductsData || []).forEach(product => { // Use typedProductsData here
-          productPriceMap.set(product.id, product.price);
+        const productPriceAndNameMap = new Map<string, { price: number; name: string }>(); // Map to store price and name
+        (typedProductsData || []).forEach(product => {
+          productPriceAndNameMap.set(product.id, { price: product.price, name: product.name });
         });
 
-        // 4. Calculate total based on liked favorites and their prices
         let total = 0;
-        (likedFavorites as CustomerFavorite[]).forEach(fav => { // Iterate over 'likedFavorites'
-          const productPrice = productPriceMap.get(fav.product_id);
-          if (productPrice !== undefined) {
-            total += productPrice * fav.quantity;
+        (likedFavorites as CustomerFavorite[]).forEach(fav => {
+          const productDetails = productPriceAndNameMap.get(fav.product_id);
+          if (productDetails !== undefined) {
+            total += productDetails.price * fav.quantity;
           } else {
-            console.warn(`Product price not found for ID: ${fav.product_id}`);
+            console.warn(`Product price or name not found for ID: ${fav.product_id}`);
           }
         });
 
         setCalculatedTotal(total);
 
-      } catch (err: unknown) { // FIX 2: Changed `any` to `unknown`
+      } catch (err: unknown) {
         console.error('Error calculating total:', err);
-        // Optional: add more robust error message extraction if needed, similar to product page
         let errorMessage = 'Error desconocido al calcular el total.';
         if (err instanceof Error) {
           errorMessage = err.message;
@@ -160,6 +175,115 @@ export default function KusamPaymentPage() {
     alert(`Procesando su pago de ${formatCurrency(calculatedTotal)} con ${paymentMethodText}. ¡Gracias por su compra. Su comprobante de transacción y los datos de envío serán enviadas a su correo electrónico. ¡Hasta luego! 👋`);
     // In a real app, this would integrate with payment gateways
   };
+
+  // --- NEW: Specific handler for Mercado Pago ---
+  const handleMercadoPagoPaymentClick = async () => {
+    setPaymentError(null);
+    if (calculatedTotal <= 0) {
+      setPaymentError('No hay productos en el carrito para procesar el pago con Mercado Pago o el total es cero.');
+      return;
+    }
+
+    const customerId = typeof window !== 'undefined' ? localStorage.getItem('kusam_customer_id') : null;
+
+    if (!customerId) {
+      setPaymentError('No se encontró el ID de cliente para Mercado Pago. Por favor, inicie sesión o regrese al carrito.');
+      return;
+    }
+
+    try {
+      // Re-fetch liked items and product details for the preference creation
+      // This ensures the data is fresh and complete for Mercado Pago
+      const { data: likedFavorites, error: favoritesError } = await supabase
+        .from('customer_favorites')
+        .select('product_id, quantity')
+        .eq('customer_id', customerId)
+        .eq('is_liked', true);
+
+      if (favoritesError) {
+        throw favoritesError;
+      }
+
+      if (!likedFavorites || likedFavorites.length === 0) {
+        setPaymentError('No tienes productos favoritos para procesar el pago con Mercado Pago.');
+        return;
+      }
+
+      const uniqueProductIds = [...new Set(likedFavorites.map(fav => fav.product_id))];
+      const { data: productsData, error: productsError } = await supabase
+        .from('products')
+        .select('id, price, name'); // Ensure 'name' is selected for the item title
+
+      if (productsError) {
+        throw productsError;
+      }
+
+      const productDetailsMap = new Map<string, { price: number; name: string }>();
+      (productsData || []).forEach(product => {
+        productDetailsMap.set(product.id, { price: product.price, name: product.name });
+      });
+
+      const itemsForPreference = likedFavorites.map(fav => {
+        const details = productDetailsMap.get(fav.product_id);
+        if (!details) {
+          // Fallback title if product name not found, though it should be
+          console.warn(`Product details (name, price) not found for ID: ${fav.product_id}. Using generic title.`);
+          return {
+              id: fav.product_id,
+              title: `Producto ID: ${fav.product_id}`,
+              quantity: fav.quantity,
+              unit_price: 0, // Fallback price if not found
+          };
+        }
+        return {
+          id: fav.product_id,
+          title: details.name, // Use product name as title
+          quantity: fav.quantity,
+          unit_price: details.price,
+        };
+      });
+
+      // Call your Supabase Edge Function
+      // For local development with `npm run dev`, Next.js can proxy /api/function-name to the Supabase URL
+      // But for Vercel deployment, you should use the full Supabase Edge Function URL.
+      // For now, let's use the local API route which can be configured to proxy:
+
+console.log('Sending to Edge Function:');
+console.log('itemsForPreference:', itemsForPreference);
+console.log('calculatedTotal:', calculatedTotal);
+console.log('customerId:', customerId);
+console.log('customerEmail:', customerEmail);
+
+const response = await fetch('https://dpbxyauaobvcdwdgzcxc.supabase.co/functions/v1/create-mercadopago-preference', {          method: 'POST',
+          headers: {
+              'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+              items: itemsForPreference,
+              totalAmount: calculatedTotal,
+              customerId: customerId,
+              customerEmail: customerEmail, // Pass customer email to Edge Function
+          }),
+      });
+
+      if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Fallo al crear la preferencia de Mercado Pago.');
+      }
+
+      const data = await response.json();
+      setPreferenceId(data.preferenceId); // Set the preference ID received from the backend
+
+    } catch (err: unknown) {
+      console.error('Error al iniciar el pago con Mercado Pago:', err);
+      let errorMessage = 'Error al iniciar el pago con Mercado Pago.';
+      if (err instanceof Error) {
+        errorMessage = err.message;
+      }
+      setPaymentError(errorMessage);
+    }
+  };
+
 
   return (
     <div className="relative min-h-screen flex flex-col items-center justify-center p-4 bg-white">
@@ -307,13 +431,20 @@ export default function KusamPaymentPage() {
             <p className="text-gray-700 mb-4">
               Será redirigido de forma segura a la plataforma de MercadoPago para completar su pago.
             </p>
-            <button
-              onClick={handlePaymentSubmit}
-              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out"
-              disabled={loadingTotal || calculatedTotal === 0}
-            >
-              {loadingTotal ? 'Calculando...' : `Proceder a MercadoPago (${formatCurrency(calculatedTotal)})`}
-            </button>
+            {!preferenceId ? ( // --- CHANGE: Conditionally render button or Wallet component ---
+              <button
+                onClick={handleMercadoPagoPaymentClick} // --- CHANGE: Use the new specific handler ---
+                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out"
+                disabled={loadingTotal || calculatedTotal === 0}
+              >
+                {loadingTotal ? 'Calculando...' : `Preparar Pago con MercadoPago (${formatCurrency(calculatedTotal)})`}
+              </button>
+            ) : (
+              <div className="flex justify-center mt-4">
+                {/* --- NEW: Render Mercado Pago Wallet component if preferenceId exists --- */}
+<Wallet initialization={{ preferenceId: preferenceId }} customization={{ valueProp: 'smart_option' }} />              </div>
+            )}
+            {paymentError && <p className="text-red-600 mt-4">{paymentError}</p>}
           </div>
         )}
 

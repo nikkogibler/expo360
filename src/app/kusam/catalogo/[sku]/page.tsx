@@ -12,12 +12,12 @@ import { supabase } from '@/utils/supabase';
 import { PostgrestError } from '@supabase/supabase-js';
 
 
-// NEW INTERFACE: GlobalProductOption to match your new table structure
+// --- MODIFIED INTERFACE: GlobalProductOption - hex_code removed, image_url added ---
 interface GlobalProductOption {
   id: string; // UUID of the global option
   name: string; // e.g., "Madera Clara", "Azul Cielo"
   type: string; // e.g., "finish", "fabric_color"
-  value_data: { hex_code?: string };
+  value_data: { image_url?: string }; // Now ONLY includes image_url
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -145,8 +145,9 @@ const ProductDetailPage = ({ params }: ProductDetailPageProps) => {
           if (globalOptionsRawData) {
             allFetchedGlobalOptions = globalOptionsRawData.map(option => ({
               ...option,
+              // --- MODIFIED: value_data parsing now expects image_url only ---
               value_data: typeof option.value_data === 'string' ?
-                JSON.parse(option.value_data) as { hex_code?: string } :
+                JSON.parse(option.value_data) as { image_url?: string } :
                 option.value_data
             })) as GlobalProductOption[];
           }
@@ -420,12 +421,12 @@ const ProductDetailPage = ({ params }: ProductDetailPageProps) => {
     await logProductFavorite(true, false, 1, null);
   };
 
-  // Helper to get the value (name) and hex_code for display from an ID
+  // --- MODIFIED HELPER: hex_code removed ---
   const getGlobalOptionDetailsById = (id: string, options: GlobalProductOption[]) => {
     const option = options.find(opt => opt.id === id);
     return {
       name: option?.name || 'N/A',
-      hex_code: option?.value_data?.hex_code || '#CCCCCC',
+      image_url: option?.value_data?.image_url || null, // Only image URL
     };
   };
 
@@ -575,8 +576,7 @@ const ProductDetailPage = ({ params }: ProductDetailPageProps) => {
           {product.description}
         </p>
 
-        {/* Customization Options: Fabric Colors (formerly Packaging Variants) */}
-        {/* Only render if the product has fabric colors AND there are filtered options */}
+        {/* Customization Options: Fabric Colors */}
         {fabricColorOptions.length > 0 && (
           <div className="mb-6">
             <h2 className="text-lg font-semibold text-gray-700 mb-3">Colores de Tela</h2>
@@ -585,14 +585,26 @@ const ProductDetailPage = ({ params }: ProductDetailPageProps) => {
                 <button
                   key={option.id}
                   onClick={() => setSelectedFabricColorId(option.id)}
-                  className={`w-10 h-10 rounded-full border-2 focus:outline-none transition-all duration-200
-                    ${selectedFabricColorId === option.id ? 'border-blue-500 ring-2 ring-blue-300' : 'border-gray-300 hover:border-blue-300'}`}
-                  // Access value_data directly as an object after pre-parsing in useEffect
-                  style={{ backgroundColor: option.value_data.hex_code || '#CCCCCC' }}
+                  className={`relative w-10 h-10 rounded-full border-2 focus:outline-none overflow-hidden flex items-center justify-center transition-all duration-200
+                    ${selectedFabricColorId === option.id ? 'border-blue-500 ring-2 ring-blue-300' : 'border-gray-300 hover:border-blue-300'}
+                    ${!option.value_data.image_url ? 'bg-gray-200' : ''}`}
                   title={option.name}
+                  // Default background if no image
                 >
+                  {option.value_data.image_url ? (
+                    <Image
+                      src={option.value_data.image_url}
+                      alt={option.name}
+                      layout="fill"
+                      objectFit="cover"
+                      className="rounded-full"
+                      sizes="40px"
+                    />
+                  ) : (
+                    null
+                  )}
                   {selectedFabricColorId === option.id && (
-                    <span className="flex justify-center items-center text-white text-xl">✓</span>
+                    <span className="absolute inset-0 flex justify-center items-center text-white text-xl bg-black bg-opacity-30 rounded-full">✓</span>
                   )}
                 </button>
               ))}
@@ -605,8 +617,7 @@ const ProductDetailPage = ({ params }: ProductDetailPageProps) => {
           </div>
         )}
 
-        {/* Customization Options: Frame Colors (formerly Accessory Options) */}
-        {/* Only render if the product has frame finish AND there are filtered options */}
+        {/* Customization Options: Frame Colors */}
         {frameColorOptions.length > 0 && (
           <div className="mb-8">
             <h2 className="text-lg font-semibold text-gray-700 mb-3">Colores de Estructura</h2>
@@ -615,14 +626,26 @@ const ProductDetailPage = ({ params }: ProductDetailPageProps) => {
                 <button
                   key={option.id}
                   onClick={() => setSelectedFrameColorId(option.id)}
-                  className={`w-10 h-10 rounded-full border-2 focus:outline-none transition-all duration-200
-                    ${selectedFrameColorId === option.id ? 'border-blue-500 ring-2 ring-blue-300' : 'border-gray-300 hover:border-blue-300'}`}
-                  // Access value_data directly as an object after pre-parsing in useEffect
-                  style={{ backgroundColor: option.value_data.hex_code || '#DDDDDD' }}
+                  className={`relative w-10 h-10 rounded-full border-2 focus:outline-none overflow-hidden flex items-center justify-center transition-all duration-200
+                    ${selectedFrameColorId === option.id ? 'border-blue-500 ring-2 ring-blue-300' : 'border-gray-300 hover:border-blue-300'}
+                    ${!option.value_data.image_url ? 'bg-gray-200' : ''}`}
                   title={option.name}
                 >
+                  {/* Default background if no image */}
+                  {option.value_data.image_url ? (
+                    <Image
+                      src={option.value_data.image_url}
+                      alt={option.name}
+                      layout="fill"
+                      objectFit="cover"
+                      className="rounded-full"
+                      sizes="40px"
+                    />
+                  ) : (
+                    null
+                  )}
                   {selectedFrameColorId === option.id && (
-                    <span className="flex justify-center items-center text-white text-xl">✓</span>
+                    <span className="absolute inset-0 flex justify-center items-center text-white text-xl bg-black bg-opacity-30 rounded-full">✓</span>
                   )}
                 </button>
               ))}
