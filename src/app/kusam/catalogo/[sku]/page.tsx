@@ -93,6 +93,10 @@ const ProductDetailPage = ({ params }: ProductDetailPageProps) => {
 
   const [editingFavoriteId, setEditingFavoriteId] = useState<string | null>(null);
 
+  // --- NEW STATE FOR IMAGE PREVIEW POPUP ---
+  const [hoveredImage, setHoveredImage] = useState<{ src: string; alt: string; x: number; y: number } | null>(null);
+  // --- END NEW STATE ---
+
   useEffect(() => {
     let currentCustomerId = localStorage.getItem('kusam_customer_id');
     if (!currentCustomerId) {
@@ -235,7 +239,7 @@ const ProductDetailPage = ({ params }: ProductDetailPageProps) => {
     }
 
     fetchData();
-  }, [sku, currentSearchParams, customerId]); // removed isLiked
+  }, [sku, currentSearchParams, customerId, isLiked]); // isLiked added back as dependency
   const ensureCustomerExists = async (cId: string): Promise<string> => {
     console.log("ensureCustomerExists: Verificando/Creando cliente con ID", cId);
     if (!cId) {
@@ -440,6 +444,24 @@ const ProductDetailPage = ({ params }: ProductDetailPageProps) => {
   };
   // --- END NEW ---
 
+  // --- NEW HANDLERS FOR IMAGE PREVIEW POPUP ---
+  const handleMouseEnterSwatch = (e: React.MouseEvent, imageUrl: string, imageName: string) => {
+    setHoveredImage({ src: imageUrl, alt: imageName, x: e.clientX, y: e.clientY });
+  };
+
+  const handleMouseLeaveSwatch = () => {
+    setHoveredImage(null);
+  };
+
+  const handleMouseMoveSwatch = (e: React.MouseEvent) => {
+    // Update position on move to follow cursor, with a small offset
+    if (hoveredImage) {
+      setHoveredImage(prev => prev ? { ...prev, x: e.clientX + 15, y: e.clientY + 15 } : null);
+    }
+  };
+  // --- END NEW HANDLERS ---
+
+
   if (loadingProduct) {
     return (
       <div className="flex justify-center items-center h-screen bg-gray-50">
@@ -585,6 +607,11 @@ const ProductDetailPage = ({ params }: ProductDetailPageProps) => {
                 <button
                   key={option.id}
                   onClick={() => setSelectedFabricColorId(option.id)}
+                  // --- NEW: Hover Event Handlers for Preview ---
+                  onMouseEnter={(e) => option.value_data.image_url && handleMouseEnterSwatch(e, option.value_data.image_url, option.name)}
+                  onMouseLeave={handleMouseLeaveSwatch}
+                  onMouseMove={handleMouseMoveSwatch}
+                  // --- END NEW ---
                   className={`relative w-10 h-10 rounded-full border-2 focus:outline-none overflow-hidden flex items-center justify-center transition-all duration-200
                     ${selectedFabricColorId === option.id ? 'border-blue-500 ring-2 ring-blue-300' : 'border-gray-300 hover:border-blue-300'}
                     ${!option.value_data.image_url ? 'bg-gray-200' : ''}`}
@@ -626,6 +653,11 @@ const ProductDetailPage = ({ params }: ProductDetailPageProps) => {
                 <button
                   key={option.id}
                   onClick={() => setSelectedFrameColorId(option.id)}
+                  // --- NEW: Hover Event Handlers for Preview ---
+                  onMouseEnter={(e) => option.value_data.image_url && handleMouseEnterSwatch(e, option.value_data.image_url, option.name)}
+                  onMouseLeave={handleMouseLeaveSwatch}
+                  onMouseMove={handleMouseMoveSwatch}
+                  // --- END NEW ---
                   className={`relative w-10 h-10 rounded-full border-2 focus:outline-none overflow-hidden flex items-center justify-center transition-all duration-200
                     ${selectedFrameColorId === option.id ? 'border-blue-500 ring-2 ring-blue-300' : 'border-gray-300 hover:border-blue-300'}
                     ${!option.value_data.image_url ? 'bg-gray-200' : ''}`}
@@ -675,7 +707,7 @@ const ProductDetailPage = ({ params }: ProductDetailPageProps) => {
               min="1"
               value={quantity}
               onChange={(e) => setQuantity(Math.max(1, Number(e.target.value)))}
-              className="w-24 p-2 border border-gray-300 rounded-md text-center text-gray-900 text-xl font-bold
+              className="w-24 p-2 border border-gray-300 rounded-md shadow-sm text-center text-gray-900 text-xl font-bold
                 appearance-none [-moz-appearance:textfield] [&::-webkit-inner-spin-button]:m-0 [&::-webkit-outer-spin-button]:m-0"
             />
             <button
@@ -722,6 +754,37 @@ const ProductDetailPage = ({ params }: ProductDetailPageProps) => {
       >
         {editingFavoriteId ? '← Regresar a Mis Favoritos' : '← Regresar al catálogo'}
       </button>
+
+      {/* --- IMAGE PREVIEW POPUP (RENDERED CONDITIONALLY) --- */}
+      <AnimatePresence>
+        {hoveredImage && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            transition={{ duration: 0.2 }}
+            className="fixed z-50 p-2 bg-white rounded-lg shadow-xl border border-gray-200 pointer-events-none"
+            style={{
+              left: hoveredImage.x,
+              top: hoveredImage.y,
+              // Offset to prevent obscuring the cursor directly
+              transform: 'translate(15px, 15px)',
+              width: '120px', // Adjust size as needed
+              height: '120px', // Adjust size as needed
+            }}
+          >
+            <Image
+              src={hoveredImage.src}
+              alt={hoveredImage.alt}
+              layout="fill"
+              objectFit="cover"
+              className="rounded-md" // Slightly rounded corners for the preview
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+      {/* --- END IMAGE PREVIEW POPUP --- */}
+
     </motion.div>
   );
 };
