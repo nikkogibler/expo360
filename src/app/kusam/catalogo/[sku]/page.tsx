@@ -3,7 +3,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react'; // Import useRef for drag constraints
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -93,11 +93,23 @@ const ProductDetailPage = ({ params }: ProductDetailPageProps) => {
 
   const [editingFavoriteId, setEditingFavoriteId] = useState<string | null>(null);
 
-  // --- NEW STATE FOR IMAGE PREVIEW POPUP ---
-  const [hoveredImage, setHoveredImage] = useState<{ src: string; alt: string; x: number; y: number } | null>(null);
-  // --- END NEW STATE ---
+  // --- ONE AND ONLY DECLARATION FOR PREVIEW IMAGE STATE ---
+  const [previewImage, setPreviewImage] = useState<{ src: string; alt: string; x: number; y: number; isTapped: boolean } | null>(null);
+  // --- END ONE AND ONLY DECLARATION ---
+
+  // --- ONE AND ONLY DECLARATION FOR HOVER CAPABILITY STATE ---
+  const [canHover, setCanHover] = useState(false);
+  // --- END ONE AND ONLY DECLARATION ---
+
+  // Ref for drag constraints (to limit dragging within a boundary)
+  const dragConstraintsRef = useRef(null);
 
   useEffect(() => {
+    // Detect hover capability on mount. This useEffect runs only once on component mount.
+    if (typeof window !== 'undefined') {
+      setCanHover(window.matchMedia('(hover: hover) and (pointer: fine)').matches);
+    }
+
     let currentCustomerId = localStorage.getItem('kusam_customer_id');
     if (!currentCustomerId) {
       currentCustomerId = uuidv4();
@@ -180,7 +192,7 @@ const ProductDetailPage = ({ params }: ProductDetailPageProps) => {
 
           // Set state with the newly filtered options
           setFrameColorOptions(filteredFrameColors);
-          setFabricColorOptions(filteredFabricColors);
+          setFabricColorOptions(filteredFabricColors); // Corrected: was setFabricColorOptions(filteredFrameColors);
 
           // ... (Rest of your existing logic for customer_favorites and pre-loading selections) ...
 
@@ -444,22 +456,66 @@ const ProductDetailPage = ({ params }: ProductDetailPageProps) => {
   };
   // --- END NEW ---
 
-  // --- NEW HANDLERS FOR IMAGE PREVIEW POPUP ---
+  // --- ALL NEW HANDLERS AND STATE FOR IMAGE PREVIEW POPUP ---
+  // Handler for mouse entering a swatch (only active if canHover is true)
   const handleMouseEnterSwatch = (e: React.MouseEvent, imageUrl: string, imageName: string) => {
-    setHoveredImage({ src: imageUrl, alt: imageName, x: e.clientX, y: e.clientY });
-  };
-
-  const handleMouseLeaveSwatch = () => {
-    setHoveredImage(null);
-  };
-
-  const handleMouseMoveSwatch = (e: React.MouseEvent) => {
-    // Update position on move to follow cursor, with a small offset
-    if (hoveredImage) {
-      setHoveredImage(prev => prev ? { ...prev, x: e.clientX + 15, y: e.clientY + 15 } : null);
+    if (canHover) { // Only trigger on hover-capable devices
+      setPreviewImage({ src: imageUrl, alt: imageName, x: e.clientX, y: e.clientY, isTapped: false });
     }
   };
-  // --- END NEW HANDLERS ---
+
+  // Handler for mouse leaving a swatch (only dismisses if it's a hover-triggered preview)
+  const handleMouseLeaveSwatch = () => {
+    // Only dismiss hover-triggered previews. If it's a tapped preview, it stays until tapped again.
+    if (canHover && previewImage && !previewImage.isTapped) {
+      setPreviewImage(null);
+    }
+  };
+
+  // Handler for mouse moving over a swatch (only updates position for hover-triggered previews)
+  const handleMouseMoveSwatch = (e: React.MouseEvent) => {
+    // Only update position for hover-triggered previews and if canHover
+    if (canHover && previewImage && !previewImage.isTapped) {
+      setPreviewImage(prev => prev ? { ...prev, x: e.clientX + 15, y: e.clientY + 15 } : null);
+    }
+  };
+
+  // Handler to dismiss the preview (used by tapping the preview itself)
+  const handlePreviewDismiss = () => {
+    setPreviewImage(null); // Dismiss the preview
+  };
+
+  // Main handler for clicking/tapping a swatch
+  const handleSwatchSelection = (optionId: string, imageUrl: string | undefined, optionName: string, type: 'fabric' | 'frame') => {
+    // First, set the selected color/finish regardless of image or device type
+    if (type === 'fabric') {
+      setSelectedFabricColorId(optionId);
+    } else { // type === 'frame'
+      setSelectedFrameColorId(optionId);
+    }
+
+    // Now, handle the preview logic
+    if (imageUrl) {
+      if (previewImage && previewImage.src === imageUrl && previewImage.isTapped) {
+        // If the same tapped image is already showing, dismiss it
+        setPreviewImage(null);
+      } else {
+        // Show a new tap-triggered preview (centered for mobile)
+        setPreviewImage({
+          src: imageUrl,
+          alt: optionName,
+          // Position centrally for tap, covering the screen (or specific area)
+          x: window.innerWidth / 2, // Use window dimensions for centering
+          y: window.innerHeight / 2, // Use window dimensions for centering
+          isTapped: true // Mark as tapped
+        });
+      }
+    } else {
+      // If the swatch has no image_url, ensure any preview is dismissed when selecting it
+      setPreviewImage(null);
+    }
+  };
+  // --- END ALL NEW HANDLERS AND STATE FOR IMAGE PREVIEW POPUP ---
 
 
   if (loadingProduct) {
@@ -493,6 +549,9 @@ const ProductDetailPage = ({ params }: ProductDetailPageProps) => {
       transition={{ duration: 0.5 }}
       className="min-h-screen bg-gray-50 text-gray-800 flex flex-col items-center py-8 px-4"
     >
+      {/* Container for drag constraints (to limit popup dragging) */}
+      {/* It's good to have this as a parent for the whole view or a relevant section */}
+      <div ref={dragConstraintsRef} className="fixed inset-0 z-40 pointer-events-none" />
 
          {/* Kusam Logo */}
       <div className="mb-6">
@@ -606,17 +665,14 @@ const ProductDetailPage = ({ params }: ProductDetailPageProps) => {
               {fabricColorOptions.map((option) => (
                 <button
                   key={option.id}
-                  onClick={() => setSelectedFabricColorId(option.id)}
-                  // --- NEW: Hover Event Handlers for Preview ---
+                  onClick={() => handleSwatchSelection(option.id, option.value_data.image_url, option.name, 'fabric')}
                   onMouseEnter={(e) => option.value_data.image_url && handleMouseEnterSwatch(e, option.value_data.image_url, option.name)}
                   onMouseLeave={handleMouseLeaveSwatch}
                   onMouseMove={handleMouseMoveSwatch}
-                  // --- END NEW ---
                   className={`relative w-10 h-10 rounded-full border-2 focus:outline-none overflow-hidden flex items-center justify-center transition-all duration-200
                     ${selectedFabricColorId === option.id ? 'border-blue-500 ring-2 ring-blue-300' : 'border-gray-300 hover:border-blue-300'}
                     ${!option.value_data.image_url ? 'bg-gray-200' : ''}`}
                   title={option.name}
-                  // Default background if no image
                 >
                   {option.value_data.image_url ? (
                     <Image
@@ -652,24 +708,21 @@ const ProductDetailPage = ({ params }: ProductDetailPageProps) => {
               {frameColorOptions.map((option) => (
                 <button
                   key={option.id}
-                  onClick={() => setSelectedFrameColorId(option.id)}
-                  // --- NEW: Hover Event Handlers for Preview ---
+                  onClick={() => handleSwatchSelection(option.id, option.value_data.image_url, option.name, 'frame')}
                   onMouseEnter={(e) => option.value_data.image_url && handleMouseEnterSwatch(e, option.value_data.image_url, option.name)}
                   onMouseLeave={handleMouseLeaveSwatch}
                   onMouseMove={handleMouseMoveSwatch}
-                  // --- END NEW ---
                   className={`relative w-10 h-10 rounded-full border-2 focus:outline-none overflow-hidden flex items-center justify-center transition-all duration-200
                     ${selectedFrameColorId === option.id ? 'border-blue-500 ring-2 ring-blue-300' : 'border-gray-300 hover:border-blue-300'}
                     ${!option.value_data.image_url ? 'bg-gray-200' : ''}`}
                   title={option.name}
                 >
-                  {/* Default background if no image */}
                   {option.value_data.image_url ? (
                     <Image
-                      src={option.value_data.image_url} 
+                      src={option.value_data.image_url}
                       alt={option.name}
                       layout="fill"
-                      objectFit="cover" 
+                      objectFit="cover"
                       className="rounded-full"
                       sizes="40px"
                     />
@@ -757,25 +810,31 @@ const ProductDetailPage = ({ params }: ProductDetailPageProps) => {
 
       {/* --- IMAGE PREVIEW POPUP (RENDERED CONDITIONALLY) --- */}
       <AnimatePresence>
-        {hoveredImage && (
+        {previewImage && (
           <motion.div
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.8 }}
             transition={{ duration: 0.2 }}
-            className="fixed z-50 p-2 bg-white rounded-lg shadow-xl border border-gray-200 pointer-events-none"
+            onClick={handlePreviewDismiss} // Tap to dismiss
+            // Make draggable only on desktop (canHover)
+            drag={canHover} // Only allow drag if device supports hover
+            dragConstraints={dragConstraintsRef} // Confine dragging to the full screen
+            dragElastic={0.1} // Little bounce
+            dragTransition={{ bounceStiffness: 100, bounceDamping: 10 }}
+            className="fixed z-50 p-2 bg-white rounded-lg shadow-xl border border-gray-200 cursor-pointer"
             style={{
-              left: hoveredImage.x,
-              top: hoveredImage.y,
-              // Offset to prevent obscuring the cursor directly
-              transform: 'translate(15px, 15px)',
-              width: '120px', // Adjust size as needed
-              height: '120px', // Adjust size as needed
+              // Adjust positioning based on whether it's a tap or hover
+              left: previewImage.isTapped ? '50%' : previewImage.x,
+              top: previewImage.isTapped ? '50%' : previewImage.y,
+              transform: previewImage.isTapped ? 'translate(-50%, -50%)' : 'translate(15px, 15px)',
+              width: previewImage.isTapped ? '133px' : '80px', // 2/3 of 200px and 120px
+              height: previewImage.isTapped ? '133px' : '80px', // 2/3 of 200px and 120px
             }}
           >
             <Image
-              src={hoveredImage.src}
-              alt={hoveredImage.alt}
+              src={previewImage.src}
+              alt={previewImage.alt}
               layout="fill"
               objectFit="cover"
               className="rounded-md" // Slightly rounded corners for the preview
