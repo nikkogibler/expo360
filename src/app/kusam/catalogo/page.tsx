@@ -210,7 +210,11 @@ export default function KusamCatalogPage() {
         throw productsError;
       }
 
-      const typedProducts = productsData as Product[];
+      // Filter out products that begin with "XX"
+      const typedProducts = (productsData as Product[]).filter(product => 
+        !product.name.startsWith('XX')
+      );
+      
       setProducts(typedProducts);
       setFilteredProducts(typedProducts);
 
