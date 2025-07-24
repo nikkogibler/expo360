@@ -417,18 +417,31 @@ export default function KusamCatalogPage() {
           </motion.div>
         )}
 
-        {/* Navigation Links */}
-        <div className="mt-12 text-center space-x-4">
-          <Link href="/kusam/cart">
-            <span className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors cursor-pointer">
-              Ver Favoritos
-            </span>
-          </Link>
-          <Link href="/kusam">
-            <span className="px-6 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors cursor-pointer">
-              Inicio
-            </span>
-          </Link>
+        {/* Navigation Buttons - Same style as product detail page */}
+        <div className="mt-12 w-full max-w-sm mx-auto">
+          <div className="grid grid-cols-2 gap-3">
+            {/* Favorites Button */}
+            <button
+              onClick={() => window.location.href = '/kusam/cart'}
+              className="py-3 px-2 bg-white border-2 border-green-500 text-green-600 rounded-lg font-medium text-xs shadow-sm hover:bg-green-50 transition-all duration-200 flex flex-col items-center justify-center gap-1"
+            >
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+              </svg>
+              <span>Favoritos</span>
+            </button>
+            
+            {/* Home Button */}
+            <button
+              onClick={() => window.location.href = '/kusam'}
+              className="py-3 px-2 bg-white border-2 border-gray-300 text-gray-600 rounded-lg font-medium text-xs shadow-sm hover:bg-gray-50 transition-all duration-200 flex flex-col items-center justify-center gap-1"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+              </svg>
+              <span>Inicio</span>
+            </button>
+          </div>
         </div>
       </motion.div>
     </div>
