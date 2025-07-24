@@ -582,9 +582,6 @@ export default function KusamCartPage() {
           ) : favoriteItems.length === 0 ? (
             <div className="text-center py-10 col-span-full">
               <p className="text-gray-600 text-lg">Aún no tienes piezas favoritas. ¡Acércate a un producto para marcarlo!</p>
-              <Link href="/kusam/catalog">
-                <p className="mt-4 text-blue-600 hover:underline">Ver catálogo</p>
-              </Link>
             </div>
           ) : (
             favoriteItems.map((item, index) => (
@@ -625,11 +622,32 @@ export default function KusamCartPage() {
           Solicita Tu Cotización
         </button>
 
-        <Link href="/kusam" passHref>
-            <p className="text-center text-sm text-blue-600 hover:underline mt-4 cursor-pointer">
-                Regresar al inicio de la demo
-            </p>
-        </Link>
+        {/* Navigation Buttons - Same style as product detail page */}
+        <div className="mt-6 w-full max-w-sm mx-auto">
+          <div className="grid grid-cols-2 gap-3">
+            {/* Catalog Button - Brown outline */}
+            <button
+              onClick={() => router.push('/kusam/catalogo')}
+              className="py-3 px-2 bg-white border-2 border-amber-700 text-amber-700 rounded-lg font-medium text-xs shadow-sm hover:bg-amber-50 transition-all duration-200 flex flex-col items-center justify-center gap-1"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+              </svg>
+              <span>Catálogo</span>
+            </button>
+            
+            {/* Home Button */}
+            <button
+              onClick={() => router.push('/kusam')}
+              className="py-3 px-2 bg-white border-2 border-gray-300 text-gray-600 rounded-lg font-medium text-xs shadow-sm hover:bg-gray-50 transition-all duration-200 flex flex-col items-center justify-center gap-1"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+              </svg>
+              <span>Inicio</span>
+            </button>
+          </div>
+        </div>
       </motion.div>
 
       <AnimatePresence>
