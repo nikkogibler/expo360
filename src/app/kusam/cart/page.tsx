@@ -85,7 +85,8 @@ interface ItemProps {
 
 interface CartItemCardProps {
   item: ItemProps;
-  index: number; 
+  index: number;
+  onRemove: (itemId: string) => void; // Add this prop
 }
 
 interface ProductVariant {
@@ -100,13 +101,19 @@ interface ProductVariant {
 // };
 // }
 
-const CartItemCard = memo(function CartItemCard({ item, index }: CartItemCardProps) {
+const CartItemCard = memo(function CartItemCard({ item, index, onRemove }: CartItemCardProps) {
   const itemVariants: Variants = {
     hidden: { opacity: 0, y: 20 },
     visible: { opacity: 1, y: 0, transition: { delay: index * 0.1, type: 'spring' as const, stiffness: 100 } },
   };
 
   const productDetailPath = `/kusam/catalogo/${item.productId}`;
+
+  const handleRemove = (e: React.MouseEvent) => {
+    e.preventDefault(); // Prevent navigation to product page
+    e.stopPropagation();
+    onRemove(item.id);
+  };
 
   const renderNotesWithColors = (notes: string) => {
     const parts = notes.split(',').map(part => part.trim()).filter(part => part);
@@ -144,17 +151,26 @@ const CartItemCard = memo(function CartItemCard({ item, index }: CartItemCardPro
   return (
     <Link href={productDetailPath} passHref>
       <motion.div
-        className="bg-white p-2 rounded-lg shadow-md border border-gray-100 flex flex-col items-center text-center cursor-pointer overflow-hidden
-                   w-full" // Use w-full to make it responsive to grid column size
+        className="bg-white p-2 rounded-lg shadow-md border border-gray-100 flex flex-col items-center text-center cursor-pointer overflow-hidden relative
+                   w-full"
         variants={itemVariants}
         initial="hidden"
         animate="visible"
         whileHover={{ scale: 1.05 }}
         transition={{ type: 'spring' as const, stiffness: 300, damping: 10 }}
-        // Set a fixed height for the entire card. Width will be controlled by the grid.
-        style={{ height: '280px' }} // Adjusted height, slightly smaller
+        style={{ height: '280px' }}
       >
-        <div className="relative w-28 h-28 mb-2 flex-shrink-0"> {/* Slightly smaller image area */}
+        {/* Updated Remove button - now gray and discrete */}
+        <button
+          onClick={handleRemove}
+          className="absolute top-2 right-2 w-5 h-5 bg-gray-400 hover:bg-gray-500 text-white rounded-full flex items-center justify-center text-xs font-normal transition-colors duration-200 z-10 shadow-sm opacity-70 hover:opacity-100"
+          title="Quitar de favoritos"
+          aria-label="Quitar de favoritos"
+        >
+          ×
+        </button>
+
+        <div className="relative w-28 h-28 mb-2 flex-shrink-0">
           <Image
             src={item.imageUrl}
             alt={item.name}
@@ -163,16 +179,15 @@ const CartItemCard = memo(function CartItemCard({ item, index }: CartItemCardPro
             className="rounded-md"
           />
         </div>
-        {/* Adjusted h3: fixed height with vertical centering and multi-line overflow handling */}
-        <h3 className="text-sm font-semibold text-gray-800 text-center mt-auto flex-shrink-0 flex items-center justify-center px-1" // Reduced font size, added px-1
+        
+        <h3 className="text-sm font-semibold text-gray-800 text-center mt-auto flex-shrink-0 flex items-center justify-center px-1"
             style={{ minHeight: '40px', maxHeight: '40px', overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
             {item.name}
         </h3>
         {item.quantity > 1 && (
-          <p className="text-xs font-bold text-gray-700 mt-1 flex-shrink-0">Cantidad: {item.quantity}</p> // Reduced font size
+          <p className="text-xs font-bold text-gray-700 mt-1 flex-shrink-0">Cantidad: {item.quantity}</p>
         )}
-        {/* Fixed height container for notes with scroll */}
-        <div className="flex-shrink-0" style={{ minHeight: '50px', maxHeight: '70px', flexGrow: 1 }}> {/* Adjusted notes height */}
+        <div className="flex-shrink-0" style={{ minHeight: '50px', maxHeight: '70px', flexGrow: 1 }}>
             {item.notes && renderNotesWithColors(item.notes)} 
         </div>
       </motion.div>
@@ -329,16 +344,18 @@ export default function KusamCartPage() {
         console.log('Product_variants fetched and mapped.'); 
 
         console.log('Fetching customer_favorites...'); 
+        // ADD THE FILTER HERE - only fetch liked items
         const { data: rawFavorites, error: favoritesError } = await supabase
           .from('customer_favorites')
           .select('*') 
-          .eq('customer_id', customerId);
+          .eq('customer_id', customerId)
+          .eq('is_liked', true); // ✅ Add this line
 
         if (favoritesError) {
           throw favoritesError;
         }
 
-        console.log('Raw Favorites Data from Supabase (after select \'*\' ):', rawFavorites);
+        console.log('Raw Favorites Data from Supabase (only is_liked=true):', rawFavorites);
 
         if (!rawFavorites || rawFavorites.length === 0) {
           console.log('No favorite items found for this customer.');
@@ -453,6 +470,47 @@ export default function KusamCartPage() {
     router.push('/kusam/payment');
   };
 
+  // Add state for tracking removal operations
+  const [removingItems, setRemovingItems] = useState<Set<string>>(new Set());
+
+  // Add the remove handler that sets is_liked to false
+  const handleRemoveItem = async (itemId: string) => {
+    // Optimistic update - remove from UI immediately
+    setFavoriteItems(prev => prev.filter(item => item.id !== itemId));
+    
+    // Add to removing set to show loading state if needed
+    setRemovingItems(prev => new Set(prev).add(itemId));
+
+    try {
+      // Instead of deleting, update is_liked to false
+      const { error } = await supabase
+        .from('customer_favorites')
+        .update({ is_liked: false })
+        .eq('id', itemId);
+
+      if (error) {
+        throw error;
+      }
+
+      console.log('Item unliked successfully - is_liked set to false');
+      
+    } catch (err: unknown) {
+      console.error('Error unliking item:', err);
+      
+      // Revert optimistic update on error
+      alert('Error al quitar el elemento de favoritos. La página se recargará.');
+      window.location.reload(); // Simple fallback - you could implement more sophisticated error recovery
+      
+    } finally {
+      // Remove from removing set
+      setRemovingItems(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(itemId);
+        return newSet;
+      });
+    }
+  };
+
   return (
     <div className="relative min-h-screen flex flex-col items-center p-4 pt-10 pb-10 bg-white" style={{ minHeight: '800px' }}>
       <video
@@ -508,35 +566,36 @@ export default function KusamCartPage() {
             - px-2 sm:px-4 md:px-6: Responsive horizontal padding
             - justify-items-center: Centers items within their grid cells
         */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-x-4 gap-y-6 mb-8 min-h-[400px] px-2 sm:px-4 md:px-6 justify-items-center"> 
-            {loadingFavorites ? (
-                <div className="text-center py-10 col-span-full">
-                    <p className="text-gray-600 text-lg">Cargando tus favoritos...</p>
-                </div>
-            ) : favoritesError ? (
-                <div className="text-center py-10 text-red-600 text-lg col-span-full">
-                    <p>Error: {favoritesError}</p>
-                </div>
-            ) : hasCustomerId === false ? (
-                <div className="text-center py-10 col-span-full">
-                    <p className="text-gray-600 text-lg">No hay sesión activa. Por favor, <Link href="/kusam"><span className="text-blue-600 hover:underline cursor-pointer">inicie una sesión aquí</span></Link>.</p>
-                </div>
-            ) : favoriteItems.length === 0 ? (
-                <div className="text-center py-10 col-span-full">
-                    <p className="text-gray-600 text-lg">Aún no tienes piezas favoritas. ¡Acércate a un producto para marcarlo!</p>
-                    <Link href="/kusam/catalog">
-                        <p className="mt-4 text-blue-600 hover:underline">Ver catálogo</p>
-                    </Link>
-                </div>
-            ) : (
-                favoriteItems.map((item, index) => (
-                    <CartItemCard 
-                      key={item.id} 
-                      item={item} 
-                      index={index} 
-                    />
-                ))
-            )}
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-x-4 gap-y-6 mb-8 min-h-[400px] px-2 sm:px-4 md:px-6 justify-items-center">
+          {loadingFavorites ? (
+            <div className="text-center py-10 col-span-full">
+              <p className="text-gray-600 text-lg">Cargando tus favoritos...</p>
+            </div>
+          ) : favoritesError ? (
+            <div className="text-center py-10 text-red-600 text-lg col-span-full">
+              <p>Error: {favoritesError}</p>
+            </div>
+          ) : hasCustomerId === false ? (
+            <div className="text-center py-10 col-span-full">
+              <p className="text-gray-600 text-lg">No hay sesión activa. Por favor, <Link href="/kusam"><span className="text-blue-600 hover:underline cursor-pointer">inicie una sesión aquí</span></Link>.</p>
+            </div>
+          ) : favoriteItems.length === 0 ? (
+            <div className="text-center py-10 col-span-full">
+              <p className="text-gray-600 text-lg">Aún no tienes piezas favoritas. ¡Acércate a un producto para marcarlo!</p>
+              <Link href="/kusam/catalog">
+                <p className="mt-4 text-blue-600 hover:underline">Ver catálogo</p>
+              </Link>
+            </div>
+          ) : (
+            favoriteItems.map((item, index) => (
+              <CartItemCard 
+                key={item.id} 
+                item={item} 
+                index={index}
+                onRemove={handleRemoveItem} // ✅ Pass the remove handler
+              />
+            ))
+          )}
         </div>
 
         <div className="mb-8 text-center p-4 bg-blue-50 rounded-md border-blue-200 border" style={{ minHeight: '100px' }}>

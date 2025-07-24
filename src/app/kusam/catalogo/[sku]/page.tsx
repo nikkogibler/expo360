@@ -800,13 +800,61 @@ const ProductDetailPage = ({ params }: ProductDetailPageProps) => {
         </motion.button>
       </div>
 
-      {/* Back to Products/Home / Back to Cart button */}
-      <button
-        onClick={() => router.push(editingFavoriteId ? '/kusam/cart' : '/kusam/catalog')}
-        className="mt-6 text-blue-600 hover:text-blue-800 text-sm font-semibold transition-colors duration-200"
-      >
-        {editingFavoriteId ? '← Regresar a Mis Favoritos' : '← Regresar al catálogo'}
-      </button>
+      {/* Enhanced Navigation Section - Uniform mobile-optimized design */}
+      <div className="mt-8 w-full max-w-sm">
+        {/* All three buttons on same line, uniform size */}
+        <div className="grid grid-cols-3 gap-3">
+          {/* Catalog Button - Brown outline */}
+          <button
+            onClick={() => router.push('/kusam/catalogo')}
+            className="py-3 px-2 bg-white border-2 border-amber-700 text-amber-700 rounded-lg font-medium text-xs shadow-sm hover:bg-amber-50 transition-all duration-200 flex flex-col items-center justify-center gap-1"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+            </svg>
+            <span>Catálogo</span>
+          </button>
+
+          {/* Favorites Button */}
+          <button
+            onClick={() => router.push('/kusam/cart')}
+            className="py-3 px-2 bg-white border-2 border-green-500 text-green-600 rounded-lg font-medium text-xs shadow-sm hover:bg-green-50 transition-all duration-200 flex flex-col items-center justify-center gap-1"
+          >
+            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+            </svg>
+            <span>Favoritos</span>
+          </button>
+          
+          {/* Home Button */}
+          <button
+            onClick={() => router.push('/kusam')}
+            className="py-3 px-2 bg-white border-2 border-gray-300 text-gray-600 rounded-lg font-medium text-xs shadow-sm hover:bg-gray-50 transition-all duration-200 flex flex-col items-center justify-center gap-1"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+            </svg>
+            <span>Inicio</span>
+          </button>
+        </div>
+
+        {/* Status indicator - Clean and minimal */}
+        {editingFavoriteId && (
+          <div className="mt-4 text-center">
+            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
+              <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clipRule="evenodd" />
+              </svg>
+              Editando selección
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* Simple breadcrumb - More minimal */}
+      <div className="mt-6 text-center text-sm text-gray-500 max-w-sm px-4">
+        <span className="font-medium text-gray-700">{product.name}</span>
+      </div>
 
       {/* --- IMAGE PREVIEW POPUP (RENDERED CONDITIONALLY) --- */}
       <AnimatePresence>
