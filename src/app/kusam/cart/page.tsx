@@ -470,16 +470,11 @@ export default function KusamCartPage() {
     router.push('/kusam/payment');
   };
 
-  // Add state for tracking removal operations
-  const [removingItems, setRemovingItems] = useState<Set<string>>(new Set());
-
   // Add the remove handler that sets is_liked to false
   const handleRemoveItem = async (itemId: string) => {
     // Optimistic update - remove from UI immediately
     setFavoriteItems(prev => prev.filter(item => item.id !== itemId));
     
-    // Add to removing set to show loading state if needed
-    setRemovingItems(prev => new Set(prev).add(itemId));
 
     try {
       // Instead of deleting, update is_liked to false
@@ -501,13 +496,6 @@ export default function KusamCartPage() {
       alert('Error al quitar el elemento de favoritos. La página se recargará.');
       window.location.reload(); // Simple fallback - you could implement more sophisticated error recovery
       
-    } finally {
-      // Remove from removing set
-      setRemovingItems(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(itemId);
-        return newSet;
-      });
     }
   };
 
