@@ -99,7 +99,7 @@ export default function PaymentSuccessPage() {
 
         {/* Success Message */}
         <h1 className="text-3xl font-bold text-gray-800 mb-4">
-          ¡Pago Exitoso!
+          ¡Pago Exitoso! Gracias por tu compra.
         </h1>
         
         <p className="text-gray-600 mb-6 text-lg">
