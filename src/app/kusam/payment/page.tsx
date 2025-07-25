@@ -268,17 +268,25 @@ console.log('calculatedTotal:', calculatedTotal);
 console.log('customerId:', customerId);
 console.log('customerEmail:', customerEmail);
 
-const response = await fetch('https://dpbxyauaobvcdwdgzcxc.supabase.co/functions/v1/create-mercadopago-preference', {          method: 'POST',
-          headers: {
-              'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-              items: itemsForPreference,
-              totalAmount: calculatedTotal,
-              customerId: customerId,
-              customerEmail: customerEmail, // Pass customer email to Edge Function
-          }),
-      });
+const response = await fetch('https://dpbxyauaobvcdwdgzcxc.supabase.co/functions/v1/create-mercadopago-preference', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    items: itemsForPreference,
+    totalAmount: calculatedTotal,
+    customerId: customerId,
+    customerEmail: customerEmail,
+    // --- ADD THESE REDIRECT URLS ---
+    back_urls: {
+      success: `${window.location.origin}/kusam/payment/success`,
+      failure: `${window.location.origin}/kusam/payment/failure`, 
+      pending: `${window.location.origin}/kusam/payment/pending`
+    },
+    auto_return: 'approved' // Automatically redirect on successful payment
+  }),
+});
 
       if (!response.ok) {
           const errorData = await response.json();
