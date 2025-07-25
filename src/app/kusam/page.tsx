@@ -85,40 +85,41 @@ const KusamLeadFormPage = () => { // Changed to const for export default as Reac
     let storedCustomerId = localStorage.getItem('kusam_customer_id');
 
     const initializeCustomer = async () => {
-      setIsLoadingCustomerStatus(true); // Start loading
-
-      if (clearSessionFlag === 'true') {
-        console.log('KusamLeadFormPage: Detected clear_session=true. Forcing new session by clearing localStorage.');
-        localStorage.removeItem('kusam_customer_id');
-        storedCustomerId = null; // Ensure logic below sees it as null
-        // Optionally, clean the URL here to avoid repeated clearing on refresh
-        // if (window.location.search.includes('clear_session')) {
-        //   window.history.replaceState({}, document.title, window.location.pathname);
-        // }
+      console.log('🔍 Initializing customer...');
+      
+      let currentCustomerId = localStorage.getItem('kusam_customer_id');
+      
+      if (!currentCustomerId) {
+        // Generate new customer ID if none exists
+        currentCustomerId = uuidv4();
+        localStorage.setItem('kusam_customer_id', currentCustomerId);
+        console.log('🆕 Generated new customer ID:', currentCustomerId);
       }
+      
+      setCurrentCustomerId(currentCustomerId);
 
-      if (storedCustomerId) {
-        console.log('--- Found stored kusam_customer_id:', storedCustomerId, 'in KusamLeadFormPage. Verifying with Supabase.');
-
-        const { data: customerData, error } = await supabase
+      try {
+        console.log('🔍 Checking if customer exists in database:', currentCustomerId);
+        
+        // ✅ FIX: Use .maybeSingle() instead of .single() to handle multiple/no results gracefully
+        const { data: existingCustomer, error: fetchError } = await supabase
           .from('customers')
           .select('*')
-          .eq('customer_id', storedCustomerId)
-          .single();
+          .eq('customer_id', currentCustomerId)
+          .maybeSingle(); // ← Changed from .single() to .maybeSingle()
 
-        if (error || !customerData) {
-          console.error('Error fetching customer data or customer not found in DB:', error?.message || 'Not found');
-          localStorage.removeItem('kusam_customer_id'); // Invalidate stored ID if not in DB
-          setCurrentCustomerId(null); // Clear state
-          // Fall through to generate new ID or show form if not found
-        } else {
-          // Customer ID found and validated in Supabase! -> User is "signed up"
-          setCurrentCustomerId(storedCustomerId); // Set state with valid ID
-          setName(customerData.name || '');
-          setEmail(customerData.email || '');
-          setCustomerType(customerData.customer_type || '');
+        if (fetchError) {
+          console.error('❌ Error fetching customer:', fetchError);
+          throw new Error(`Error fetching customer data: ${fetchError.message}`);
+        }
 
-          const existingWhatsapp = customerData.whatsapp || '';
+        if (existingCustomer) {
+          console.log('✅ Customer found in database:', existingCustomer);
+          setName(existingCustomer.name || '');
+          setEmail(existingCustomer.email || '');
+          setCustomerType(existingCustomer.customer_type || '');
+
+          const existingWhatsapp = existingCustomer.whatsapp || '';
           const foundCountry = countryCodes.find(c => existingWhatsapp.startsWith(c.dial_code));
           if (foundCountry) {
             setSelectedCountry(foundCountry);
@@ -127,34 +128,45 @@ const KusamLeadFormPage = () => { // Changed to const for export default as Reac
             setSelectedCountry(countryCodes[0]); // Default to Mexico
             setLocalWhatsapp(existingWhatsapp);
           }
-          console.log('Returning customer data loaded for form pre-fill and redirect:', customerData);
+          console.log('Returning customer data loaded for form pre-fill and redirect:', existingCustomer);
 
           // REDIRECT ONLY IF ON THE ROOT KUSAM PAGE AND CONFIRMED SIGNED UP
           if (pathname === '/kusam') {
-            router.replace(`/kusam/instructions?customer_id=${storedCustomerId}`);
+            router.replace(`/kusam/instructions?customer_id=${currentCustomerId}`);
             return; // Exit early as we are redirecting
           }
-        }
-      }
+        } else {
+          console.log('🆕 Customer not found, creating new customer record');
+          
+          // Create new customer record
+          const { data: newCustomer, error: insertError } = await supabase
+            .from('customers')
+            .insert({
+              customer_id: currentCustomerId,
+              name: 'Visitante Anónimo',
+              email: `${currentCustomerId}@temp.com`,
+              phone: null,
+            })
+            .select()
+            .single();
 
-      // This block only runs if storedCustomerId was null OR was invalidated above
-      if (!storedCustomerId || localStorage.getItem('kusam_customer_id') === null) { // Double check localStorage after potential clearing/invalidation
-        console.log('--- No valid kusam_customer_id found. Generating a new one for current session.');
-        const newCustomerId = uuidv4();
-        localStorage.setItem('kusam_customer_id', newCustomerId); // Store new ID
-        setCurrentCustomerId(newCustomerId); // Set state with new ID
-        console.log('New customer ID generated and stored for this session:', newCustomerId);
-
-        // Log QR scan for truly new customer at this stage
-        if (sourceQrCode) {
-          const { error: logError } = await supabase
-            .from('customer_qr_scans')
-            .insert({ customer_id: newCustomerId, source_qr_code: sourceQrCode });
-          if (logError) {
-            console.error('Error logging QR scan for new customer on initial load:', logError);
+          if (insertError) {
+            console.error('❌ Error creating customer:', insertError);
+            throw new Error(`Error creating customer: ${insertError.message}`);
           }
+
+          console.log('✅ New customer created:', newCustomer);
+          setName(newCustomer.name || '');
+          setEmail(newCustomer.email || '');
+          setCustomerType(newCustomer.customer_type || '');
         }
+
+      } catch (error) {
+        console.error('❌ Customer initialization failed:', error);
+        // Don't throw here - just log the error and continue
+        // The app should still work even if customer data fails
       }
+
       setIsLoadingCustomerStatus(false); // End loading
     };
 

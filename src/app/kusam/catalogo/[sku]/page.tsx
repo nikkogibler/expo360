@@ -3,11 +3,11 @@
 
 'use client';
 
-import { useState, useEffect, useRef } from 'react'; // Import useRef for drag constraints
+import React, { useState, useEffect, useCallback, useRef } from 'react'; // ← ADD useRef
+import { motion, Variants, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
-import { v4 as uuidv4 } from 'uuid';
+import { v4 as uuidv4 } from 'uuid'; // ← ADD this import
 import { supabase } from '@/utils/supabase';
 import { PostgrestError } from '@supabase/supabase-js';
 
@@ -64,15 +64,15 @@ interface ProductPageParams {
 
 // Define the actual shape of the props your component expects at runtime.
 interface ProductDetailPageProps {
-  params: ProductPageParams;
-  searchParams?: { [key: string]: string | string[] | undefined };
+  params: Promise<ProductPageParams>; // ← This is now a Promise
 }
 
 const ProductDetailPage = ({ params }: ProductDetailPageProps) => {
   const router = useRouter();
   const currentSearchParams = useSearchParams();
 
-  const { sku } = params;
+  // ✅ Use React.use() to unwrap the params Promise
+  const { sku } = React.use(params);
 
   const [product, setProduct] = useState<Product | null>(null);
   const [loadingProduct, setLoadingProduct] = useState(true);
@@ -258,23 +258,30 @@ const ProductDetailPage = ({ params }: ProductDetailPageProps) => {
       console.error("ensureCustomerExists: Se intentó asegurar la existencia del cliente con ID de cliente nulo.");
       return "";
     }
+
+    // ✅ FIX: Use .maybeSingle() instead of .single()
     const { data: existingCustomer, error: selectError } = await supabase
       .from('customers')
       .select('customer_id')
       .eq('customer_id', cId)
-      .limit(1);
+      .maybeSingle(); // ← Changed from .single() to .maybeSingle()
 
     if (selectError) {
       console.error("Error al verificar cliente existente:", selectError.message);
       return cId;
     }
 
-    if (!existingCustomer || existingCustomer.length === 0) {
+    if (!existingCustomer) {
       console.log("Cliente no encontrado, intentando insertar nuevo cliente.");
       const { data: newCustomer, error: insertError } = await supabase
         .from('customers')
-        .insert({ customer_id: cId, email: `${cId}@temp.com`, name: 'Visitante Anónimo de la Expo' })
-        .select();
+        .insert({ 
+          customer_id: cId, 
+          email: `${cId}@temp.com`, 
+          name: 'Visitante Anónimo de la Expo' 
+        })
+        .select()
+        .single();
 
       if (insertError) {
         console.error("Error al insertar nuevo cliente:", insertError.message);
@@ -896,9 +903,4 @@ const ProductDetailPage = ({ params }: ProductDetailPageProps) => {
   );
 };
 
-// --- MODIFIED EXPORT FOR ESLINT ---
-// ESLint needs to be explicitly told to ignore `no-explicit-any` on this line.
-// This is a comment that ESLint understands to disable the rule for the next line.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export default ProductDetailPage as React.FunctionComponent<any>;
-// --- MODIFIED EXPORT ENDS HERE ---
+export default ProductDetailPage;
