@@ -17,6 +17,7 @@ interface Product {
   description?: string;
   is_active: boolean;
   category?: string;
+  colección?: string; // ← CHANGE FROM "collection" TO "colección"
   created_at: string;
   updated_at: string;
 }
@@ -173,11 +174,19 @@ const ProductCard = ({ product, index }: ProductCardProps) => {
             </p>
           )}
           
-          {product.category && (
-            <span className="inline-block bg-gray-100 text-gray-700 px-2 py-1 rounded-md text-xs">
-              {product.category}
-            </span>
-          )}
+          {/* ✅ Updated badges section */}
+          <div className="flex flex-wrap gap-2">
+            {product.category && (
+              <span className="inline-block bg-blue-100 text-blue-700 px-2 py-1 rounded-md text-xs">
+                {product.category}
+              </span>
+            )}
+            {product.colección && ( // ← CHANGE TO "colección"
+              <span className="inline-block bg-green-100 text-green-700 px-2 py-1 rounded-md text-xs">
+                ✨ {product.colección}
+              </span>
+            )}
+          </div>
         </div>
       </motion.div>
     </Link>
@@ -191,8 +200,10 @@ export default function KusamCatalogPage() {
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [selectedCollection, setSelectedCollection] = useState<string>('all'); // ← ADD THIS
   const [sortBy, setSortBy] = useState<'name' | 'price' | 'newest'>('name');
   const [categories, setCategories] = useState<string[]>([]);
+  const [collections, setCollections] = useState<string[]>([]); // ← ADD THIS
 
   // Fetch products from Supabase
   const fetchProducts = useCallback(async () => {
@@ -200,15 +211,19 @@ export default function KusamCatalogPage() {
     setError(null);
     
     try {
+      console.log('🔍 Fetching products...');
+      
       const { data: productsData, error: productsError } = await supabase
         .from('products')
-        .select('*')
+        .select('*') // This will now include the colección column
         .eq('is_active', true)
         .order('name', { ascending: true });
 
       if (productsError) {
         throw productsError;
       }
+
+      console.log('📦 Raw products data sample:', productsData?.[0]);
 
       // Filter out products that begin with "XX"
       const typedProducts = (productsData as Product[]).filter(product => 
@@ -225,6 +240,16 @@ export default function KusamCatalogPage() {
           .filter(Boolean)
       )] as string[];
       setCategories(uniqueCategories);
+
+      // ✅ Extract unique collections using "colección" field
+      const uniqueCollections = [...new Set(
+        typedProducts
+          .map(p => p.colección) // ← CHANGE FROM "collection" TO "colección"
+          .filter(collection => collection && collection.trim() !== '')
+      )] as string[];
+      
+      console.log('🎨 Unique collections found:', uniqueCollections);
+      setCollections(uniqueCollections);
 
     } catch (err: unknown) {
       console.error('Error fetching products:', err);
@@ -249,13 +274,19 @@ export default function KusamCatalogPage() {
       filtered = filtered.filter(product =>
         product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         product.sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        product.description?.toLowerCase().includes(searchTerm.toLowerCase())
+        product.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        product.colección?.toLowerCase().includes(searchTerm.toLowerCase()) // ← CHANGE TO "colección"
       );
     }
 
     // Filter by category
     if (selectedCategory !== 'all') {
       filtered = filtered.filter(product => product.category === selectedCategory);
+    }
+
+    // ✅ Filter by collection using "colección" field
+    if (selectedCollection !== 'all') {
+      filtered = filtered.filter(product => product.colección === selectedCollection); // ← CHANGE TO "colección"
     }
 
     // Sort products
@@ -272,7 +303,7 @@ export default function KusamCatalogPage() {
     });
 
     setFilteredProducts(filtered);
-  }, [products, searchTerm, selectedCategory, sortBy]);
+  }, [products, searchTerm, selectedCategory, selectedCollection, sortBy]); // ← ADD selectedCollection
 
   useEffect(() => {
     fetchProducts();
@@ -325,7 +356,7 @@ export default function KusamCatalogPage() {
 
         {/* Search and Filters */}
         <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200 mb-8">
-          <div className="flex flex-col md:flex-row gap-4 items-center">
+          <div className="flex flex-col gap-4">
             {/* Search */}
             <div className="flex-1">
               <input
@@ -337,39 +368,77 @@ export default function KusamCatalogPage() {
               />
             </div>
 
-            {/* Category Filter */}
-            <div>
-              <select
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black bg-white"
-              >
-                <option value="all" className="text-black">Todas las categorías</option>
-                {categories.map(category => (
-                  <option key={category} value={category} className="text-black">
-                    {category}
-                  </option>
-                ))}
-              </select>
+            {/* Filters Row */}
+            <div className="flex flex-col md:flex-row gap-4 items-center">
+              {/* Category Filter */}
+              <div className="flex-1">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Categoría</label>
+                <select
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black bg-white"
+                >
+                  <option value="all" className="text-black">Todas las categorías</option>
+                  {categories.map(category => (
+                    <option key={category} value={category} className="text-black">
+                      {category}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* ✅ Collection Filter */}
+              <div className="flex-1">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Colección</label>
+                <select
+                  value={selectedCollection}
+                  onChange={(e) => setSelectedCollection(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black bg-white"
+                >
+                  <option value="all" className="text-black">Todas las colecciones</option>
+                  {collections.map(collection => (
+                    <option key={collection} value={collection} className="text-black">
+                      {collection}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Sort */}
+              <div className="flex-1">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Ordenar por</label>
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as 'name' | 'price' | 'newest')}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black bg-white"
+                >
+                  <option value="name" className="text-black">Nombre</option>
+                  <option value="price" className="text-black">Precio</option>
+                  <option value="newest" className="text-black">Más Recientes</option>
+                </select>
+              </div>
             </div>
 
-            {/* Sort */}
-            <div>
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as 'name' | 'price' | 'newest')}
-                className="px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black bg-white"
-              >
-                <option value="name" className="text-black">Ordenar por Nombre</option>
-                <option value="price" className="text-black">Ordenar por Precio</option>
-                <option value="newest" className="text-black">Más Recientes</option>
-              </select>
+            {/* Results Count */}
+            <div className="text-sm text-gray-600">
+              Mostrando {filteredProducts.length} de {products.length} productos
+              {selectedCategory !== 'all' && ` en categoría "${selectedCategory}"`}
+              {selectedCollection !== 'all' && ` de colección "${selectedCollection}"`}
             </div>
-          </div>
 
-          {/* Results Count */}
-          <div className="mt-4 text-sm text-gray-600">
-            Mostrando {filteredProducts.length} de {products.length} productos
+            {/* Clear Filters Button */}
+            {(selectedCategory !== 'all' || selectedCollection !== 'all' || searchTerm) && (
+              <button
+                onClick={() => {
+                  setSearchTerm('');
+                  setSelectedCategory('all');
+                  setSelectedCollection('all');
+                }}
+                className="self-start px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors text-sm"
+              >
+                Limpiar Filtros
+              </button>
+            )}
           </div>
         </div>
 
@@ -396,6 +465,7 @@ export default function KusamCatalogPage() {
               onClick={() => {
                 setSearchTerm('');
                 setSelectedCategory('all');
+                setSelectedCollection('all'); // ← ADD THIS
               }}
               className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
             >
