@@ -29,27 +29,29 @@ interface CustomerFavorite {
 }
 
 export default function KusamPaymentPage() {
-  const [selectedMethod, setSelectedMethod] = useState('credit_card');
+  const [selectedMethod, setSelectedMethod] = useState('mercadopago');
   const [loadingTotal, setLoadingTotal] = useState(true);
   const [calculatedTotal, setCalculatedTotal] = useState<number>(0);
+  const [originalTotal, setOriginalTotal] = useState<number>(0);
+  const [discountAmount, setDiscountAmount] = useState<number>(0);
   const [paymentError, setPaymentError] = useState<string | null>(null);
-
-  const [cardNumber, setCardNumber] = useState('');
-  const [expiryDate, setExpiryDate] = useState('');
-  const [cvc, setCvc] = useState('');
-  const [cardName, setCardName] = useState('');
-
-  // --- NEW: State for Mercado Pago Preference ID ---
+  
+  // --- ADD MISSING STATE VARIABLES ---
   const [preferenceId, setPreferenceId] = useState<string | null>(null);
-  // --- NEW: State for customer email, assumed to be available from session or DB ---
-  const [customerEmail, setCustomerEmail] = useState<string | null>(null);
+  const [customerEmail, setCustomerEmail] = useState<string>('');
 
-  const formatCurrency = useCallback((amount: number) => {
-    return `$${new Intl.NumberFormat('es-MX', {
+  // --- ADD MISSING formatCurrency FUNCTION ---
+  const formatCurrency = useCallback((amount: number): string => {
+    return new Intl.NumberFormat('es-MX', {
+      style: 'currency',
+      currency: 'MXN',
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
-    }).format(amount)} MXN`;
+    }).format(amount);
   }, []);
+
+  // --- DISCOUNT CONSTANTS ---
+  const EXPO_DISCOUNT_PERCENTAGE = 0.15; // 15% discount
 
   // --- NEW: Initialize Mercado Pago SDK with your Public Key ---
   useEffect(() => {
@@ -62,7 +64,9 @@ export default function KusamPaymentPage() {
       setLoadingTotal(true);
       setPaymentError(null);
       setCalculatedTotal(0);
-      setPreferenceId(null); // Reset preference ID on total recalculation
+      setOriginalTotal(0); // --- NEW ---
+      setDiscountAmount(0); // --- NEW ---
+      setPreferenceId(null);
 
       const customerId = typeof window !== 'undefined' ? localStorage.getItem('kusam_customer_id') : null;
       // --- NEW: Fetch customer email (example: from supabase auth session or DB) ---
@@ -127,7 +131,14 @@ export default function KusamPaymentPage() {
           }
         });
 
-        setCalculatedTotal(total);
+        // --- NEW: Calculate discount ---
+        const originalAmount = total;
+        const discount = originalAmount * EXPO_DISCOUNT_PERCENTAGE;
+        const finalTotal = originalAmount - discount;
+
+        setOriginalTotal(originalAmount);
+        setDiscountAmount(discount);
+        setCalculatedTotal(finalTotal);
 
       } catch (err: unknown) {
         console.error('Error calculating total:', err);
@@ -167,8 +178,7 @@ export default function KusamPaymentPage() {
       return;
     }
 
-    const paymentMethodText = selectedMethod === 'credit_card' ? 'Tarjeta de Crédito' :
-                              selectedMethod === 'direct_deposit' ? 'Depósito Directo' :
+    const paymentMethodText = selectedMethod === 'direct_deposit' ? 'Depósito Directo' :
                               selectedMethod === 'mercadopago' ? 'MercadoPago' :
                               'Transferencia Bancaria';
 
@@ -235,11 +245,15 @@ export default function KusamPaymentPage() {
               unit_price: 0, // Fallback price if not found
           };
         }
+        
+        // --- NEW: Apply discount to individual item prices ---
+        const discountedPrice = details.price * (1 - EXPO_DISCOUNT_PERCENTAGE);
+        
         return {
           id: fav.product_id,
           title: details.name, // Use product name as title
           quantity: fav.quantity,
-          unit_price: details.price,
+          unit_price: Number(discountedPrice.toFixed(2)), // Round to 2 decimal places
         };
       });
 
@@ -324,20 +338,46 @@ const response = await fetch('https://dpbxyauaobvcdwdgzcxc.supabase.co/functions
         ) : paymentError ? (
           <p className="text-center text-red-600 text-lg mb-4">{paymentError}</p>
         ) : (
-          <p className="text-xl font-semibold text-gray-800 mb-4 text-center">
-              Total a Pagar: <span className="text-green-600">{formatCurrency(calculatedTotal)}</span>
-          </p>
+          // --- NEW: Enhanced pricing display with discount breakdown ---
+          <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-green-50 rounded-lg border border-blue-200">
+            {/* Expo Banner */}
+            <div className="text-center mb-4">
+              <div className="inline-flex items-center bg-amber-100 text-amber-800 px-3 py-1 rounded-full text-sm font-semibold">
+                🎪 DESCUENTO EXCLUSIVO EXPO MUEBLE
+              </div>
+            </div>
+
+            {/* Original Price */}
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-gray-600">Subtotal:</span>
+              <span className="text-gray-600 line-through">{formatCurrency(originalTotal)}</span>
+            </div>
+
+            {/* Discount Line */}
+            <div className="flex justify-between items-center mb-3">
+              <span className="text-green-700 font-semibold">Descuento Expo (15%):</span>
+              <span className="text-green-700 font-bold text-lg">-{formatCurrency(discountAmount)}</span>
+            </div>
+
+            {/* Divider */}
+            <hr className="border-gray-300 mb-3" />
+
+            {/* Final Total */}
+            <div className="flex justify-between items-center">
+              <span className="text-xl font-bold text-gray-800">Total a Pagar:</span>
+              <span className="text-xl font-bold text-green-600">{formatCurrency(calculatedTotal)}</span>
+            </div>
+
+            {/* Savings Message */}
+            <div className="text-center mt-3 text-sm text-green-700 font-medium">
+              💰 ¡Ahorras {formatCurrency(discountAmount)} con este descuento!
+            </div>
+          </div>
         )}
 
 
-        {/* Payment Method Tabs */}
+        {/* Payment Method Tabs - Remove credit_card option */}
         <div className="flex justify-center flex-wrap gap-2 mb-6 border-b border-gray-200 pb-2">
-          <button
-            onClick={() => setSelectedMethod('credit_card')}
-            className={`px-3 py-2 text-base font-medium rounded-md ${selectedMethod === 'credit_card' ? 'text-blue-600 bg-blue-50' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'}`}
-          >
-            Tarjeta de Crédito
-          </button>
           <button
             onClick={() => setSelectedMethod('mercadopago')}
             className={`px-3 py-2 text-base font-medium rounded-md ${selectedMethod === 'mercadopago' ? 'text-blue-600 bg-blue-50' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'}`}
@@ -352,78 +392,7 @@ const response = await fetch('https://dpbxyauaobvcdwdgzcxc.supabase.co/functions
           </button>
         </div>
 
-        {/* Payment Method Content */}
-        {selectedMethod === 'credit_card' && (
-          <form onSubmit={handlePaymentSubmit} className="space-y-4">
-            <div className="flex justify-center items-center space-x-3 mb-4">
-              <Image src="/payments/visa.svg" alt="Visa" width={50} height={30} />
-              <Image src="/payments/mastercard.svg" alt="Mastercard" width={50} height={30} />
-              <Image src="/payments/amex.svg" alt="American Express" width={50} height={30} />
-              <Image src="/payments/paypal.svg" alt="PayPal" width={50} height={30} />
-            </div>
-            <div>
-              <label htmlFor="cardNumber" className="block text-sm font-medium text-gray-700">Número de Tarjeta</label>
-              <input
-                type="text"
-                id="cardNumber"
-                value={cardNumber}
-                onChange={(e) => setCardNumber(e.target.value.replace(/\D/g, '').replace(/(.{4})/g, '$1 ').trim())}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-gray-900 placeholder-gray-500"
-                placeholder="XXXX XXXX XXXX XXXX"
-                maxLength={19}
-                required
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label htmlFor="expiryDate" className="block text-sm font-medium text-gray-700">Fecha de Vencimiento (MM/AA)</label>
-                <input
-                  type="text"
-                  id="expiryDate"
-                  value={expiryDate}
-                  onChange={(e) => setExpiryDate(e.target.value.replace(/\D/g, '').replace(/^(\d{2})(\d{0,2})$/, '$1/$2').trim())}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-gray-900 placeholder-gray-500"
-                  placeholder="MM/AA"
-                  maxLength={5}
-                  required
-                />
-              </div>
-              <div>
-                <label htmlFor="cvc" className="block text-sm font-medium text-gray-700">CVC</label>
-                <input
-                  type="text"
-                  id="cvc"
-                  value={cvc}
-                  onChange={(e) => setCvc(e.target.value.replace(/\D/g, ''))}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-gray-900 placeholder-gray-500"
-                  placeholder="XXX"
-                  maxLength={4}
-                  required
-                />
-              </div>
-            </div>
-            <div>
-              <label htmlFor="cardName" className="block text-sm font-medium text-gray-700">Nombre en la Tarjeta</label>
-              <input
-                type="text"
-                id="cardName"
-                value={cardName}
-                onChange={(e) => setCardName(e.target.value)}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-gray-900 placeholder-gray-500"
-                placeholder="Nombre Completo"
-                required
-              />
-            </div>
-            <button
-              type="submit"
-              className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-xl font-semibold text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out"
-              disabled={loadingTotal || calculatedTotal === 0}
-            >
-              {loadingTotal ? 'Calculando...' : `Pagar ${formatCurrency(calculatedTotal)}`}
-            </button>
-          </form>
-        )}
-
+        {/* Payment Method Content - Remove credit_card section */}
         {selectedMethod === 'mercadopago' && (
           <div className="text-center p-4 bg-gray-50 rounded-md border border-gray-200">
             <h3 className="text-lg font-semibold text-gray-800 mb-3">Pagar con MercadoPago</h3>
@@ -431,18 +400,18 @@ const response = await fetch('https://dpbxyauaobvcdwdgzcxc.supabase.co/functions
             <p className="text-gray-700 mb-4">
               Será redirigido de forma segura a la plataforma de MercadoPago para completar su pago.
             </p>
-            {!preferenceId ? ( // --- CHANGE: Conditionally render button or Wallet component ---
+            {!preferenceId ? (
               <button
-                onClick={handleMercadoPagoPaymentClick} // --- CHANGE: Use the new specific handler ---
-                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out"
+                onClick={handleMercadoPagoPaymentClick}
+                className="w-full py-3 px-4 border-2 border-blue-600 text-blue-600 rounded-lg font-medium hover:bg-blue-50 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                 disabled={loadingTotal || calculatedTotal === 0}
               >
-                {loadingTotal ? 'Calculando...' : `Preparar Pago con MercadoPago (${formatCurrency(calculatedTotal)})`}
+                {loadingTotal ? 'Calculando...' : `Paga con MercadoPago ${formatCurrency(calculatedTotal)}`}
               </button>
             ) : (
               <div className="flex justify-center mt-4">
-                {/* --- NEW: Render Mercado Pago Wallet component if preferenceId exists --- */}
-<Wallet initialization={{ preferenceId: preferenceId }} customization={{ valueProp: 'smart_option' }} />              </div>
+                <Wallet initialization={{ preferenceId: preferenceId }} customization={{ valueProp: 'smart_option' }} />
+              </div>
             )}
             {paymentError && <p className="text-red-600 mt-4">{paymentError}</p>}
           </div>

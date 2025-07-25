@@ -258,7 +258,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({ onClose, onSubmit
           Completa tu orden **HOY** <br /> y
           recibirás{' '}
           <span className="text-4xl font-extrabold text-green-700 animate-pulse drop-shadow-[0_0_16px_rgba(59,130,246,0.7)] align-middle">
-            5%
+            15%
           </span>{' '}
           de descuento. Haz:
         </p>
@@ -593,7 +593,7 @@ export default function KusamCartPage() {
                         height={20}
                         className="inline-block"
                     />
-                </span> reciben un <span className="font-bold text-xl">DESCUENTO ESPECIAL de 5%</span>.
+                </span> reciben un <span className="font-bold text-xl">DESCUENTO ESPECIAL de 15%</span>.
             </p>
         </div>
 
