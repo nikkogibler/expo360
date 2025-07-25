@@ -3,11 +3,11 @@
 
 'use client';
 
-import React, { useState, useEffect, useCallback, useRef } from 'react'; // ← ADD useRef
-import { motion, Variants, AnimatePresence } from 'framer-motion';
+import React, { useState, useEffect, useRef } from 'react'; // ← REMOVE useCallback
+import { motion, AnimatePresence } from 'framer-motion'; // ← REMOVE Variants
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { v4 as uuidv4 } from 'uuid'; // ← ADD this import
+import { v4 as uuidv4 } from 'uuid';
 import { supabase } from '@/utils/supabase';
 import { PostgrestError } from '@supabase/supabase-js';
 

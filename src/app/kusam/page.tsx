@@ -79,11 +79,7 @@ const KusamLeadFormPage = () => { // Changed to const for export default as Reac
   }, [dropdownRef]);
 
   useEffect(() => {
-    const sourceQrCode = searchParams.get('source_qr_code');
-    const clearSessionFlag = searchParams.get('clear_session');
-
-    let storedCustomerId = localStorage.getItem('kusam_customer_id');
-
+    // Remove unused variables and simplify
     const initializeCustomer = async () => {
       console.log('🔍 Initializing customer...');
       
@@ -106,7 +102,7 @@ const KusamLeadFormPage = () => { // Changed to const for export default as Reac
           .from('customers')
           .select('*')
           .eq('customer_id', currentCustomerId)
-          .maybeSingle(); // ← Changed from .single() to .maybeSingle()
+          .maybeSingle();
 
         if (fetchError) {
           console.error('❌ Error fetching customer:', fetchError);
@@ -120,20 +116,19 @@ const KusamLeadFormPage = () => { // Changed to const for export default as Reac
           setCustomerType(existingCustomer.customer_type || '');
 
           const existingWhatsapp = existingCustomer.whatsapp || '';
-          const foundCountry = countryCodes.find(c => existingWhatsapp.startsWith(c.dial_code));
-          if (foundCountry) {
-            setSelectedCountry(foundCountry);
-            setLocalWhatsapp(existingWhatsapp.substring(foundCountry.dial_code.length));
-          } else {
-            setSelectedCountry(countryCodes[0]); // Default to Mexico
-            setLocalWhatsapp(existingWhatsapp);
-          }
-          console.log('Returning customer data loaded for form pre-fill and redirect:', existingCustomer);
-
-          // REDIRECT ONLY IF ON THE ROOT KUSAM PAGE AND CONFIRMED SIGNED UP
-          if (pathname === '/kusam') {
-            router.replace(`/kusam/instructions?customer_id=${currentCustomerId}`);
-            return; // Exit early as we are redirecting
+          if (existingWhatsapp) {
+            const parts = existingWhatsapp.split(' ');
+            if (parts.length >= 2) {
+              const countryMatch = countryCodes.find(c => c.dial_code === parts[0]);
+              if (countryMatch) {
+                setSelectedCountry(countryMatch);
+                setLocalWhatsapp(parts.slice(1).join(' '));
+              } else {
+                setLocalWhatsapp(existingWhatsapp);
+              }
+            } else {
+              setLocalWhatsapp(existingWhatsapp);
+            }
           }
         } else {
           console.log('🆕 Customer not found, creating new customer record');
