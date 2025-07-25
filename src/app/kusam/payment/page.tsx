@@ -411,7 +411,7 @@ const response = await fetch('https://dpbxyauaobvcdwdgzcxc.supabase.co/functions
             {!preferenceId ? (
               <button
                 onClick={handleMercadoPagoPaymentClick}
-                className="w-full py-3 px-4 border-2 border-blue-600 text-blue-600 rounded-lg font-medium hover:bg-blue-50 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                className="w-full py-3 px-4 border-2 border-green-600 text-green-600 rounded-lg font-medium hover:bg-green-50 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
                 disabled={loadingTotal || calculatedTotal === 0}
               >
                 {loadingTotal ? 'Calculando...' : `Paga con MercadoPago ${formatCurrency(calculatedTotal)}`}
