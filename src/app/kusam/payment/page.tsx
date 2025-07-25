@@ -203,7 +203,6 @@ export default function KusamPaymentPage() {
 
     try {
       // Re-fetch liked items and product details for the preference creation
-      // This ensures the data is fresh and complete for Mercado Pago
       const { data: likedFavorites, error: favoritesError } = await supabase
         .from('customer_favorites')
         .select('product_id, quantity')
@@ -219,10 +218,9 @@ export default function KusamPaymentPage() {
         return;
       }
 
-      // --- REMOVED: const uniqueProductIds = [...new Set(likedFavorites.map(fav => fav.product_id))]; ---
       const { data: productsData, error: productsError } = await supabase
         .from('products')
-        .select('id, price, name'); // Ensure 'name' is selected for the item title
+        .select('id, price, name');
 
       if (productsError) {
         throw productsError;
@@ -236,73 +234,68 @@ export default function KusamPaymentPage() {
       const itemsForPreference = likedFavorites.map(fav => {
         const details = productDetailsMap.get(fav.product_id);
         if (!details) {
-          // Fallback title if product name not found, though it should be
-          console.warn(`Product details (name, price) not found for ID: ${fav.product_id}. Using generic title.`);
+          console.warn(`Product details not found for ID: ${fav.product_id}`);
           return {
-              id: fav.product_id,
-              title: `Producto ID: ${fav.product_id}`,
-              quantity: fav.quantity,
-              unit_price: 0, // Fallback price if not found
+            id: fav.product_id,
+            title: `Producto ID: ${fav.product_id}`,
+            quantity: fav.quantity,
+            unit_price: 0,
           };
         }
         
-        // --- NEW: Apply discount to individual item prices ---
         const discountedPrice = details.price * (1 - EXPO_DISCOUNT_PERCENTAGE);
         
         return {
           id: fav.product_id,
-          title: details.name, // Use product name as title
+          title: details.name,
           quantity: fav.quantity,
-          unit_price: Number(discountedPrice.toFixed(2)), // Round to 2 decimal places
+          unit_price: Number(discountedPrice.toFixed(2)),
         };
       });
 
-      // Call your Supabase Edge Function
-      // For local development with `npm run dev`, Next.js can proxy /api/function-name to the Supabase URL
-      // But for Vercel deployment, you should use the full Supabase Edge Function URL.
-      // For now, let's use the local API route which can be configured to proxy:
+      console.log('🔥 FRONTEND: About to send request');
+      console.log('🔥 Items for preference:', itemsForPreference);
+      console.log('🔥 Total amount:', calculatedTotal);
 
-console.log('Sending to Edge Function:');
-console.log('itemsForPreference:', itemsForPreference);
-console.log('calculatedTotal:', calculatedTotal);
-console.log('customerId:', customerId);
-console.log('customerEmail:', customerEmail);
+      // ✅ FIX: Add the Authorization header that was missing!
+      const response = await fetch('https://dpbxyauaobvcdwdgzcxc.supabase.co/functions/v1/create-mercadopago-preference', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`, // ← This was missing!
+        },
+        body: JSON.stringify({
+          items: itemsForPreference,
+          totalAmount: calculatedTotal,
+          customerId: customerId,
+          customerEmail: customerEmail,
+        }),
+      });
 
-const response = await fetch('https://dpbxyauaobvcdwdgzcxc.supabase.co/functions/v1/create-mercadopago-preference', {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-  },
-  body: JSON.stringify({
-    items: itemsForPreference,
-    totalAmount: calculatedTotal,
-    customerId: customerId,
-    customerEmail: customerEmail,
-    // --- ADD THESE REDIRECT URLS ---
-    back_urls: {
-      success: `${window.location.origin}/kusam/payment/success`,
-      failure: `${window.location.origin}/kusam/payment/failure`, 
-      pending: `${window.location.origin}/kusam/payment/pending`
-    },
-    auto_return: 'approved' // Automatically redirect on successful payment
-  }),
-});
+      console.log('🔥 FRONTEND: Response status:', response.status);
+      const responseText = await response.text();
+      console.log('🔥 FRONTEND: Response:', responseText);
 
       if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || 'Fallo al crear la preferencia de Mercado Pago.');
+        let errorData;
+        try {
+          errorData = JSON.parse(responseText);
+        } catch {
+          throw new Error(`HTTP ${response.status}: ${responseText}`);
+        }
+        throw new Error(errorData.error || 'Failed to create MercadoPago preference');
       }
 
-      const data = await response.json();
-      setPreferenceId(data.preferenceId); // Set the preference ID received from the backend
+      const data = JSON.parse(responseText);
+      if (!data.preferenceId) {
+        throw new Error('No preference ID received from server');
+      }
+      
+      setPreferenceId(data.preferenceId);
 
     } catch (err: unknown) {
-      console.error('Error al iniciar el pago con Mercado Pago:', err);
-      let errorMessage = 'Error al iniciar el pago con Mercado Pago.';
-      if (err instanceof Error) {
-        errorMessage = err.message;
-      }
-      setPaymentError(errorMessage);
+      console.error('🔥 FRONTEND: Error:', err);
+      setPaymentError('Fallo al crear la preferencia de Mercado Pago.');
     }
   };
 
