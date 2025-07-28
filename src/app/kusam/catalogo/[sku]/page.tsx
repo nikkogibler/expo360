@@ -554,7 +554,12 @@ const ProductDetailPage = ({ params }: ProductDetailPageProps) => {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="min-h-screen bg-gray-50 text-gray-800 flex flex-col items-center py-8 px-4"
+      className="min-h-screen text-gray-800 flex flex-col items-center py-8 px-4"
+      style={{
+        backgroundImage: 'url("/vine_2b.png")',
+        backgroundRepeat: 'repeat',
+        backgroundSize: 'auto'
+      }}
     >
       {/* Container for drag constraints (to limit popup dragging) */}
       {/* It's good to have this as a parent for the whole view or a relevant section */}
@@ -635,7 +640,22 @@ const ProductDetailPage = ({ params }: ProductDetailPageProps) => {
       </div>
 
       {/* Product Details Section */}
-      <div className="w-full max-w-sm bg-white rounded-lg shadow-xl p-6">
+      <div 
+        className="w-full max-w-sm rounded-lg shadow-xl p-6 relative"
+        style={{
+          backgroundColor: 'rgba(255, 255, 255, 0.85)',
+        }}
+      >
+        {/* Vine background layer */}
+        <div 
+          className="absolute inset-0 rounded-lg opacity-30"
+          style={{
+            backgroundImage: 'url("/vine_2b.png")',
+            backgroundRepeat: 'repeat',
+            backgroundSize: 'auto',
+            zIndex: -1
+          }}
+        ></div>
         <h1
           className="text-3xl font-extrabold mb-2 text-center"
           style={{

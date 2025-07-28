@@ -4,8 +4,10 @@ import { useState, useEffect, useCallback } from 'react';
 import { motion, Variants } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
+import Head from 'next/head';
 import { supabase } from '@/utils/supabase';
 import { PostgrestError } from '@supabase/supabase-js';
+import { getHomeRoute } from '@/utils/navigation';
 
 // Interface matching your existing product structure
 interface Product {
@@ -58,6 +60,7 @@ const itemVariants: Variants = {
 const ProductCard = ({ product, index }: ProductCardProps) => {
   const [imageError, setImageError] = useState(false);
   const [imageLoading, setImageLoading] = useState(true);
+  const [imageLoaded, setImageLoaded] = useState(false);
 
   const formatCurrency = (amount: number) => {
     return `$${new Intl.NumberFormat('es-MX', {
@@ -66,32 +69,45 @@ const ProductCard = ({ product, index }: ProductCardProps) => {
     }).format(amount)} MXN`;
   };
 
-  const handleImageError = () => {
+  const handleImageError = useCallback(() => {
     console.log('❌ Image failed to load:', product.image_url);
     setImageError(true);
     setImageLoading(false);
-  };
+    setImageLoaded(false);
+  }, [product.image_url]);
 
-  const handleImageLoad = () => {
+  const handleImageLoad = useCallback(() => {
     console.log('✅ Image loaded successfully:', product.image_url);
+    setImageError(false);
     setImageLoading(false);
-  };
+    setImageLoaded(true);
+  }, [product.image_url]);
+
+  // Reset image state when product changes
+  useEffect(() => {
+    setImageError(false);
+    setImageLoading(true);
+    setImageLoaded(false);
+  }, [product.image_url]);
 
   // Add timeout for stuck loading images
   useEffect(() => {
+    if (!imageLoading) return; // Don't set timeout if not loading
+    
     const timeout = setTimeout(() => {
-      if (imageLoading) {
+      if (imageLoading && !imageLoaded && !imageError) {
         console.log('⏰ Image loading timeout:', product.image_url);
         setImageError(true);
         setImageLoading(false);
       }
-    }, 10000); // 10 second timeout
+    }, 8000); // Reduced to 8 seconds
 
     return () => clearTimeout(timeout);
-  }, [imageLoading, product.image_url]);
+  }, [imageLoading, imageLoaded, imageError, product.image_url]);
 
   const getImageSrc = () => {
-    if (product.image_url) {
+    // Always return the product image URL if available, let error handling deal with failures
+    if (product.image_url && !imageError) {
       return product.image_url;
     }
     return '/expo_mueble.png';
@@ -121,9 +137,9 @@ const ProductCard = ({ product, index }: ProductCardProps) => {
             </div>
           )}
           
-          {!imageError ? (
+          {!imageError && product.image_url ? (
             <Image
-              src={getImageSrc()}
+              src={product.image_url}
               alt={product.name}
               fill
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
@@ -131,17 +147,19 @@ const ProductCard = ({ product, index }: ProductCardProps) => {
               onError={handleImageError}
               onLoad={handleImageLoad}
               priority={shouldPrioritize}
-              unoptimized={true}
+              unoptimized={false} // Let Next.js optimize the images
+              loading={shouldPrioritize ? "eager" : "lazy"}
             />
           ) : (
             // Fallback - use placeholder image instead of error state
             <Image
               src="/expo_mueble.png"
-              alt={product.name}
+              alt={`${product.name} - Placeholder`}
               fill
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
               className="object-cover transition-transform duration-300 group-hover:scale-105 opacity-75"
-              unoptimized={true}
+              priority={shouldPrioritize}
+              loading={shouldPrioritize ? "eager" : "lazy"}
             />
           )}
           
@@ -150,10 +168,23 @@ const ProductCard = ({ product, index }: ProductCardProps) => {
             {formatCurrency(product.price)}
           </div>
 
-          {/* Show image status for debugging */}
+          {/* Show image status for debugging and retry option */}
           {imageError && (
-            <div className="absolute bottom-2 left-2 bg-red-500 text-white text-xs px-2 py-1 rounded z-30">
-              Placeholder
+            <div className="absolute bottom-2 left-2 right-2 bg-red-500 text-white text-xs px-2 py-1 rounded z-30 flex justify-between items-center">
+              <span>Using placeholder</span>
+              <button 
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setImageError(false);
+                  setImageLoading(true);
+                  setImageLoaded(false);
+                }}
+                className="ml-2 bg-red-700 hover:bg-red-800 px-2 py-0.5 rounded text-xs"
+                title="Retry loading image"
+              >
+                ↻
+              </button>
             </div>
           )}
         </div>
@@ -314,18 +345,83 @@ export default function KusamCatalogPage() {
   }, [filterAndSortProducts]);
 
   return (
-    <div className="relative min-h-screen flex flex-col p-4 pt-10 pb-10 bg-white">
-      {/* Background Video - matching your existing pattern */}
-      <video
-        className="fixed inset-0 w-full h-full object-cover"
-        src="/leaves1.mp4"
-        autoPlay
-        loop
-        muted
-        playsInline
-        disablePictureInPicture={true}
-        preload="auto"
-        style={{ opacity: 0.1, zIndex: -1 }}
+    <>
+      <Head>
+        {/* Primary Meta Tags */}
+        <title>Catálogo de Muebles para Exteriores | Kusam Outdoor Solutions</title>
+        <meta name="title" content="Catálogo de Muebles para Exteriores | Kusam Outdoor Solutions" />
+        <meta name="description" content="Descubre nuestra amplia colección de muebles para exteriores de alta calidad. Sofás, sillas, mesas y más para crear el espacio exterior perfecto. Kusam - Expertos en mobiliario outdoor." />
+        <meta name="keywords" content="muebles exteriores, outdoor furniture, muebles jardín, muebles terraza, sofás exteriores, sillas jardín, mesas exteriores, kusam, mobiliario outdoor México" />
+        <meta name="robots" content="index, follow" />
+        <meta name="language" content="Spanish" />
+        <meta name="author" content="Kusam Outdoor Solutions" />
+        
+        {/* Open Graph / Facebook */}
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://kusam.com/catalogo" />
+        <meta property="og:title" content="Catálogo de Muebles para Exteriores | Kusam Outdoor Solutions" />
+        <meta property="og:description" content="Descubre nuestra amplia colección de muebles para exteriores de alta calidad. Sofás, sillas, mesas y más para crear el espacio exterior perfecto." />
+        <meta property="og:image" content="https://kusam.com/kusam_main.webp" />
+        <meta property="og:site_name" content="Kusam Outdoor Solutions" />
+        <meta property="og:locale" content="es_MX" />
+        
+        {/* Twitter */}
+        <meta property="twitter:card" content="summary_large_image" />
+        <meta property="twitter:url" content="https://kusam.com/catalogo" />
+        <meta property="twitter:title" content="Catálogo de Muebles para Exteriores | Kusam Outdoor Solutions" />
+        <meta property="twitter:description" content="Descubre nuestra amplia colección de muebles para exteriores de alta calidad. Sofás, sillas, mesas y más." />
+        <meta property="twitter:image" content="https://kusam.com/kusam_main.webp" />
+        
+        {/* Additional SEO */}
+        <link rel="canonical" href="https://kusam.com/catalogo" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta httpEquiv="Content-Type" content="text/html; charset=utf-8" />
+        
+        {/* Schema.org structured data */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "Store",
+              "name": "Kusam Outdoor Solutions",
+              "description": "Especialistas en muebles para exteriores de alta calidad",
+              "url": "https://kusam.com/catalogo",
+              "logo": "https://kusam.com/kusam_main.webp",
+              "image": "https://kusam.com/catalog_header1.png",
+              "priceRange": "$$",
+              "address": {
+                "@type": "PostalAddress",
+                "addressCountry": "MX"
+              },
+              "hasOfferCatalog": {
+                "@type": "OfferCatalog",
+                "name": "Catálogo de Muebles para Exteriores",
+                "itemListElement": [
+                  {
+                    "@type": "Offer",
+                    "itemOffered": {
+                      "@type": "Product",
+                      "name": "Muebles para Exteriores",
+                      "category": "Furniture"
+                    }
+                  }
+                ]
+              }
+            })
+          }}
+        />
+      </Head>
+      
+      <div className="relative min-h-screen flex flex-col p-4 pt-10 pb-10">
+      {/* Background Image - vine pattern */}
+      <div
+        className="fixed inset-0 w-full h-full bg-cover bg-center bg-no-repeat"
+        style={{
+          backgroundImage: `url('/vine_2b.png')`,
+          opacity: 1,
+          zIndex: -1
+        }}
       />
 
       <motion.div
@@ -333,19 +429,36 @@ export default function KusamCatalogPage() {
         variants={containerVariants}
         initial="hidden"
         animate="visible"
+        role="main"
+        aria-label="Catálogo de productos"
       >
         {/* Header */}
-        <div className="text-center mb-8">
+        <header className="text-center mb-8">
           <div className="mb-6">
             <Image
               src="/kusam_main.webp"
-              alt="Kusam Outdoor Solutions Logo"
+              alt="Kusam Outdoor Solutions - Especialistas en muebles para exteriores"
               width={200}
               height={50}
               priority
               className="mx-auto"
             />
           </div>
+          
+          {/* Header Image */}
+          <div className="mb-6 w-full">
+            <Image
+              src="/catalog_header1.png"
+              alt="Catálogo de productos - Muebles para exteriores de alta calidad"
+              width={800}
+              height={200}
+              priority
+              className="w-full h-auto object-contain"
+            />
+          </div>
+          
+          {/* Commented out text header */}
+          {/* 
           <h1 
             className="text-4xl font-bold mb-4 bg-clip-text text-transparent"
             style={{
@@ -362,20 +475,38 @@ export default function KusamCatalogPage() {
           <p className="text-lg text-gray-600">
             Descubre nuestra colección completa de muebles para exteriores
           </p>
-        </div>
+          */}
+        </header>
 
         {/* Search and Filters */}
-        <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200 mb-8">
-          <div className="flex flex-col gap-4">
+        <section 
+          className="p-6 rounded-lg shadow-md border border-gray-200 mb-8 relative"
+          style={{
+            backgroundImage: `url('/vine_2.png')`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat'
+          }}
+          aria-label="Buscar y filtrar productos"
+        >
+          <div className="flex flex-col gap-4 relative z-10">
             {/* Search */}
             <div className="flex-1">
+              <label htmlFor="product-search" className="sr-only">
+                Buscar productos por nombre, SKU o descripción
+              </label>
               <input
+                id="product-search"
                 type="text"
                 placeholder="Buscar productos..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black placeholder-gray-500"
+                className="w-full px-4 py-2 border-2 border-amber-950 rounded-md focus:ring-2 focus:ring-amber-950 focus:border-amber-950 text-amber-950 placeholder-amber-950 bg-transparent"
+                aria-describedby="search-help"
               />
+              <span id="search-help" className="sr-only">
+                Busque por nombre del producto, código SKU, descripción o colección
+              </span>
             </div>
 
             {/* Filters Row */}
@@ -450,14 +581,15 @@ export default function KusamCatalogPage() {
               </button>
             )}
           </div>
-        </div>
+        </section>
 
         {/* Products Grid */}
+        <main role="main" aria-label="Lista de productos">
         {loading ? (
-          <div className="text-center py-20">
+          <section className="text-center py-20" aria-label="Cargando productos">
             <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
             <p className="text-gray-600 text-lg mt-4">Cargando productos...</p>
-          </div>
+          </section>
         ) : error ? (
           <div className="text-center py-20">
             <p className="text-red-600 text-lg">{error}</p>
@@ -496,14 +628,16 @@ export default function KusamCatalogPage() {
             ))}
           </motion.div>
         )}
+        </main>
 
         {/* Navigation Buttons - Same style as product detail page */}
-        <div className="mt-12 w-full max-w-sm mx-auto">
-          <div className="grid grid-cols-2 gap-3">
+        <nav className="mt-12 w-full max-w-sm mx-auto" aria-label="Navegación principal">
+          <div className="grid grid-cols-2 gap-3" role="group" aria-label="Acciones principales">
             {/* Favorites Button */}
             <button
               onClick={() => window.location.href = '/kusam/cart'}
               className="py-3 px-2 bg-white border-2 border-green-500 text-green-600 rounded-lg font-medium text-xs shadow-sm hover:bg-green-50 transition-all duration-200 flex flex-col items-center justify-center gap-1"
+              aria-label="Ver productos favoritos"
             >
               <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
@@ -513,8 +647,9 @@ export default function KusamCatalogPage() {
             
             {/* Home Button */}
             <button
-              onClick={() => window.location.href = '/kusam'}
+              onClick={() => window.location.href = '/kusam/instructions'}
               className="py-3 px-2 bg-white border-2 border-gray-300 text-gray-600 rounded-lg font-medium text-xs shadow-sm hover:bg-gray-50 transition-all duration-200 flex flex-col items-center justify-center gap-1"
+              aria-label="Ir al inicio"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
@@ -522,8 +657,9 @@ export default function KusamCatalogPage() {
               <span>Inicio</span>
             </button>
           </div>
-        </div>
+        </nav>
       </motion.div>
-    </div>
+      </div>
+    </>
   );
 }

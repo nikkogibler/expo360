@@ -111,29 +111,46 @@ const KusamLeadFormPage = () => { // Changed to const for export default as Reac
 
         if (existingCustomer) {
           console.log('✅ Customer found in database:', existingCustomer);
-          setName(existingCustomer.name || '');
-          setEmail(existingCustomer.email || '');
-          setCustomerType(existingCustomer.customer_type || '');
+          
+          // Check if this is a fully registered customer (not just anonymous)
+          const isFullyRegistered = existingCustomer.name && 
+                                  existingCustomer.name !== 'Visitante Anónimo' &&
+                                  existingCustomer.email && 
+                                  !existingCustomer.email.endsWith('@temp.com') &&
+                                  existingCustomer.whatsapp &&
+                                  existingCustomer.customer_type;
+          
+          if (isFullyRegistered) {
+            console.log('🚀 Customer is fully registered, redirecting to catalog...');
+            router.push('/kusam/catalogo');
+            return; // Exit early, don't continue with form setup
+          } else {
+            console.log('⚠️ Customer exists but not fully registered, showing signup form...');
+            // Pre-populate form with existing data
+            setName(existingCustomer.name === 'Visitante Anónimo' ? '' : existingCustomer.name || '');
+            setEmail(existingCustomer.email?.endsWith('@temp.com') ? '' : existingCustomer.email || '');
+            setCustomerType(existingCustomer.customer_type || '');
 
-          const existingWhatsapp = existingCustomer.whatsapp || '';
-          if (existingWhatsapp) {
-            const parts = existingWhatsapp.split(' ');
-            if (parts.length >= 2) {
-              const countryMatch = countryCodes.find(c => c.dial_code === parts[0]);
-              if (countryMatch) {
-                setSelectedCountry(countryMatch);
-                setLocalWhatsapp(parts.slice(1).join(' '));
+            const existingWhatsapp = existingCustomer.whatsapp || '';
+            if (existingWhatsapp) {
+              const parts = existingWhatsapp.split(' ');
+              if (parts.length >= 2) {
+                const countryMatch = countryCodes.find(c => c.dial_code === parts[0]);
+                if (countryMatch) {
+                  setSelectedCountry(countryMatch);
+                  setLocalWhatsapp(parts.slice(1).join(' '));
+                } else {
+                  setLocalWhatsapp(existingWhatsapp);
+                }
               } else {
                 setLocalWhatsapp(existingWhatsapp);
               }
-            } else {
-              setLocalWhatsapp(existingWhatsapp);
             }
           }
         } else {
-          console.log('🆕 Customer not found, creating new customer record');
+          console.log('🆕 Customer not found, will show signup form for new customer');
           
-          // Create new customer record
+          // Create a minimal customer record to reserve the ID
           const { data: newCustomer, error: insertError } = await supabase
             .from('customers')
             .insert({
@@ -147,13 +164,56 @@ const KusamLeadFormPage = () => { // Changed to const for export default as Reac
 
           if (insertError) {
             console.error('❌ Error creating customer:', insertError);
-            throw new Error(`Error creating customer: ${insertError.message}`);
+            const errorMessage = insertError.message || insertError.details || JSON.stringify(insertError);
+            
+            // If it's a duplicate key error, try to fetch the existing customer instead
+            if (insertError.code === '23505' || errorMessage.includes('duplicate') || errorMessage.includes('already exists')) {
+              console.log('🔄 Customer already exists, fetching existing record...');
+              const { data: existingCustomer, error: fetchError } = await supabase
+                .from('customers')
+                .select('*')
+                .eq('customer_id', currentCustomerId)
+                .maybeSingle();
+                
+              if (fetchError) {
+                console.error('❌ Error fetching existing customer:', fetchError);
+                throw new Error(`Error fetching existing customer: ${fetchError.message}`);
+              }
+              
+              if (existingCustomer) {
+                console.log('✅ Found existing customer:', existingCustomer);
+                
+                // Check if this duplicate customer is fully registered
+                const isFullyRegistered = existingCustomer.name && 
+                                        existingCustomer.name !== 'Visitante Anónimo' &&
+                                        existingCustomer.email && 
+                                        !existingCustomer.email.endsWith('@temp.com') &&
+                                        existingCustomer.whatsapp &&
+                                        existingCustomer.customer_type;
+                
+                if (isFullyRegistered) {
+                  console.log('🚀 Duplicate customer is fully registered, redirecting to catalog...');
+                  router.push('/kusam/catalogo');
+                  return;
+                } else {
+                  console.log('⚠️ Duplicate customer not fully registered, showing signup form...');
+                  // Pre-populate form with existing data
+                  setName(existingCustomer.name === 'Visitante Anónimo' ? '' : existingCustomer.name || '');
+                  setEmail(existingCustomer.email?.endsWith('@temp.com') ? '' : existingCustomer.email || '');
+                  setCustomerType(existingCustomer.customer_type || '');
+                }
+              }
+            } else {
+              throw new Error(`Error creating customer: ${errorMessage}`);
+            }
+          } else {
+            console.log('✅ New anonymous customer record created:', newCustomer);
+            console.log('📝 Showing signup form for new customer...');
+            // Keep form fields empty for new customer
+            setName('');
+            setEmail('');
+            setCustomerType('');
           }
-
-          console.log('✅ New customer created:', newCustomer);
-          setName(newCustomer.name || '');
-          setEmail(newCustomer.email || '');
-          setCustomerType(newCustomer.customer_type || '');
         }
 
       } catch (error) {
