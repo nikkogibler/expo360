@@ -239,7 +239,7 @@ export default function KusamCatalogPage() {
           .map(p => p.category)
           .filter(Boolean)
       )] as string[];
-      setCategories(uniqueCategories);
+      setCategories(uniqueCategories.sort());
 
       // ✅ Extract unique collections using "colección" field
       const uniqueCollections = [...new Set(
@@ -249,7 +249,7 @@ export default function KusamCatalogPage() {
       )] as string[];
       
       console.log('🎨 Unique collections found:', uniqueCollections);
-      setCollections(uniqueCollections);
+      setCollections(uniqueCollections.sort());
 
     } catch (err: unknown) {
       console.error('Error fetching products:', err);
@@ -346,7 +346,17 @@ export default function KusamCatalogPage() {
               className="mx-auto"
             />
           </div>
-          <h1 className="text-4xl font-bold text-gray-800 mb-4">
+          <h1 
+            className="text-4xl font-bold mb-4 bg-clip-text text-transparent"
+            style={{
+              backgroundImage: `url('/wood/var5.png')`,
+              backgroundSize: '200px 200px',
+              backgroundRepeat: 'repeat',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text'
+            }}
+          >
             Catálogo de Productos
           </h1>
           <p className="text-lg text-gray-600">

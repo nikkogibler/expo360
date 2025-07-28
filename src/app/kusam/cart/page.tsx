@@ -626,7 +626,7 @@ export default function KusamCartPage() {
             
             {/* Home Button */}
             <button
-              onClick={() => router.push('/kusam')}
+              onClick={() => router.push('/kusam/instructions')}
               className="py-3 px-2 bg-white border-2 border-gray-300 text-gray-600 rounded-lg font-medium text-xs shadow-sm hover:bg-gray-50 transition-all duration-200 flex flex-col items-center justify-center gap-1"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
