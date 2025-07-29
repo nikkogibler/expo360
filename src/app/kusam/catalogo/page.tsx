@@ -7,7 +7,6 @@ import Link from 'next/link';
 import Head from 'next/head';
 import { supabase } from '@/utils/supabase';
 import { PostgrestError } from '@supabase/supabase-js';
-import { getHomeRoute } from '@/utils/navigation';
 
 // Interface matching your existing product structure
 interface Product {
@@ -104,14 +103,6 @@ const ProductCard = ({ product, index }: ProductCardProps) => {
 
     return () => clearTimeout(timeout);
   }, [imageLoading, imageLoaded, imageError, product.image_url]);
-
-  const getImageSrc = () => {
-    // Always return the product image URL if available, let error handling deal with failures
-    if (product.image_url && !imageError) {
-      return product.image_url;
-    }
-    return '/expo_mueble.png';
-  };
 
   const shouldPrioritize = index < 4;
 

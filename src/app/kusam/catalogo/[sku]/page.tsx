@@ -808,7 +808,7 @@ const ProductDetailPage = ({ params }: ProductDetailPageProps) => {
                       style={{ objectFit: 'cover' }}
                       className="rounded-full"
                       sizes="40px"
-                      onError={(e) => {
+                      onError={() => {
                         console.error('Failed to load fabric color image:', option.value_data.image_url);
                       }}
                     />
@@ -854,7 +854,7 @@ const ProductDetailPage = ({ params }: ProductDetailPageProps) => {
                       style={{ objectFit: 'cover' }}
                       className="rounded-full"
                       sizes="40px"
-                      onError={(e) => {
+                      onError={() => {
                         console.error('Failed to load frame color image:', option.value_data.image_url);
                       }}
                     />
@@ -1019,7 +1019,7 @@ const ProductDetailPage = ({ params }: ProductDetailPageProps) => {
               style={{ objectFit: 'cover' }}
               className="rounded-md" // Slightly rounded corners for the preview
               sizes="200px"
-              onError={(e) => {
+              onError={() => {
                 console.error('Failed to load preview image:', previewImage.src);
               }}
             />
