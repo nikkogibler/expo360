@@ -126,7 +126,7 @@ const ProductCard = ({ product, index }: ProductCardProps) => {
         transition={{ type: 'spring', stiffness: 300, damping: 10 }}
       >
         {/* Product Image */}
-        <div className="relative w-full h-48 mb-4 overflow-hidden rounded-md bg-gray-200">
+        <div className="relative w-full h-64 sm:h-72 md:h-64 lg:h-72 mb-4 overflow-hidden rounded-md bg-white">
           
           {imageLoading && !imageError && (
             <div className="absolute inset-0 flex items-center justify-center bg-blue-100 z-20">
@@ -143,7 +143,7 @@ const ProductCard = ({ product, index }: ProductCardProps) => {
               alt={product.name}
               fill
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
-              className="object-cover transition-transform duration-300 group-hover:scale-105"
+              className="object-contain transition-transform duration-300 group-hover:scale-105"
               onError={handleImageError}
               onLoad={handleImageLoad}
               priority={shouldPrioritize}
@@ -157,7 +157,7 @@ const ProductCard = ({ product, index }: ProductCardProps) => {
               alt={`${product.name} - Placeholder`}
               fill
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
-              className="object-cover transition-transform duration-300 group-hover:scale-105 opacity-75"
+              className="object-contain transition-transform duration-300 group-hover:scale-105 opacity-75"
               priority={shouldPrioritize}
               loading={shouldPrioritize ? "eager" : "lazy"}
             />

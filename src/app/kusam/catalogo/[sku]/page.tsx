@@ -11,6 +11,16 @@ import { v4 as uuidv4 } from 'uuid';
 import { supabase } from '@/utils/supabase';
 import { PostgrestError } from '@supabase/supabase-js';
 
+// Utility function to preload images
+const preloadImage = (src: string): Promise<void> => {
+  return new Promise((resolve, reject) => {
+    const img = new globalThis.Image();
+    img.onload = () => resolve();
+    img.onerror = () => reject(new Error(`Failed to preload image: ${src}`));
+    img.src = src;
+  });
+};
+
 
 // --- MODIFIED INTERFACE: GlobalProductOption - hex_code removed, image_url added ---
 interface GlobalProductOption {
@@ -93,6 +103,12 @@ const ProductDetailPage = ({ params }: ProductDetailPageProps) => {
 
   const [editingFavoriteId, setEditingFavoriteId] = useState<string | null>(null);
 
+  // Image loading states
+  const [imageLoading, setImageLoading] = useState(true);
+  const [imageError, setImageError] = useState(false);
+  const [imageKey, setImageKey] = useState(0); // For forcing image reload
+  const [retryCount, setRetryCount] = useState(0);
+
   // --- ONE AND ONLY DECLARATION FOR PREVIEW IMAGE STATE ---
   const [previewImage, setPreviewImage] = useState<{ src: string; alt: string; x: number; y: number; isTapped: boolean } | null>(null);
   // --- END ONE AND ONLY DECLARATION ---
@@ -132,6 +148,11 @@ const ProductDetailPage = ({ params }: ProductDetailPageProps) => {
       try {
         setLoadingProduct(true);
         setProductError(null);
+        // Reset image states when fetching new product
+        setImageLoading(true);
+        setImageError(false);
+        setImageKey(prev => prev + 1); // Force image reload
+        setRetryCount(0); // Reset retry count
 
         // Fetch Product Data (now includes new option columns due to select('*'))
         const { data: productData, error: productFetchError } = await supabase
@@ -146,6 +167,17 @@ const ProductDetailPage = ({ params }: ProductDetailPageProps) => {
 
         if (productData) {
           setProduct(productData as Product);
+
+          // Preload the main product image
+          if (productData.image_url) {
+            preloadImage(productData.image_url)
+              .then(() => {
+                console.log('Product image preloaded successfully:', productData.image_url);
+              })
+              .catch((error) => {
+                console.warn('Failed to preload product image:', error.message);
+              });
+          }
 
           // Fetch ALL relevant global options (unchanged from original code)
           const { data: globalOptionsRawData, error: globalOptionsFetchError } = await supabase
@@ -581,13 +613,80 @@ const ProductDetailPage = ({ params }: ProductDetailPageProps) => {
       {/* Product Image Section And stuff */}
       <div className="w-full max-w-sm bg-white rounded-lg shadow-lg overflow-hidden mb-6">
         <div className="relative w-full pt-[177.77%] bg-white">
+          {/* Loading spinner */}
+          {imageLoading && (
+            <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
+              <div className="flex flex-col items-center space-y-3">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-600"></div>
+                <p className="text-sm text-gray-600">Cargando imagen...</p>
+              </div>
+            </div>
+          )}
+          
+          {/* Error state */}
+          {imageError && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-100 text-gray-600">
+              <svg className="w-16 h-16 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              <p className="text-sm text-center px-4">No se pudo cargar la imagen</p>
+              {retryCount >= 2 && (
+                <p className="text-xs text-center px-4 text-gray-500">
+                  (Intentos automáticos: {retryCount}/2)
+                </p>
+              )}
+              <button 
+                onClick={() => {
+                  setImageError(false);
+                  setImageLoading(true);
+                  setImageKey(prev => prev + 1); // Force reload with new key
+                  setRetryCount(0); // Reset manual retry
+                }}
+                className="mt-2 px-3 py-1 bg-gray-600 text-white text-xs rounded hover:bg-gray-700"
+              >
+                Reintentar manualmente
+              </button>
+            </div>
+          )}
+          
           <Image
+            key={`product-image-${imageKey}`} // Force re-render when key changes
             src={product.image_url}
             alt={product.name}
-            layout="fill"
-            objectFit="contain"
-            className="absolute inset-0 rounded-t-lg cursor-pointer"
+            fill
+            style={{ objectFit: 'contain' }}
+            className={`absolute inset-0 rounded-t-lg cursor-pointer transition-opacity duration-300 ${
+              imageLoading || imageError ? 'opacity-0' : 'opacity-100'
+            }`}
             onClick={handleLikeToggle}
+            priority
+            sizes="(max-width: 640px) 100vw, 400px"
+            onLoad={() => {
+              console.log('Product image loaded successfully:', product.image_url);
+              setImageLoading(false);
+              setImageError(false);
+            }}
+            onError={(e) => {
+              console.error('Failed to load product image:', product.image_url);
+              console.error('Error details:', e);
+              setImageLoading(false);
+              setImageError(true);
+              
+              // Auto-retry up to 2 times with exponential backoff
+              if (retryCount < 2) {
+                const retryDelay = Math.pow(2, retryCount) * 1000; // 1s, 2s
+                console.log(`Auto-retrying image load in ${retryDelay}ms (attempt ${retryCount + 1}/2)`);
+                setTimeout(() => {
+                  setRetryCount(prev => prev + 1);
+                  setImageError(false);
+                  setImageLoading(true);
+                  setImageKey(prev => prev + 1);
+                }, retryDelay);
+              }
+            }}
+            onLoadStart={() => {
+              console.log('Starting to load product image:', product.image_url);
+            }}
           />
 
           {isLiked !== null && (
@@ -705,10 +804,13 @@ const ProductDetailPage = ({ params }: ProductDetailPageProps) => {
                     <Image
                       src={option.value_data.image_url}
                       alt={option.name}
-                      layout="fill"
-                      objectFit="cover"
+                      fill
+                      style={{ objectFit: 'cover' }}
                       className="rounded-full"
                       sizes="40px"
+                      onError={(e) => {
+                        console.error('Failed to load fabric color image:', option.value_data.image_url);
+                      }}
                     />
                   ) : (
                     null
@@ -748,10 +850,13 @@ const ProductDetailPage = ({ params }: ProductDetailPageProps) => {
                     <Image
                       src={option.value_data.image_url}
                       alt={option.name}
-                      layout="fill"
-                      objectFit="cover"
+                      fill
+                      style={{ objectFit: 'cover' }}
                       className="rounded-full"
                       sizes="40px"
+                      onError={(e) => {
+                        console.error('Failed to load frame color image:', option.value_data.image_url);
+                      }}
                     />
                   ) : (
                     null
@@ -910,9 +1015,13 @@ const ProductDetailPage = ({ params }: ProductDetailPageProps) => {
             <Image
               src={previewImage.src}
               alt={previewImage.alt}
-              layout="fill"
-              objectFit="cover"
+              fill
+              style={{ objectFit: 'cover' }}
               className="rounded-md" // Slightly rounded corners for the preview
+              sizes="200px"
+              onError={(e) => {
+                console.error('Failed to load preview image:', previewImage.src);
+              }}
             />
           </motion.div>
         )}
