@@ -160,13 +160,13 @@ const ProductCard = ({ product, index }: ProductCardProps) => {
         transition={{ type: 'spring', stiffness: 300, damping: 10 }}
       >
         {/* Product Image */}
-        <div className="relative w-full h-64 sm:h-72 md:h-64 lg:h-72 mb-4 overflow-hidden rounded-md bg-gray-50">
+        <div className="relative w-full h-64 sm:h-72 md:h-64 lg:h-72 mb-4 overflow-hidden rounded-md bg-white">
           
           {imageLoading && !imageError && (
-            <div className="absolute inset-0 flex items-center justify-center bg-gray-50 z-20">
+            <div className="absolute inset-0 flex items-center justify-center bg-white z-20">
               <div className="text-center">
                 <div className="relative w-8 h-8 mx-auto mb-2">
-                  <div className="animate-spin rounded-full h-8 w-8 border-2 border-gray-200"></div>
+                  <div className="animate-spin rounded-full h-8 w-8 border-2 border-gray-100"></div>
                   <div 
                     className="absolute top-0 left-0 h-8 w-8 border-2 border-amber-500 border-t-transparent rounded-full animate-spin"
                     style={{
@@ -174,7 +174,7 @@ const ProductCard = ({ product, index }: ProductCardProps) => {
                     }}
                   ></div>
                 </div>
-                <p className="text-xs text-gray-600 font-medium">
+                <p className="text-xs text-gray-500 font-medium">
                   {retryCount > 0 ? `Reintentando (${retryCount + 1}/3)...` : `Cargando... ${Math.round(loadingProgress)}%`}
                 </p>
               </div>
@@ -204,7 +204,7 @@ const ProductCard = ({ product, index }: ProductCardProps) => {
             />
           ) : (
             // Fallback - use placeholder image instead of error state
-            <div className="absolute inset-0 flex items-center justify-center">
+            <div className="absolute inset-0 flex items-center justify-center bg-white">
               <Image
                 src="/expo_mueble.png"
                 alt={`${product.name} - Imagen de muestra`}
@@ -214,8 +214,8 @@ const ProductCard = ({ product, index }: ProductCardProps) => {
                 priority={shouldPrioritize}
                 loading={shouldPrioritize ? "eager" : "lazy"}
               />
-              <div className="absolute inset-0 bg-black bg-opacity-5 flex items-center justify-center">
-                <span className="text-xs text-gray-500 bg-white bg-opacity-90 px-2 py-1 rounded">
+              <div className="absolute inset-0 bg-white bg-opacity-5 flex items-center justify-center">
+                <span className="text-xs text-gray-500 bg-white bg-opacity-95 px-2 py-1 rounded shadow-sm">
                   Imagen no disponible
                 </span>
               </div>
