@@ -13,9 +13,18 @@ const nextConfig: NextConfig = {
       }
     ],
     formats: ['image/webp', 'image/avif'],
-    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
-    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
-    minimumCacheTTL: 60,
+    deviceSizes: [480, 640, 768, 1024, 1280, 1600],
+    imageSizes: [16, 32, 48, 64, 96, 128, 192, 256, 384],
+    minimumCacheTTL: 300, // 5 minutes cache
+    dangerouslyAllowSVG: true,
+    contentDispositionType: 'attachment',
+    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
+    // Enhanced optimization for large images
+    loader: 'default',
+    path: '/_next/image',
+    // Limit concurrent image optimizations to prevent memory issues
+    domains: [],
+    unoptimized: false,
   },
   experimental: {
     optimizePackageImports: ['next/image'],

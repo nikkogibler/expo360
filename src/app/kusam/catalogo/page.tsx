@@ -60,6 +60,9 @@ const ProductCard = ({ product, index }: ProductCardProps) => {
   const [imageError, setImageError] = useState(false);
   const [imageLoading, setImageLoading] = useState(true);
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
+  const [imageKey, setImageKey] = useState(0); // For forcing re-renders
+  const [loadingProgress, setLoadingProgress] = useState(0);
 
   const formatCurrency = (amount: number) => {
     return `$${new Intl.NumberFormat('es-MX', {
@@ -69,42 +72,82 @@ const ProductCard = ({ product, index }: ProductCardProps) => {
   };
 
   const handleImageError = useCallback(() => {
-    console.log('❌ Image failed to load:', product.image_url);
-    setImageError(true);
-    setImageLoading(false);
-    setImageLoaded(false);
-  }, [product.image_url]);
+    console.log('❌ Image failed to load:', product.image_url, 'Attempt:', retryCount + 1);
+    
+    // Auto-retry up to 3 times with exponential backoff
+    if (retryCount < 2) { // Reduced to 2 retries for faster fallback
+      const retryDelay = Math.pow(2, retryCount) * 800; // 800ms, 1.6s
+      console.log(`Auto-retrying image load in ${retryDelay}ms (attempt ${retryCount + 1}/2)`);
+      
+      setTimeout(() => {
+        setRetryCount(prev => prev + 1);
+        setImageError(false);
+        setImageLoading(true);
+        setImageKey(prev => prev + 1); // Force re-render
+        setLoadingProgress(0);
+      }, retryDelay);
+    } else {
+      // After 2 retries, silently use fallback
+      console.log('Max retries reached, using fallback for:', product.image_url);
+      setImageError(true);
+      setImageLoading(false);
+      setImageLoaded(false);
+      setLoadingProgress(0);
+    }
+  }, [product.image_url, retryCount]);
 
   const handleImageLoad = useCallback(() => {
     console.log('✅ Image loaded successfully:', product.image_url);
     setImageError(false);
     setImageLoading(false);
     setImageLoaded(true);
+    setLoadingProgress(100);
   }, [product.image_url]);
+
+  const handleImageLoadStart = useCallback(() => {
+    setLoadingProgress(10);
+  }, []);
+
+  const handleImageProgress = useCallback(() => {
+    setLoadingProgress(prev => Math.min(prev + 20, 90));
+  }, []);
 
   // Reset image state when product changes
   useEffect(() => {
     setImageError(false);
     setImageLoading(true);
     setImageLoaded(false);
+    setRetryCount(0);
+    setImageKey(0);
+    setLoadingProgress(0);
   }, [product.image_url]);
 
-  // Add timeout for stuck loading images
+  // Progressive loading progress simulation for large images
   useEffect(() => {
-    if (!imageLoading) return; // Don't set timeout if not loading
+    if (imageLoading && loadingProgress < 90) {
+      const interval = setInterval(() => {
+        setLoadingProgress(prev => Math.min(prev + 5, 85));
+      }, 300);
+      
+      return () => clearInterval(interval);
+    }
+  }, [imageLoading, loadingProgress]);
+
+  // Add timeout for stuck loading images - reduced to 15 seconds
+  useEffect(() => {
+    if (!imageLoading) return; 
     
     const timeout = setTimeout(() => {
       if (imageLoading && !imageLoaded && !imageError) {
-        console.log('⏰ Image loading timeout:', product.image_url);
-        setImageError(true);
-        setImageLoading(false);
+        console.log('⏰ Image loading timeout (15s):', product.image_url);
+        handleImageError(); // Use retry logic instead of immediate failure
       }
-    }, 8000); // Reduced to 8 seconds
+    }, 15000); // Reduced to 15 seconds for faster fallback
 
     return () => clearTimeout(timeout);
-  }, [imageLoading, imageLoaded, imageError, product.image_url]);
+  }, [imageLoading, imageLoaded, imageError, product.image_url, handleImageError]);
 
-  const shouldPrioritize = index < 4;
+  const shouldPrioritize = index < 6; // Reduced from 8 to 6 for better performance
 
   return (
     <Link href={`/kusam/catalogo/${product.sku}`} passHref>
@@ -117,67 +160,72 @@ const ProductCard = ({ product, index }: ProductCardProps) => {
         transition={{ type: 'spring', stiffness: 300, damping: 10 }}
       >
         {/* Product Image */}
-        <div className="relative w-full h-64 sm:h-72 md:h-64 lg:h-72 mb-4 overflow-hidden rounded-md bg-white">
+        <div className="relative w-full h-64 sm:h-72 md:h-64 lg:h-72 mb-4 overflow-hidden rounded-md bg-gray-50">
           
           {imageLoading && !imageError && (
-            <div className="absolute inset-0 flex items-center justify-center bg-blue-100 z-20">
+            <div className="absolute inset-0 flex items-center justify-center bg-gray-50 z-20">
               <div className="text-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
-                <p className="text-xs text-blue-600">Cargando imagen...</p>
+                <div className="relative w-8 h-8 mx-auto mb-2">
+                  <div className="animate-spin rounded-full h-8 w-8 border-2 border-gray-200"></div>
+                  <div 
+                    className="absolute top-0 left-0 h-8 w-8 border-2 border-amber-500 border-t-transparent rounded-full animate-spin"
+                    style={{
+                      background: `conic-gradient(from 0deg, transparent ${360 - (loadingProgress * 3.6)}deg, #f59e0b ${360 - (loadingProgress * 3.6)}deg)`
+                    }}
+                  ></div>
+                </div>
+                <p className="text-xs text-gray-600 font-medium">
+                  {retryCount > 0 ? `Reintentando (${retryCount + 1}/3)...` : `Cargando... ${Math.round(loadingProgress)}%`}
+                </p>
               </div>
             </div>
           )}
           
           {!imageError && product.image_url ? (
             <Image
+              key={`product-${product.id}-${imageKey}`} // Force re-render on retry
               src={product.image_url}
               alt={product.name}
               fill
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
-              className="object-contain transition-transform duration-300 group-hover:scale-105"
+              sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+              className={`object-contain transition-all duration-500 group-hover:scale-105 ${
+                imageLoaded ? 'opacity-100' : 'opacity-0'
+              }`}
               onError={handleImageError}
               onLoad={handleImageLoad}
+              onLoadStart={handleImageLoadStart}
+              onProgress={handleImageProgress}
               priority={shouldPrioritize}
+              quality={shouldPrioritize ? 85 : 75} // Higher quality for priority images
               unoptimized={false} // Let Next.js optimize the images
               loading={shouldPrioritize ? "eager" : "lazy"}
+              placeholder="blur"
+              blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q=="
             />
           ) : (
             // Fallback - use placeholder image instead of error state
-            <Image
-              src="/expo_mueble.png"
-              alt={`${product.name} - Placeholder`}
-              fill
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
-              className="object-contain transition-transform duration-300 group-hover:scale-105 opacity-75"
-              priority={shouldPrioritize}
-              loading={shouldPrioritize ? "eager" : "lazy"}
-            />
+            <div className="absolute inset-0 flex items-center justify-center">
+              <Image
+                src="/expo_mueble.png"
+                alt={`${product.name} - Imagen de muestra`}
+                fill
+                sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                className="object-contain transition-transform duration-300 group-hover:scale-105 opacity-60"
+                priority={shouldPrioritize}
+                loading={shouldPrioritize ? "eager" : "lazy"}
+              />
+              <div className="absolute inset-0 bg-black bg-opacity-5 flex items-center justify-center">
+                <span className="text-xs text-gray-500 bg-white bg-opacity-90 px-2 py-1 rounded">
+                  Imagen no disponible
+                </span>
+              </div>
+            </div>
           )}
           
           {/* Price Badge */}
           <div className="absolute top-2 right-2 bg-blue-600 text-white px-2 py-1 rounded-md text-sm font-semibold z-30">
             {formatCurrency(product.price)}
           </div>
-
-          {/* Show image status for debugging and retry option */}
-          {imageError && (
-            <div className="absolute bottom-2 left-2 right-2 bg-red-500 text-white text-xs px-2 py-1 rounded z-30 flex justify-between items-center">
-              <span>Using placeholder</span>
-              <button 
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setImageError(false);
-                  setImageLoading(true);
-                  setImageLoaded(false);
-                }}
-                className="ml-2 bg-red-700 hover:bg-red-800 px-2 py-0.5 rounded text-xs"
-                title="Retry loading image"
-              >
-                ↻
-              </button>
-            </div>
-          )}
         </div>
 
         {/* Product Info */}
@@ -254,6 +302,50 @@ export default function KusamCatalogPage() {
       
       setProducts(typedProducts);
       setFilteredProducts(typedProducts);
+
+      // Enhanced progressive image preloading
+      const preloadImages = async (products: Product[]) => {
+        const priorityImages = products.slice(0, 6); // First 6 images
+        const secondaryImages = products.slice(6, 16); // Next 10 images
+        
+        // Load priority images immediately
+        const priorityPromises = priorityImages.map((product, index) => {
+          return new Promise<void>((resolve) => {
+            if (!product.image_url) {
+              resolve();
+              return;
+            }
+            
+            const img = new globalThis.Image();
+            img.onload = () => {
+              console.log(`✅ Priority image ${index + 1} preloaded:`, product.name);
+              resolve();
+            };
+            img.onerror = () => {
+              console.log(`❌ Priority image ${index + 1} failed:`, product.name);
+              resolve(); // Don't block on failures
+            };
+            img.src = product.image_url;
+          });
+        });
+        
+        // Wait for priority images to load
+        await Promise.allSettled(priorityPromises);
+        
+        // Load secondary images with delay
+        setTimeout(() => {
+          secondaryImages.forEach((product, index) => {
+            if (product.image_url) {
+              const img = new globalThis.Image();
+              img.onload = () => console.log(`✅ Secondary image ${index + 7} preloaded:`, product.name);
+              img.onerror = () => console.log(`❌ Secondary image ${index + 7} failed:`, product.name);
+              img.src = product.image_url;
+            }
+          });
+        }, 1000); // 1 second delay for secondary images
+      };
+      
+      preloadImages(typedProducts);
 
       // Extract unique categories
       const uniqueCategories = [...new Set(
