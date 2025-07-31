@@ -41,8 +41,12 @@ export default function PaymentSuccessPage() {
         const data = await res.json();
         if (!data.order) throw new Error('Orden no encontrada.');
         setOrderDetails(data.order);
-      } catch (err: any) {
-        setOrderError(err.message || 'Error al obtener la orden.');
+      } catch (err: unknown) {
+        setOrderError(
+          typeof err === 'object' && err !== null && 'message' in err
+            ? String((err as { message?: string }).message)
+            : 'Error al obtener la orden.'
+        );
       } finally {
         setOrderLoading(false);
       }
