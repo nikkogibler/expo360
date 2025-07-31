@@ -150,16 +150,14 @@ export default function PaymentSuccessPage() {
             <h3 className="font-semibold text-gray-800 mb-2">Detalles del Pago:</h3>
             {orderId && (
               <p className="text-sm text-gray-600">
-                <span className="font-medium">Order ID:</span> {orderId.slice(-12)}
+                <span className="font-medium">Order ID Kusam:</span> {orderId.slice(-12)}
               </p>
             )}
             {orderLoading && <p className="text-sm text-gray-500">Cargando detalles de la orden...</p>}
             {orderError && <p className="text-sm text-red-600">{orderError}</p>}
             {orderDetails && (
               <>
-                <p className="text-sm text-gray-600">
-                  <span className="font-medium">Estado de la Orden:</span> {orderDetails.status || 'N/A'}
-                </p>
+          
                 <p className="text-sm text-gray-600">
                   <span className="font-medium">Monto Total:</span> ${orderDetails.total_amount}
                 </p>
@@ -172,7 +170,7 @@ export default function PaymentSuccessPage() {
             )}
             {paymentInfo.merchantOrder && (
               <p className="text-sm text-gray-600">
-                <span className="font-medium">Orden:</span> {paymentInfo.merchantOrder}
+                <span className="font-medium">Orden MercadoPago:</span> {paymentInfo.merchantOrder}
               </p>
             )}
             <p className="text-sm text-gray-600">
