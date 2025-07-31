@@ -441,7 +441,7 @@ export default function KusamPaymentPage() {
             ) : (
                 <p className="text-gray-700 mb-2">
                     Banco: BANREGIO<br/>
-                    Número de Cuenta: 985957550050
+                    Número de Cuenta: 985957550050<br/>
                     Clabe: 058580000151560424<br/>
                     Beneficiario: <b style={{ fontSize: '1.25em' }}>KUSAMDECOR</b><br/>
                     RFC: KUS160726FWA<br/>
