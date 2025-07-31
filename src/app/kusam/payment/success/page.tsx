@@ -150,7 +150,7 @@ export default function PaymentSuccessPage() {
             <h3 className="font-semibold text-gray-800 mb-2">Detalles del Pago:</h3>
             {orderId && (
               <p className="text-sm text-gray-600">
-                <span className="font-medium">Order ID (últimos 12 dígitos):</span> {orderId.slice(-12)}
+                <span className="font-medium">Order ID:</span> {orderId.slice(-12)}
               </p>
             )}
             {orderLoading && <p className="text-sm text-gray-500">Cargando detalles de la orden...</p>}
