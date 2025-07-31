@@ -13,6 +13,13 @@ export default function PaymentSuccessPage() {
     status: '',
     merchantOrder: ''
   });
+  const [orderDetails, setOrderDetails] = useState<{ order_id: string; status: string; total_amount: number } | null>(null);
+  const [orderLoading, setOrderLoading] = useState(false);
+  const [orderError, setOrderError] = useState('');
+  const orderIdRaw = searchParams.get('order_id');
+  // Validate if orderId is a UUID (v4)
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  const orderId = orderIdRaw && uuidRegex.test(orderIdRaw) ? orderIdRaw : '';
 
   useEffect(() => {
     // Extract payment information from URL parameters (typical MercadoPago response)
@@ -22,6 +29,26 @@ export default function PaymentSuccessPage() {
       merchantOrder: searchParams.get('merchant_order_id') || ''
     });
   }, [searchParams]);
+
+  useEffect(() => {
+    async function fetchOrderDetails() {
+      if (!orderId) return;
+      setOrderLoading(true);
+      setOrderError('');
+      try {
+        const res = await fetch(`/api/getOrder?order_id=${orderId}`);
+        if (!res.ok) throw new Error('No se pudo obtener la orden.');
+        const data = await res.json();
+        if (!data.order) throw new Error('Orden no encontrada.');
+        setOrderDetails(data.order);
+      } catch (err: any) {
+        setOrderError(err.message || 'Error al obtener la orden.');
+      } finally {
+        setOrderLoading(false);
+      }
+    }
+    fetchOrderDetails();
+  }, [orderId]);
 
   const containerVariants: Variants = {
     hidden: { opacity: 0, y: 50 },
@@ -107,19 +134,38 @@ export default function PaymentSuccessPage() {
         </p>
 
         {/* Payment Details */}
-        {paymentInfo.paymentId && (
+        {(paymentInfo.paymentId || orderId) && (
           <div className="bg-gray-50 p-4 rounded-md mb-6 text-left">
             <h3 className="font-semibold text-gray-800 mb-2">Detalles del Pago:</h3>
-            <p className="text-sm text-gray-600">
-              <span className="font-medium">ID de Pago:</span> {paymentInfo.paymentId}
-            </p>
+            {orderId && (
+              <p className="text-sm text-gray-600">
+                <span className="font-medium">Order ID (UUID):</span> {orderId}
+              </p>
+            )}
+            {orderLoading && <p className="text-sm text-gray-500">Cargando detalles de la orden...</p>}
+            {orderError && <p className="text-sm text-red-600">{orderError}</p>}
+            {orderDetails && (
+              <>
+                <p className="text-sm text-gray-600">
+                  <span className="font-medium">Estado de la Orden:</span> {orderDetails.status || 'N/A'}
+                </p>
+                <p className="text-sm text-gray-600">
+                  <span className="font-medium">Monto Total:</span> ${orderDetails.total_amount}
+                </p>
+              </>
+            )}
+            {paymentInfo.paymentId && (
+              <p className="text-sm text-gray-600">
+                <span className="font-medium">ID de Pago:</span> {paymentInfo.paymentId}
+              </p>
+            )}
             {paymentInfo.merchantOrder && (
               <p className="text-sm text-gray-600">
                 <span className="font-medium">Orden:</span> {paymentInfo.merchantOrder}
               </p>
             )}
             <p className="text-sm text-gray-600">
-              <span className="font-medium">Estado:</span> Aprobado
+              <span className="font-medium">Estado de Pago:</span> {paymentInfo.status || 'Aprobado'}
             </p>
           </div>
         )}

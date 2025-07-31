@@ -188,6 +188,7 @@ export default function KusamPaymentPage() {
 
   // --- NEW: Specific handler for Mercado Pago ---
   const handleMercadoPagoPaymentClick = async () => {
+    console.log('🔥 FRONTEND: Handler called');
     setPaymentError(null);
     if (calculatedTotal <= 0) {
       setPaymentError('No hay productos en el carrito para procesar el pago con Mercado Pago o el total es cero.');
@@ -202,7 +203,20 @@ export default function KusamPaymentPage() {
     }
 
     try {
-      // Re-fetch liked items and product details for the preference creation
+      // 1. Create order in Supabase
+      console.log('🔥 FRONTEND: About to create order');
+      const orderRes = await fetch('/api/createOrder', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ customerId, totalAmount: calculatedTotal })
+      });
+      console.log('🔥 FRONTEND: Order response status:', orderRes.status);
+      const orderJson = await orderRes.json();
+      console.log('🔥 FRONTEND: Order response:', orderJson);
+      const { orderId } = orderJson;
+      console.log('Order ID from Supabase:', orderId); // Should be a UUID
+
+      // 2. Re-fetch liked items and product details for the preference creation
       const { data: likedFavorites, error: favoritesError } = await supabase
         .from('customer_favorites')
         .select('product_id, quantity')
@@ -253,29 +267,23 @@ export default function KusamPaymentPage() {
         };
       });
 
-      console.log('🔥 FRONTEND: About to send request');
-      console.log('🔥 Items for preference:', itemsForPreference);
-      console.log('🔥 Total amount:', calculatedTotal);
-
-      // ✅ FIX: Add the Authorization header that was missing!
+      // 3. Create MercadoPago preference via Edge Function
       const response = await fetch('https://dpbxyauaobvcdwdgzcxc.supabase.co/functions/v1/create-mercadopago-preference', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`, // ← This was missing!
+          'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
         },
         body: JSON.stringify({
+          orderId,
           items: itemsForPreference,
           totalAmount: calculatedTotal,
-          customerId: customerId,
-          customerEmail: customerEmail,
+          customerId,
+          customerEmail,
         }),
       });
 
-      console.log('🔥 FRONTEND: Response status:', response.status);
       const responseText = await response.text();
-      console.log('🔥 FRONTEND: Response:', responseText);
-
       if (!response.ok) {
         let errorData;
         try {
@@ -290,7 +298,6 @@ export default function KusamPaymentPage() {
       if (!data.preferenceId) {
         throw new Error('No preference ID received from server');
       }
-      
       setPreferenceId(data.preferenceId);
 
     } catch (err: unknown) {
