@@ -440,10 +440,12 @@ export default function KusamPaymentPage() {
                <p className="text-red-700 mb-2">{paymentError}</p>
             ) : (
                 <p className="text-gray-700 mb-2">
-                    **Banco:** Banco Kusam Mx<br/>
-                    **Cuenta CLABE:** 012345678901234567<br/>
-                    **Beneficiario:** Kusam Outdoor S.A. de C.V.<br/>
-                    **Monto:** {formatCurrency(calculatedTotal)}
+                    Banco: BANREGIO<br/>
+                    Número de Cuenta: 985957550050
+                    Clabe: 058580000151560424<br/>
+                    Beneficiario: <b style={{ fontSize: '1.25em' }}>KUSAMDECOR</b><br/>
+                    RFC: KUS160726FWA<br/>
+                    Monto: {formatCurrency(calculatedTotal)}
                 </p>
             )}
             <p className="text-sm text-gray-600 mt-4">
