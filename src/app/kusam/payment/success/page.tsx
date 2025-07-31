@@ -37,9 +37,16 @@ export default function PaymentSuccessPage() {
       setOrderError('');
       try {
         const res = await fetch(`/api/getOrder?order_id=${orderId}`);
-        if (!res.ok) throw new Error('No se pudo obtener la orden.');
         const data = await res.json();
-        if (!data.order) throw new Error('Orden no encontrada.');
+
+        if (!res.ok) {
+          setOrderError(data.error || 'No se pudo obtener la orden.');
+          return;
+        }
+        if (!data.order) {
+          setOrderError('Orden no encontrada.');
+          return;
+        }
         setOrderDetails(data.order);
       } catch (err: unknown) {
         setOrderError(
@@ -143,7 +150,7 @@ export default function PaymentSuccessPage() {
             <h3 className="font-semibold text-gray-800 mb-2">Detalles del Pago:</h3>
             {orderId && (
               <p className="text-sm text-gray-600">
-                <span className="font-medium">Order ID (UUID):</span> {orderId}
+                <span className="font-medium">Order ID (últimos 12 dígitos):</span> {orderId.slice(-12)}
               </p>
             )}
             {orderLoading && <p className="text-sm text-gray-500">Cargando detalles de la orden...</p>}
