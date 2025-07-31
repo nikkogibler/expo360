@@ -172,7 +172,7 @@ export default function PaymentSuccessPage() {
               <>
           
                 <p className="text-sm text-gray-600">
-                  <span className="font-medium">Monto Total:</span> ${orderDetails.total_amount}
+                  <span className="font-medium">Monto Total:</span> ${orderDetails.total_amount.toFixed(2)} MXN
                 </p>
               </>
             )}
