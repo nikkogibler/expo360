@@ -6,6 +6,19 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 
+function getSpanishPaymentStatus(status: string) {
+  switch (status) {
+    case 'approved':
+      return 'Aprobado';
+    case 'in_process':
+      return 'En proceso';
+    case 'rejected':
+      return 'Rechazado';
+    default:
+      return status;
+  }
+}
+
 export default function PaymentSuccessPage() {
   const searchParams = useSearchParams();
   const [paymentInfo, setPaymentInfo] = useState({
@@ -174,7 +187,7 @@ export default function PaymentSuccessPage() {
               </p>
             )}
             <p className="text-sm text-gray-600">
-              <span className="font-medium">Estado de Pago:</span> {paymentInfo.status || 'Aprobado'}
+              <span className="font-medium">Estado de Pago:</span> {getSpanishPaymentStatus(paymentInfo.status || 'approved')}
             </p>
           </div>
         )}
