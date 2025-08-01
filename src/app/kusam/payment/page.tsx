@@ -444,7 +444,7 @@ export default function KusamPaymentPage() {
                     Número de Cuenta: 985957550050<br/>
                     Clabe: 058580000151560424<br/>
                     Beneficiario: <b style={{ fontSize: '1.25em' }}>KUSAMDECOR</b><br/>
-                    Monto: {formatCurrency(calculatedTotal)} MXN<br/>
+                    Monto: {formatCurrency(calculatedTotal)}MXN<br/>
                     RFC: KUS160726FWA<br/>
                 </p>
             )}

@@ -196,9 +196,9 @@ export default function PaymentSuccessPage() {
         <div className="bg-blue-50 p-4 rounded-md mb-6 text-left">
           <h3 className="font-semibold text-blue-800 mb-2">Próximos Pasos:</h3>
           <ul className="text-sm text-blue-700 space-y-1">
-            <li>• Recibirás un correo de confirmación</li>
+            <li>• Recibirás un correo de confirmación en las próximas 72 horas</li>
             <li>• Te contactaremos para coordinar la entrega</li>
-            <li>• El tiempo de entrega es de 15-20 días hábiles</li>
+            <li>• El tiempo de entrega es de 6 a 7 semanas</li>
           </ul>
         </div>
 
