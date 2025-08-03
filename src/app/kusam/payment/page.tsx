@@ -461,9 +461,10 @@ export default function KusamPaymentPage() {
           </div>
         )}
 
-        <Link href="/kusam/cart" passHref>
-            <p className="text-center text-sm text-blue-600 hover:underline mt-6 cursor-pointer">
-                Regresar a &quot;Mis Favoritos&quot;
+        <Link href="/kusam/quote" passHref>
+            <p className="text-center text-sm text-red-600 hover:underline mt-6 cursor-pointer">
+                <b className="text-red-600">No quiero descuento. </b>
+                <b className="text-black">Dame mi cotización desglozada.</b>
             </p>
         </Link>
       </motion.div>
