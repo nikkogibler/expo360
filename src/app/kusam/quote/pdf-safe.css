@@ -1,0 +1,48 @@
+/* PDF-safe color override: all colors set to hex/rgb for html2canvas compatibility */
+.pdf-safe {
+  background: #ffffff !important;
+  color: #111111 !important;
+  border-color: #cccccc !important;
+  overflow: visible !important;
+  height: auto !important;
+  max-height: none !important;
+  min-height: 0 !important;
+}
+.pdf-safe * {
+  background: transparent !important;
+  color: #111111 !important;
+  border-color: #cccccc !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+  overflow: visible !important;
+  height: auto !important;
+  max-height: none !important;
+  min-height: 0 !important;
+}
+.pdf-safe .bg-green-50, .pdf-safe .bg-gray-50 {
+  background: #f0fdf4 !important;
+}
+.pdf-safe .text-green-900, .pdf-safe .text-green-700 {
+  color: #166534 !important;
+}
+.pdf-safe .text-gray-800, .pdf-safe .text-gray-700, .pdf-safe .text-black {
+  color: #111111 !important;
+}
+.pdf-safe .border-green-400 {
+  border-color: #4ade80 !important;
+}
+.pdf-safe .border-gray-300 {
+  border-color: #d1d5db !important;
+}
+.pdf-safe .border-black {
+  border-color: #111111 !important;
+}
+.pdf-safe button,
+.pdf-safe .rounded-lg,
+.pdf-safe .rounded-21px,
+.pdf-safe .rounded-18px {
+  background: #ffffff !important;
+  color: #111111 !important;
+  border-color: #cccccc !important;
+  box-shadow: none !important;
+}
