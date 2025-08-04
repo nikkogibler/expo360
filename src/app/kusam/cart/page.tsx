@@ -255,12 +255,14 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({ onClose, onSubmit
           Tu lista ha sido enviada a nuestros asesores.
         </p>
         <p className="text-gray-800 text-lg font-semibold mb-6">
-          Completa tu orden **HOY** <br /> y
+          Completa tu orden <b>HOY</b> <br /> y
           recibirás{' '}
           <span className="text-4xl font-extrabold text-green-700 animate-pulse drop-shadow-[0_0_16px_rgba(59,130,246,0.7)] align-middle">
             15%
           </span>{' '}
-          de descuento. Haz:
+          de descuento.
+          <br />
+          Haz:
         </p>
         <button
           onClick={handleOrderClick}
@@ -275,7 +277,6 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({ onClose, onSubmit
           CLICK AQUI
         </button>
         <p className="text-sm text-gray-500 mt-4 cursor-pointer hover:underline" onClick={onClose}>
-          O cierra esta ventana y uno de nuestros asesores te contactará.
         </p>
       </motion.div>
     </div>

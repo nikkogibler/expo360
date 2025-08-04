@@ -98,7 +98,6 @@ export default function KusamInstructionsPage() {
           </motion.button>
         </Link>
         <p className="text-xs text-gray-500 mt-3">
-          (Este botón es solo para la demo, normalmente escanearías)
         </p>
       </motion.div>
     </div>

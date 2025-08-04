@@ -109,9 +109,9 @@ const KusamLeadFormPage = () => { // Changed to const for export default as Reac
           throw new Error(`Error fetching customer data: ${fetchError.message}`);
         }
 
+
         if (existingCustomer) {
           console.log('✅ Customer found in database:', existingCustomer);
-          
           // Check if this is a fully registered customer (not just anonymous)
           const isFullyRegistered = existingCustomer.name && 
                                   existingCustomer.name !== 'Visitante Anónimo' &&
@@ -119,7 +119,6 @@ const KusamLeadFormPage = () => { // Changed to const for export default as Reac
                                   !existingCustomer.email.endsWith('@temp.com') &&
                                   existingCustomer.whatsapp &&
                                   existingCustomer.customer_type;
-          
           if (isFullyRegistered) {
             console.log('🚀 Customer is fully registered, redirecting to catalog...');
             router.push('/kusam/catalogo');
@@ -149,71 +148,11 @@ const KusamLeadFormPage = () => { // Changed to const for export default as Reac
           }
         } else {
           console.log('🆕 Customer not found, will show signup form for new customer');
-          
-          // Create a minimal customer record to reserve the ID
-          const { data: newCustomer, error: insertError } = await supabase
-            .from('customers')
-            .insert({
-              customer_id: currentCustomerId,
-              name: 'Visitante Anónimo',
-              email: `${currentCustomerId}@temp.com`,
-              phone: null,
-            })
-            .select()
-            .single();
-
-          if (insertError) {
-            console.error('❌ Error creating customer:', insertError);
-            const errorMessage = insertError.message || insertError.details || JSON.stringify(insertError);
-            
-            // If it's a duplicate key error, try to fetch the existing customer instead
-            if (insertError.code === '23505' || errorMessage.includes('duplicate') || errorMessage.includes('already exists')) {
-              console.log('🔄 Customer already exists, fetching existing record...');
-              const { data: existingCustomer, error: fetchError } = await supabase
-                .from('customers')
-                .select('*')
-                .eq('customer_id', currentCustomerId)
-                .maybeSingle();
-                
-              if (fetchError) {
-                console.error('❌ Error fetching existing customer:', fetchError);
-                throw new Error(`Error fetching existing customer: ${fetchError.message}`);
-              }
-              
-              if (existingCustomer) {
-                console.log('✅ Found existing customer:', existingCustomer);
-                
-                // Check if this duplicate customer is fully registered
-                const isFullyRegistered = existingCustomer.name && 
-                                        existingCustomer.name !== 'Visitante Anónimo' &&
-                                        existingCustomer.email && 
-                                        !existingCustomer.email.endsWith('@temp.com') &&
-                                        existingCustomer.whatsapp &&
-                                        existingCustomer.customer_type;
-                
-                if (isFullyRegistered) {
-                  console.log('🚀 Duplicate customer is fully registered, redirecting to catalog...');
-                  router.push('/kusam/catalogo');
-                  return;
-                } else {
-                  console.log('⚠️ Duplicate customer not fully registered, showing signup form...');
-                  // Pre-populate form with existing data
-                  setName(existingCustomer.name === 'Visitante Anónimo' ? '' : existingCustomer.name || '');
-                  setEmail(existingCustomer.email?.endsWith('@temp.com') ? '' : existingCustomer.email || '');
-                  setCustomerType(existingCustomer.customer_type || '');
-                }
-              }
-            } else {
-              throw new Error(`Error creating customer: ${errorMessage}`);
-            }
-          } else {
-            console.log('✅ New anonymous customer record created:', newCustomer);
-            console.log('📝 Showing signup form for new customer...');
-            // Keep form fields empty for new customer
-            setName('');
-            setEmail('');
-            setCustomerType('');
-          }
+          // Do NOT create an anonymous customer record here. Wait for form submit.
+          // Just show empty form fields.
+          setName('');
+          setEmail('');
+          setCustomerType('');
         }
 
       } catch (error) {
@@ -238,13 +177,6 @@ const KusamLeadFormPage = () => { // Changed to const for export default as Reac
       return;
     }
 
-    console.log('--- Kusam Lead Captured (DEMO) ---');
-    console.log('Nombre Completo:', name);
-    console.log('WhatsApp:', fullWhatsappNumber);
-    console.log('Email:', email);
-    console.log('Tipo de Cliente:', customerType);
-    console.log('------------------------------------');
-
     const sourceQrCode = searchParams.get('source_qr_code');
 
     if (currentCustomerId === null) {
@@ -253,44 +185,55 @@ const KusamLeadFormPage = () => { // Changed to const for export default as Reac
       return;
     }
 
-    const customerIdToUse = currentCustomerId; // Use the ID from state
+    const customerIdToUse = currentCustomerId;
+    console.log('[handleSubmit] Using customer_id:', customerIdToUse);
 
-    // Check if customer exists or insert
+    // Check if customer exists
     const { data: existingCustomerCheck, error: fetchError } = await supabase
-        .from('customers')
-        .select('customer_id')
-        .eq('customer_id', customerIdToUse)
-        .maybeSingle();
+      .from('customers')
+      .select('customer_id')
+      .eq('customer_id', customerIdToUse)
+      .maybeSingle();
 
     if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116 is 'No rows found'
-        console.error('Error checking for existing customer during submit:', fetchError);
-        alert('Hubo un error de base de datos. Por favor, intente de nuevo.');
-        return;
+      console.error('Error checking for existing customer during submit:', fetchError);
+      alert('Hubo un error de base de datos. Por favor, intente de nuevo.');
+      return;
     }
+
+
+    let customerOpResult = null;
+    let opType = '';
 
     if (existingCustomerCheck) {
       // Update existing customer
+      opType = 'update';
       const { data, error } = await supabase
         .from('customers')
         .update({
           name,
           whatsapp: fullWhatsappNumber,
           email,
-          customer_type: customerType,
-          updated_at: new Date().toISOString()
+          customer_type: customerType
         })
         .eq('customer_id', customerIdToUse)
         .select();
 
       if (error) {
-        console.error('Error updating customer:', error);
-        alert('Hubo un error al actualizar sus datos. Por favor, intente de nuevo.');
+        let errorMessage = '';
+        if (error.message) errorMessage = error.message;
+        else if (error.details) errorMessage = error.details;
+        else if (typeof error === 'object' && Object.keys(error).length > 0) errorMessage = JSON.stringify(error);
+        else errorMessage = 'Unknown error';
+        console.error('Error updating customer:', error, 'Message:', errorMessage);
+        alert('Hubo un error al actualizar sus datos. Por favor, intente de nuevo.\n' + errorMessage);
         return;
       }
-      console.log('Customer updated:', data);
-
+      console.log('Customer update result:', data);
+      customerOpResult = data;
     } else {
       // Insert new customer
+      opType = 'insert';
       const { data, error } = await supabase
         .from('customers')
         .insert({
@@ -303,21 +246,29 @@ const KusamLeadFormPage = () => { // Changed to const for export default as Reac
         .select();
 
       if (error) {
-        console.error('Error inserting new customer:', error);
-        alert('Hubo un error al registrar sus datos. Por favor, intente de nuevo.');
+        let errorMessage = '';
+        if (error.message) errorMessage = error.message;
+        else if (error.details) errorMessage = error.details;
+        else if (typeof error === 'object' && Object.keys(error).length > 0) errorMessage = JSON.stringify(error);
+        else errorMessage = 'Unknown error';
+        console.error('Error inserting new customer:', error, 'Message:', errorMessage);
+        alert('Hubo un error al registrar sus datos. Por favor, intente de nuevo.\n' + errorMessage);
         return;
       }
+      console.log('New customer inserted:', data);
+      customerOpResult = data;
+    }
 
-      const newCustomer = data[0];
-      console.log('New customer inserted:', newCustomer);
+    // Log operation type and result
+    console.log(`[handleSubmit] Customer DB op: ${opType}, Result:`, customerOpResult);
 
-      if (sourceQrCode) {
-        const { error: logError } = await supabase
-          .from('customer_qr_scans')
-          .insert({ customer_id: customerIdToUse, source_qr_code: sourceQrCode });
-        if (logError) {
-          console.error('Error logging QR scan for new customer on form submit:', logError);
-        }
+    // Log QR scan if needed
+    if (sourceQrCode) {
+      const { error: logError } = await supabase
+        .from('customer_qr_scans')
+        .insert({ customer_id: customerIdToUse, source_qr_code: sourceQrCode });
+      if (logError) {
+        console.error('Error logging QR scan for customer on form submit:', logError);
       }
     }
 
