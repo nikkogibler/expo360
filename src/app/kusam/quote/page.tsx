@@ -5,6 +5,44 @@ import jsPDF from 'jspdf';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/utils/supabase';
+
+// Log quote event to Supabase
+async function logQuoteEvent({
+  eventType,
+  customerId,
+  quoteId = null,
+  metadata = null,
+}: {
+  eventType: string;
+  customerId: string | null;
+  quoteId?: string | null;
+  metadata?: unknown;
+}) {
+  if (!customerId) return;
+  // Only allow one view_quote or print_or_download_quote event per customer
+  if (eventType === 'view_quote' || eventType === 'print_or_download_quote') {
+    const { data: existing } = await supabase
+      .from('quote_events')
+      .select('id')
+      .eq('event_type', eventType)
+      .eq('customer_id', customerId)
+      .limit(1)
+      .maybeSingle();
+    if (existing) {
+      console.log(`[logQuoteEvent] ${eventType} already logged for customer`, customerId);
+      return; // Already logged
+    }
+  }
+  console.log('[logQuoteEvent] Logging event', { eventType, customerId, quoteId, metadata });
+  await supabase.from('quote_events').insert([
+    {
+      event_type: eventType,
+      customer_id: customerId,
+      quote_id: quoteId,
+      metadata,
+    },
+  ]);
+}
 // import jsPDF or html2canvas here later for PDF export
 interface FavoriteItem {
   id: string;
@@ -51,6 +89,17 @@ export default function QuotePage() {
           setLoading(false);
           return;
         }
+        // Only log view_quote once per session
+        if (typeof window !== 'undefined') {
+          const sessionKey = `kusam_view_quote_logged_${customerId}`;
+          if (!sessionStorage.getItem(sessionKey)) {
+            await logQuoteEvent({ eventType: 'view_quote', customerId });
+            sessionStorage.setItem(sessionKey, '1');
+          } else {
+            console.log('[QuotePage] view_quote already logged this session for', customerId);
+          }
+        }
+
         // Fetch liked favorites
         const { data: favs, error: favErr } = await supabase
           .from('customer_favorites')
@@ -138,6 +187,10 @@ export default function QuotePage() {
   // PDF download logic: build PDF from data, not screenshot
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleDownloadPDF = async () => {
+
+    // Log print/download event
+    const customerId = typeof window !== 'undefined' ? localStorage.getItem('kusam_customer_id') : null;
+    logQuoteEvent({ eventType: 'print_or_download_quote', customerId });
 
     const pdf = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' });
     const pageWidth = pdf.internal.pageSize.getWidth();
@@ -477,7 +530,11 @@ export default function QuotePage() {
                   </span>
                 </div>
                 <button
-                  onClick={() => window.print()}
+                  onClick={async () => {
+                    const customerId = typeof window !== 'undefined' ? localStorage.getItem('kusam_customer_id') : null;
+                    await logQuoteEvent({ eventType: 'print_or_download_quote', customerId });
+                    window.print();
+                  }}
                   className="mt-[10px] w-full px-6 py-3 border-2 border-black text-black rounded-lg font-semibold transition-colors shadow-none bg-transparent hover:bg-gray-100"
                   style={{ background: 'none' }}
                 >

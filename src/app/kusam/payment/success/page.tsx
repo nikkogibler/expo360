@@ -6,6 +6,9 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 
+// Discreetly notify webhook on page load with customer_id
+const SUCCESS_WEBHOOK_URL = process.env.NEXT_PUBLIC_SUCCESS_WEBHOOK_URL;
+
 function getSpanishPaymentStatus(status: string) {
   switch (status) {
     case 'approved':
@@ -33,6 +36,18 @@ export default function PaymentSuccessPage() {
   // Validate if orderId is a UUID (v4)
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
   const orderId = orderIdRaw && uuidRegex.test(orderIdRaw) ? orderIdRaw : '';
+
+  // Notify webhook on page load
+  useEffect(() => {
+    const customerId = typeof window !== 'undefined' ? localStorage.getItem('kusam_customer_id') : null;
+    if (customerId && SUCCESS_WEBHOOK_URL) {
+      fetch(SUCCESS_WEBHOOK_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ customer_id: customerId })
+      }).catch(() => {}); // Fail silently
+    }
+  }, []);
 
   useEffect(() => {
     // Extract payment information from URL parameters (typical MercadoPago response)
