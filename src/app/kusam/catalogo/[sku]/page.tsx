@@ -1,10 +1,8 @@
-// This file must be named 'page.tsx' and be located inside a folder like 'src/app/kusam/catalogo/[sku]/
-// for Next.js App Router to recognize it as a dynamic route. `[sku]` will capture the SKU from the URL.
-
+// src/app/kusam/catalogo/[sku]/page.tsx
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react'; // ← REMOVE useCallback
-import { motion, AnimatePresence } from 'framer-motion'; // ← REMOVE Variants
+import React, { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { v4 as uuidv4 } from 'uuid';
@@ -22,18 +20,16 @@ const preloadImage = (src: string): Promise<void> => {
 };
 
 
-// --- MODIFIED INTERFACE: GlobalProductOption - hex_code removed, image_url added ---
 interface GlobalProductOption {
-  id: string; // UUID of the global option
-  name: string; // e.g., "Madera Clara", "Azul Cielo"
-  type: string; // e.g., "finish", "fabric_color"
-  value_data: { image_url?: string }; // Now ONLY includes image_url
+  id: string;
+  name: string;
+  type: string;
+  value_data: { image_url?: string };
   is_active: boolean;
   created_at: string;
   updated_at: string;
 }
 
-// Existing Product Interface (UPDATED to include new columns)
 interface Product {
   id: string;
   sku: string;
@@ -45,14 +41,12 @@ interface Product {
   is_active: boolean;
   created_at: string;
   updated_at: string;
-  // New columns from Supabase 'products' table
   has_fabric_colors: boolean;
-  available_fabric_colors: string[] | null; // Array of names (e.g., ["LIGHT GREY", "BLUE OCEAN"])
+  available_fabric_colors: string[] | null;
   has_frame_finish: boolean;
-  available_frame_finishes: string[] | null; // Array of names
+  available_frame_finishes: string[] | null;
 }
 
-// NEW: Interface for CustomerFavorite
 interface CustomerFavorite {
   id: string;
   customer_id: string;
@@ -67,21 +61,18 @@ interface CustomerFavorite {
   updated_at: string;
 }
 
-// Define the parameters type for your dynamic route.
 interface ProductPageParams {
-  sku: string; // Dynamic route parameter, always a string
+  sku: string;
 }
 
-// Define the actual shape of the props your component expects at runtime.
 interface ProductDetailPageProps {
-  params: Promise<ProductPageParams>; // ← This is now a Promise
+  params: Promise<ProductPageParams>;
 }
 
 const ProductDetailPage = ({ params }: ProductDetailPageProps) => {
   const router = useRouter();
   const currentSearchParams = useSearchParams();
 
-  // ✅ Use React.use() to unwrap the params Promise
   const { sku } = React.use(params);
 
   const [product, setProduct] = useState<Product | null>(null);
@@ -95,41 +86,37 @@ const ProductDetailPage = ({ params }: ProductDetailPageProps) => {
   const [selectedFabricColorId, setSelectedFabricColorId] = useState<string>('');
 
   const [quantity, setQuantity] = useState<number>(1);
-
   const [isAddingToFavorites, setIsAddingToFavorites] = useState(false);
   const [isLiked, setIsLiked] = useState<boolean | null>(null);
   const [showPopUpHeart, setShowPopUpHeart] = useState(false);
   const [customerId, setCustomerId] = useState<string | null>(null);
-
   const [editingFavoriteId, setEditingFavoriteId] = useState<string | null>(null);
 
-  // Image loading states
   const [imageLoading, setImageLoading] = useState(true);
   const [imageError, setImageError] = useState(false);
-  const [imageKey, setImageKey] = useState(0); // For forcing image reload
+  const [imageKey, setImageKey] = useState(0);
   const [retryCount, setRetryCount] = useState(0);
 
-  // --- ONE AND ONLY DECLARATION FOR PREVIEW IMAGE STATE ---
   const [previewImage, setPreviewImage] = useState<{ src: string; alt: string; x: number; y: number; isTapped: boolean } | null>(null);
-  // --- END ONE AND ONLY DECLARATION ---
-
-  // --- ONE AND ONLY DECLARATION FOR HOVER CAPABILITY STATE ---
   const [canHover, setCanHover] = useState(false);
-  // --- END ONE AND ONLY DECLARATION ---
-
-  // Ref for drag constraints (to limit dragging within a boundary)
   const dragConstraintsRef = useRef(null);
 
   useEffect(() => {
-    // Detect hover capability on mount. This useEffect runs only once on component mount.
     if (typeof window !== 'undefined') {
       setCanHover(window.matchMedia('(hover: hover) and (pointer: fine)').matches);
     }
-
+    
+    // Simplifies ID handling:
+    // 1. Get the customer ID from local storage.
+    // 2. If it doesn't exist, create a new one.
+    // The CustomerIdInitializer component handles redirecting if this ID is for an anonymous user.
     let currentCustomerId = localStorage.getItem('kusam_customer_id');
     if (!currentCustomerId) {
       currentCustomerId = uuidv4();
       localStorage.setItem('kusam_customer_id', currentCustomerId);
+      console.log('Generated new customer ID:', currentCustomerId);
+    } else {
+      console.log('Using customer ID from localStorage:', currentCustomerId);
     }
     setCustomerId(currentCustomerId);
 
@@ -148,13 +135,11 @@ const ProductDetailPage = ({ params }: ProductDetailPageProps) => {
       try {
         setLoadingProduct(true);
         setProductError(null);
-        // Reset image states when fetching new product
         setImageLoading(true);
         setImageError(false);
-        setImageKey(prev => prev + 1); // Force image reload
-        setRetryCount(0); // Reset retry count
+        setImageKey(prev => prev + 1);
+        setRetryCount(0);
 
-        // Fetch Product Data (now includes new option columns due to select('*'))
         const { data: productData, error: productFetchError } = await supabase
           .from('products')
           .select('*')
@@ -168,7 +153,6 @@ const ProductDetailPage = ({ params }: ProductDetailPageProps) => {
         if (productData) {
           setProduct(productData as Product);
 
-          // Preload the main product image
           if (productData.image_url) {
             preloadImage(productData.image_url)
               .then(() => {
@@ -179,7 +163,6 @@ const ProductDetailPage = ({ params }: ProductDetailPageProps) => {
               });
           }
 
-          // Fetch ALL relevant global options (unchanged from original code)
           const { data: globalOptionsRawData, error: globalOptionsFetchError } = await supabase
             .from('global_product_options')
             .select('*')
@@ -193,7 +176,6 @@ const ProductDetailPage = ({ params }: ProductDetailPageProps) => {
           if (globalOptionsRawData) {
             allFetchedGlobalOptions = globalOptionsRawData.map(option => ({
               ...option,
-              // --- MODIFIED: value_data parsing now expects image_url only ---
               value_data: typeof option.value_data === 'string' ?
                 JSON.parse(option.value_data) as { image_url?: string } :
                 option.value_data
@@ -203,36 +185,24 @@ const ProductDetailPage = ({ params }: ProductDetailPageProps) => {
           let filteredFrameColors: GlobalProductOption[] = [];
           let filteredFabricColors: GlobalProductOption[] = [];
 
-          // FILTER global options based on product's available options (names from productData)
           if (productData.has_fabric_colors && Array.isArray(productData.available_fabric_colors) && productData.available_fabric_colors.length > 0) {
-            // Convert product's available names to uppercase for case-insensitive matching and trim whitespace
             const productFabricNamesUpper = productData.available_fabric_colors.map((name: string) => name.trim().toUpperCase());
-
             filteredFabricColors = allFetchedGlobalOptions.filter(opt =>
               opt.type.toLowerCase() === 'fabric_color' && productFabricNamesUpper.includes(opt.name.trim().toUpperCase())
             );
           }
 
           if (productData.has_frame_finish && Array.isArray(productData.available_frame_finishes) && productData.available_frame_finishes.length > 0) {
-            // Convert product's available names to uppercase for case-insensitive matching and trim whitespace
             const productFrameNamesUpper = productData.available_frame_finishes.map((name: string) => name.trim().toUpperCase());
-
             filteredFrameColors = allFetchedGlobalOptions.filter(opt =>
               opt.type.toLowerCase() === 'finish' && productFrameNamesUpper.includes(opt.name.trim().toUpperCase())
             );
           }
 
-          // Set state with the newly filtered options
           setFrameColorOptions(filteredFrameColors);
-          setFabricColorOptions(filteredFabricColors); // Corrected: was setFabricColorOptions(filteredFrameColors);
+          setFabricColorOptions(filteredFabricColors);
 
-          // ... (Rest of your existing logic for customer_favorites and pre-loading selections) ...
-
-          // Adjust initial selection logic based on newly filtered options
           if (favoriteIdFromUrl && currentCustomerId && productData) {
-            // Your existing logic for pre-loading from favoriteIdFromUrl
-            // This part correctly sets selected IDs from the existing favorite.
-            // No change needed here.
             const { data: existingFavorite, error: favoriteError } = await supabase
               .from('customer_favorites')
               .select('*')
@@ -244,7 +214,6 @@ const ProductDetailPage = ({ params }: ProductDetailPageProps) => {
               console.error("Error al obtener el favorito existente para precargar:", favoriteError.message);
               setProductError('No se pudo cargar la selección existente. Por favor, inténtelo de nuevo.');
               setEditingFavoriteId(null);
-              // Fallback to first available option from FILTERED lists if pre-load fails
               setSelectedFrameColorId(filteredFrameColors.length > 0 ? filteredFrameColors[0].id : '');
               setSelectedFabricColorId(filteredFabricColors.length > 0 ? filteredFabricColors[0].id : '');
               setQuantity(1);
@@ -257,7 +226,6 @@ const ProductDetailPage = ({ params }: ProductDetailPageProps) => {
               console.log("Formulario precargado exitosamente para editar favorito:", existingFavorite);
             }
           } else {
-            // If not editing, set default selections to the first of the *filtered* options
             setSelectedFrameColorId(filteredFrameColors.length > 0 ? filteredFrameColors[0].id : '');
             setSelectedFabricColorId(filteredFabricColors.length > 0 ? filteredFabricColors[0].id : '');
             setQuantity(1);
@@ -281,9 +249,9 @@ const ProductDetailPage = ({ params }: ProductDetailPageProps) => {
         setLoadingProduct(false);
       }
     }
-
     fetchData();
-  }, [sku, currentSearchParams, customerId, isLiked]); // isLiked added back as dependency
+  }, [sku, currentSearchParams, isLiked]);
+
   const ensureCustomerExists = async (cId: string): Promise<string> => {
     console.log("ensureCustomerExists: Verificando/Creando cliente con ID", cId);
     if (!cId) {
@@ -291,12 +259,11 @@ const ProductDetailPage = ({ params }: ProductDetailPageProps) => {
       return "";
     }
 
-    // ✅ FIX: Use .maybeSingle() instead of .single()
     const { data: existingCustomer, error: selectError } = await supabase
       .from('customers')
       .select('customer_id')
       .eq('customer_id', cId)
-      .maybeSingle(); // ← Changed from .single() to .maybeSingle()
+      .maybeSingle();
 
     if (selectError) {
       console.error("Error al verificar cliente existente:", selectError.message);
@@ -345,30 +312,38 @@ const ProductDetailPage = ({ params }: ProductDetailPageProps) => {
     }
 
     let existingEntry: CustomerFavorite | null = null;
+    let existingLikedEntry: CustomerFavorite | null = null;
 
-    if (explicitFavId) {
-      const { data, error } = await supabase
-        .from('customer_favorites')
-        .select('*')
-        .eq('id', explicitFavId)
-        .eq('customer_id', currentCustomerId)
-        .maybeSingle<CustomerFavorite>();
-      if (error && error.code !== 'PGRST116') console.error("Error fetching explicitFavId:", error.message);
-      existingEntry = data;
-    } else {
-      const { data, error } = await supabase
+    // Check for an existing liked entry for the same product to prevent multiple likes
+    const { data: likedEntry, error: likedEntryError } = await supabase
         .from('customer_favorites')
         .select('*')
         .eq('customer_id', currentCustomerId)
         .eq('product_id', product.id)
+        .eq('is_liked', true)
         .maybeSingle<CustomerFavorite>();
-      if (error && error.code !== 'PGRST116') console.error("Error checking existing favorite for product:", error.message);
-      existingEntry = data;
+
+    if (likedEntryError && likedEntryError.code !== 'PGRST116') {
+        console.error("Error checking for existing liked entry:", likedEntryError.message);
+    }
+    existingLikedEntry = likedEntry;
+
+    // The explicitFavId is used for editing an existing entry
+    if (explicitFavId) {
+        const { data, error } = await supabase
+            .from('customer_favorites')
+            .select('*')
+            .eq('id', explicitFavId)
+            .eq('customer_id', currentCustomerId)
+            .maybeSingle<CustomerFavorite>();
+        if (error && error.code !== 'PGRST116') {
+            console.error("Error fetching explicitFavId:", error.message);
+        }
+        existingEntry = data;
     }
 
     try {
       if (isInterestedAction) {
-        // These still correctly find the selected option details from the filtered arrays
         const selectedFabricName = fabricColorOptions.find(opt => opt.id === selectedFabricColorId)?.name || null;
         const selectedFrameName = frameColorOptions.find(opt => opt.id === selectedFrameColorId)?.name || null;
 
@@ -402,16 +377,15 @@ const ProductDetailPage = ({ params }: ProductDetailPageProps) => {
           console.log('New configured favorite item registered successfully in Supabase:', data);
         }
         setIsLiked(true);
-
       } else if (isLikeAction) {
         const newLikedState = !isLiked;
 
-        if (existingEntry) {
-          console.log(`Toggling is_liked on existing entry ${existingEntry.id} to: ${newLikedState}`);
+        if (existingLikedEntry) {
+          console.log(`Toggling is_liked on existing entry ${existingLikedEntry.id} to: ${newLikedState}`);
           const { data, error } = await supabase
             .from('customer_favorites')
             .update({ is_liked: newLikedState })
-            .eq('id', existingEntry.id)
+            .eq('id', existingLikedEntry.id)
             .select();
 
           if (error) throw error;
@@ -438,7 +412,6 @@ const ProductDetailPage = ({ params }: ProductDetailPageProps) => {
       }
     } catch (error: unknown) {
       console.error('logProductFavorite: Supabase operation error:', error);
-
       if (error instanceof Error) {
         console.error('logProductFavorite: Message:', error.message);
       } else if (typeof error === 'object' && error !== null && 'message' in error) {
@@ -476,16 +449,14 @@ const ProductDetailPage = ({ params }: ProductDetailPageProps) => {
     await logProductFavorite(true, false, 1, null);
   };
 
-  // --- MODIFIED HELPER: hex_code removed ---
   const getGlobalOptionDetailsById = (id: string, options: GlobalProductOption[]) => {
     const option = options.find(opt => opt.id === id);
     return {
       name: option?.name || 'N/A',
-      image_url: option?.value_data?.image_url || null, // Only image URL
+      image_url: option?.value_data?.image_url || null,
     };
   };
 
-  // --- NEW: Quantity Increment/Decrement Handlers ---
   const handleDecrement = () => {
     setQuantity(prev => Math.max(1, prev - 1));
   };
@@ -493,69 +464,52 @@ const ProductDetailPage = ({ params }: ProductDetailPageProps) => {
   const handleIncrement = () => {
     setQuantity(prev => prev + 1);
   };
-  // --- END NEW ---
 
-  // --- ALL NEW HANDLERS AND STATE FOR IMAGE PREVIEW POPUP ---
-  // Handler for mouse entering a swatch (only active if canHover is true)
   const handleMouseEnterSwatch = (e: React.MouseEvent, imageUrl: string, imageName: string) => {
-    if (canHover) { // Only trigger on hover-capable devices
+    if (canHover) {
       setPreviewImage({ src: imageUrl, alt: imageName, x: e.clientX, y: e.clientY, isTapped: false });
     }
   };
 
-  // Handler for mouse leaving a swatch (only dismisses if it's a hover-triggered preview)
   const handleMouseLeaveSwatch = () => {
-    // Only dismiss hover-triggered previews. If it's a tapped preview, it stays until tapped again.
     if (canHover && previewImage && !previewImage.isTapped) {
       setPreviewImage(null);
     }
   };
 
-  // Handler for mouse moving over a swatch (only updates position for hover-triggered previews)
   const handleMouseMoveSwatch = (e: React.MouseEvent) => {
-    // Only update position for hover-triggered previews and if canHover
     if (canHover && previewImage && !previewImage.isTapped) {
       setPreviewImage(prev => prev ? { ...prev, x: e.clientX + 15, y: e.clientY + 15 } : null);
     }
   };
 
-  // Handler to dismiss the preview (used by tapping the preview itself)
   const handlePreviewDismiss = () => {
-    setPreviewImage(null); // Dismiss the preview
+    setPreviewImage(null);
   };
 
-  // Main handler for clicking/tapping a swatch
   const handleSwatchSelection = (optionId: string, imageUrl: string | undefined, optionName: string, type: 'fabric' | 'frame') => {
-    // First, set the selected color/finish regardless of image or device type
     if (type === 'fabric') {
       setSelectedFabricColorId(optionId);
-    } else { // type === 'frame'
+    } else {
       setSelectedFrameColorId(optionId);
     }
 
-    // Now, handle the preview logic
     if (imageUrl) {
       if (previewImage && previewImage.src === imageUrl && previewImage.isTapped) {
-        // If the same tapped image is already showing, dismiss it
         setPreviewImage(null);
       } else {
-        // Show a new tap-triggered preview (centered for mobile)
         setPreviewImage({
           src: imageUrl,
           alt: optionName,
-          // Position centrally for tap, covering the screen (or specific area)
-          x: window.innerWidth / 2, // Use window dimensions for centering
-          y: window.innerHeight / 2, // Use window dimensions for centering
-          isTapped: true // Mark as tapped
+          x: window.innerWidth / 2,
+          y: window.innerHeight / 2,
+          isTapped: true
         });
       }
     } else {
-      // If the swatch has no image_url, ensure any preview is dismissed when selecting it
       setPreviewImage(null);
     }
   };
-  // --- END ALL NEW HANDLERS AND STATE FOR IMAGE PREVIEW POPUP ---
-
 
   if (loadingProduct) {
     return (
@@ -593,11 +547,8 @@ const ProductDetailPage = ({ params }: ProductDetailPageProps) => {
         backgroundSize: 'auto'
       }}
     >
-      {/* Container for drag constraints (to limit popup dragging) */}
-      {/* It's good to have this as a parent for the whole view or a relevant section */}
       <div ref={dragConstraintsRef} className="fixed inset-0 z-40 pointer-events-none" />
 
-         {/* Kusam Logo */}
       <div className="mb-6">
         <Image
           src="/kusam_main.webp"
@@ -609,11 +560,8 @@ const ProductDetailPage = ({ params }: ProductDetailPageProps) => {
         />
       </div>
 
-
-      {/* Product Image Section And stuff */}
       <div className="w-full max-w-sm bg-white rounded-lg shadow-lg overflow-hidden mb-6">
         <div className="relative w-full pt-[177.77%] bg-white">
-          {/* Loading spinner */}
           {imageLoading && (
             <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
               <div className="flex flex-col items-center space-y-3">
@@ -622,8 +570,6 @@ const ProductDetailPage = ({ params }: ProductDetailPageProps) => {
               </div>
             </div>
           )}
-          
-          {/* Error state */}
           {imageError && (
             <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-100 text-gray-600">
               <svg className="w-16 h-16 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -639,8 +585,8 @@ const ProductDetailPage = ({ params }: ProductDetailPageProps) => {
                 onClick={() => {
                   setImageError(false);
                   setImageLoading(true);
-                  setImageKey(prev => prev + 1); // Force reload with new key
-                  setRetryCount(0); // Reset manual retry
+                  setImageKey(prev => prev + 1);
+                  setRetryCount(0);
                 }}
                 className="mt-2 px-3 py-1 bg-gray-600 text-white text-xs rounded hover:bg-gray-700"
               >
@@ -648,9 +594,8 @@ const ProductDetailPage = ({ params }: ProductDetailPageProps) => {
               </button>
             </div>
           )}
-          
           <Image
-            key={`product-image-${imageKey}`} // Force re-render when key changes
+            key={`product-image-${imageKey}`}
             src={product.image_url}
             alt={product.name}
             fill
@@ -671,10 +616,8 @@ const ProductDetailPage = ({ params }: ProductDetailPageProps) => {
               console.error('Error details:', e);
               setImageLoading(false);
               setImageError(true);
-              
-              // Auto-retry up to 2 times with exponential backoff
               if (retryCount < 2) {
-                const retryDelay = Math.pow(2, retryCount) * 1000; // 1s, 2s
+                const retryDelay = Math.pow(2, retryCount) * 1000;
                 console.log(`Auto-retrying image load in ${retryDelay}ms (attempt ${retryCount + 1}/2)`);
                 setTimeout(() => {
                   setRetryCount(prev => prev + 1);
@@ -710,7 +653,6 @@ const ProductDetailPage = ({ params }: ProductDetailPageProps) => {
             </button>
           )}
 
-
           <AnimatePresence>
             {showPopUpHeart && (
               <motion.div
@@ -738,14 +680,12 @@ const ProductDetailPage = ({ params }: ProductDetailPageProps) => {
         </div>
       </div>
 
-      {/* Product Details Section */}
       <div 
         className="w-full max-w-sm rounded-lg shadow-xl p-6 relative"
         style={{
           backgroundColor: 'rgba(255, 255, 255, 0.85)',
         }}
       >
-        {/* Vine background layer */}
         <div 
           className="absolute inset-0 rounded-lg opacity-30"
           style={{
@@ -758,21 +698,20 @@ const ProductDetailPage = ({ params }: ProductDetailPageProps) => {
         <h1
           className="text-3xl font-extrabold mb-2 text-center"
           style={{
-            backgroundImage: `url('/wood/var3.png')`, // Uses your wood image
-            backgroundSize: 'cover', // Ensures the image covers the text area
-            backgroundRepeat: 'no-repeat', // Prevents the image from repeating
-            backgroundPosition: 'center', // Centers the image within the text
-            WebkitBackgroundClip: 'text', // Clips the background to the text shape for Webkit browsers
-            backgroundClip: 'text', // Standard property for clipping background to text
-            color: 'transparent', // Makes the text itself transparent so the background image shows through
-            WebkitTextFillColor: 'transparent', // For older Webkit browsers to make text transparent
+            backgroundImage: `url('/wood/var3.png')`,
+            backgroundSize: 'cover',
+            backgroundRepeat: 'no-repeat',
+            backgroundPosition: 'center',
+            WebkitBackgroundClip: 'text',
+            backgroundClip: 'text',
+            color: 'transparent',
+            WebkitTextFillColor: 'transparent',
           }}
         >
           {product.name}
         </h1>
 
 <p className="text-lg font-semibold text-gray-700 mb-4 text-center">
-  {/* Format the number with a comma and two decimal places */}
   ${new Intl.NumberFormat('es-MX', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
@@ -783,7 +722,6 @@ const ProductDetailPage = ({ params }: ProductDetailPageProps) => {
           {product.description}
         </p>
 
-        {/* Customization Options: Fabric Colors */}
         {fabricColorOptions.length > 0 && (
           <div className="mb-6">
             <h2 className="text-lg font-semibold text-gray-700 mb-3">Colores de Tela</h2>
@@ -829,7 +767,6 @@ const ProductDetailPage = ({ params }: ProductDetailPageProps) => {
           </div>
         )}
 
-        {/* Customization Options: Frame Colors */}
         {frameColorOptions.length > 0 && (
           <div className="mb-8">
             <h2 className="text-lg font-semibold text-gray-700 mb-3">Colores de Estructura</h2>
@@ -875,7 +812,6 @@ const ProductDetailPage = ({ params }: ProductDetailPageProps) => {
           </div>
         )}
 
-        {/* Quantity Selector with + and - buttons */}
         <div className="mb-8">
           <h2 className="text-lg font-semibold text-gray-700 mb-3 text-center">Cantidad</h2>
           <div className="flex items-center justify-center space-x-3">
@@ -883,7 +819,7 @@ const ProductDetailPage = ({ params }: ProductDetailPageProps) => {
               onClick={handleDecrement}
               className="bg-gray-200 text-gray-700 w-12 h-12 rounded-full flex items-center justify-center text-2xl font-bold hover:bg-gray-300 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-gray-400"
               aria-label="Disminuir cantidad"
-              disabled={quantity <= 1} // Disable if quantity is 1
+              disabled={quantity <= 1}
             >
               -
             </button>
@@ -905,7 +841,6 @@ const ProductDetailPage = ({ params }: ProductDetailPageProps) => {
           </div>
         </div>
 
-        {/* "I'm Interested" / "Update Selection" Button */}
         <motion.button
           onClick={handleImInterested}
           whileTap={{ scale: 0.98 }}
@@ -920,7 +855,7 @@ const ProductDetailPage = ({ params }: ProductDetailPageProps) => {
             backgroundSize: 'cover',
             backgroundRepeat: 'no-repeat',
             backgroundPosition: 'center',
-            backgroundColor: '#6b7280', // Fallback or base color
+            backgroundColor: '#6b7280',
           }}
           disabled={isAddingToFavorites}
         >
@@ -932,11 +867,8 @@ const ProductDetailPage = ({ params }: ProductDetailPageProps) => {
         </motion.button>
       </div>
 
-      {/* Enhanced Navigation Section - Uniform mobile-optimized design */}
       <div className="mt-8 w-full max-w-sm">
-        {/* All three buttons on same line, uniform size */}
         <div className="grid grid-cols-3 gap-3">
-          {/* Catalog Button - Brown outline */}
           <button
             onClick={() => router.push('/kusam/catalogo')}
             className="py-3 px-2 bg-white border-2 border-amber-700 text-amber-700 rounded-lg font-medium text-xs shadow-sm hover:bg-amber-50 transition-all duration-200 flex flex-col items-center justify-center gap-1"
@@ -947,18 +879,16 @@ const ProductDetailPage = ({ params }: ProductDetailPageProps) => {
             <span>Catálogo</span>
           </button>
 
-          {/* Favorites Button */}
           <button
             onClick={() => router.push('/kusam/cart')}
             className="py-3 px-2 bg-white border-2 border-green-500 text-green-600 rounded-lg font-medium text-xs shadow-sm hover:bg-green-50 transition-all duration-200 flex flex-col items-center justify-center gap-1"
           >
             <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.51-2.54 5.57-8.16 11.17L12 21.35z" />
             </svg>
             <span>Favoritos</span>
           </button>
           
-          {/* Home Button */}
           <button
             onClick={() => router.push('/kusam')}
             className="py-3 px-2 bg-white border-2 border-gray-300 text-gray-600 rounded-lg font-medium text-xs shadow-sm hover:bg-gray-50 transition-all duration-200 flex flex-col items-center justify-center gap-1"
@@ -970,12 +900,11 @@ const ProductDetailPage = ({ params }: ProductDetailPageProps) => {
           </button>
         </div>
 
-        {/* Status indicator - Clean and minimal */}
         {editingFavoriteId && (
           <div className="mt-4 text-center">
             <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
               <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clipRule="evenodd" />
+                <path fillRule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379-1.561-2.6-2.978-2.106a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clipRule="evenodd" />
               </svg>
               Editando selección
             </span>
@@ -983,12 +912,10 @@ const ProductDetailPage = ({ params }: ProductDetailPageProps) => {
         )}
       </div>
 
-      {/* Simple breadcrumb - More minimal */}
       <div className="mt-6 text-center text-sm text-gray-500 max-w-sm px-4">
         <span className="font-medium text-gray-700">{product.name}</span>
       </div>
 
-      {/* --- IMAGE PREVIEW POPUP (RENDERED CONDITIONALLY) --- */}
       <AnimatePresence>
         {previewImage && (
           <motion.div
@@ -996,20 +923,18 @@ const ProductDetailPage = ({ params }: ProductDetailPageProps) => {
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.8 }}
             transition={{ duration: 0.2 }}
-            onClick={handlePreviewDismiss} // Tap to dismiss
-            // Make draggable only on desktop (canHover)
-            drag={canHover} // Only allow drag if device supports hover
-            dragConstraints={dragConstraintsRef} // Confine dragging to the full screen
-            dragElastic={0.1} // Little bounce
+            onClick={handlePreviewDismiss}
+            drag={canHover}
+            dragConstraints={dragConstraintsRef}
+            dragElastic={0.1}
             dragTransition={{ bounceStiffness: 100, bounceDamping: 10 }}
             className="fixed z-50 p-2 bg-white rounded-lg shadow-xl border border-gray-200 cursor-pointer"
             style={{
-              // Adjust positioning based on whether it's a tap or hover
               left: previewImage.isTapped ? '50%' : previewImage.x,
               top: previewImage.isTapped ? '50%' : previewImage.y,
               transform: previewImage.isTapped ? 'translate(-50%, -50%)' : 'translate(15px, 15px)',
-              width: previewImage.isTapped ? '133px' : '80px', // 2/3 of 200px and 120px
-              height: previewImage.isTapped ? '133px' : '80px', // 2/3 of 200px and 120px
+              width: previewImage.isTapped ? '133px' : '80px',
+              height: previewImage.isTapped ? '133px' : '80px',
             }}
           >
             <Image
@@ -1017,7 +942,7 @@ const ProductDetailPage = ({ params }: ProductDetailPageProps) => {
               alt={previewImage.alt}
               fill
               style={{ objectFit: 'cover' }}
-              className="rounded-md" // Slightly rounded corners for the preview
+              className="rounded-md"
               sizes="200px"
               onError={() => {
                 console.error('Failed to load preview image:', previewImage.src);
@@ -1026,8 +951,6 @@ const ProductDetailPage = ({ params }: ProductDetailPageProps) => {
           </motion.div>
         )}
       </AnimatePresence>
-      {/* --- END IMAGE PREVIEW POPUP --- */}
-
     </motion.div>
   );
 };

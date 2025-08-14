@@ -1,20 +1,18 @@
 // src/app/kusam/page.tsx (KusamLeadFormPage)
-'use client'; // This component uses client-side interactivity
+'use client';
 
 import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
-import { v4 as uuidv4 } from 'uuid'; // Keep uuidv4 here!
+import { v4 as uuidv4 } from 'uuid';
 import type { Variants } from 'framer-motion';
 
 import { supabase } from '../../utils/supabase';
 
-// Helper function to convert ISO country code to flag emoji
 const getFlagEmoji = (countryCode: string) => {
-  if (countryCode === 'OT') return '🌐'; // Use a globe emoji for "Otro"
-  if (!countryCode) return ''; // Handle empty code
-
+  if (countryCode === 'OT') return '🌐';
+  if (!countryCode) return '';
   const codePoints = countryCode
     .toUpperCase()
     .split('')
@@ -25,11 +23,10 @@ const getFlagEmoji = (countryCode: string) => {
 interface CountryCode {
   name: string;
   dial_code: string;
-  code: string; // ISO 2-letter code
-  emoji?: string; // Optional: to store the pre-computed emoji for performance
+  code: string;
+  emoji?: string;
 }
 
-// Expanded list of country codes with associated emoji
 const countryCodes: CountryCode[] = [
   { name: 'México', dial_code: '+52', code: 'MX' },
   { name: 'Estados Unidos', dial_code: '+1', code: 'US' },
@@ -40,32 +37,30 @@ const countryCodes: CountryCode[] = [
   { name: 'Brasil', dial_code: '+55', code: 'BR' },
   { name: 'Chile', dial_code: '+56', code: 'CL' },
   { name: 'Perú', dial_code: '+51', code: 'PE' },
-  // Add more as needed
   { name: 'Otro', dial_code: '', code: 'OT' }
 ];
 
-// Pre-compute emojis for constant `countryCodes` array
 countryCodes.forEach(country => {
   country.emoji = getFlagEmoji(country.code);
 });
 
-
-const KusamLeadFormPage = () => { // Changed to const for export default as React.FC<any>
+const KusamLeadFormPage = () => {
   const [name, setName] = useState('');
   const [localWhatsapp, setLocalWhatsapp] = useState('');
-  const [selectedCountry, setSelectedCountry] = useState<CountryCode>(countryCodes[0]); // Default to Mexico
+  const [selectedCountry, setSelectedCountry] = useState<CountryCode>(countryCodes[0]);
   const [email, setEmail] = useState('');
   const [customerType, setCustomerType] = useState('');
   const [currentCustomerId, setCurrentCustomerId] = useState<string | null>(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [isLoadingCustomerStatus, setIsLoadingCustomerStatus] = useState(true); // NEW: Loading state for customer check
+  const [isLoadingCustomerStatus, setIsLoadingCustomerStatus] = useState(true);
 
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const dropdownRef = useRef<HTMLDivElement>(null);
+  
+  const redirectFrom = searchParams.get('redirect_from');
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -79,14 +74,12 @@ const KusamLeadFormPage = () => { // Changed to const for export default as Reac
   }, [dropdownRef]);
 
   useEffect(() => {
-    // Remove unused variables and simplify
     const initializeCustomer = async () => {
       console.log('🔍 Initializing customer...');
       
       let currentCustomerId = localStorage.getItem('kusam_customer_id');
       
       if (!currentCustomerId) {
-        // Generate new customer ID if none exists
         currentCustomerId = uuidv4();
         localStorage.setItem('kusam_customer_id', currentCustomerId);
         console.log('🆕 Generated new customer ID:', currentCustomerId);
@@ -97,7 +90,6 @@ const KusamLeadFormPage = () => { // Changed to const for export default as Reac
       try {
         console.log('🔍 Checking if customer exists in database:', currentCustomerId);
         
-        // ✅ FIX: Use .maybeSingle() instead of .single() to handle multiple/no results gracefully
         const { data: existingCustomer, error: fetchError } = await supabase
           .from('customers')
           .select('*')
@@ -109,23 +101,25 @@ const KusamLeadFormPage = () => { // Changed to const for export default as Reac
           throw new Error(`Error fetching customer data: ${fetchError.message}`);
         }
 
-
         if (existingCustomer) {
           console.log('✅ Customer found in database:', existingCustomer);
-          // Check if this is a fully registered customer (not just anonymous)
           const isFullyRegistered = existingCustomer.name && 
                                   existingCustomer.name !== 'Visitante Anónimo' &&
                                   existingCustomer.email && 
                                   !existingCustomer.email.endsWith('@temp.com') &&
                                   existingCustomer.whatsapp &&
                                   existingCustomer.customer_type;
+
           if (isFullyRegistered) {
             console.log('🚀 Customer is fully registered, redirecting to catalog...');
-            router.push('/kusam/catalogo');
-            return; // Exit early, don't continue with form setup
+            // Redirect to the original page if they were redirected from it, otherwise go to the catalog.
+            const redirectParams = new URLSearchParams(searchParams.toString());
+            redirectParams.delete('redirect_from');
+            const newRedirectPath = redirectFrom ? `${redirectFrom}?${redirectParams.toString()}` : '/kusam/catalogo';
+            router.push(newRedirectPath);
+            return;
           } else {
             console.log('⚠️ Customer exists but not fully registered, showing signup form...');
-            // Pre-populate form with existing data
             setName(existingCustomer.name === 'Visitante Anónimo' ? '' : existingCustomer.name || '');
             setEmail(existingCustomer.email?.endsWith('@temp.com') ? '' : existingCustomer.email || '');
             setCustomerType(existingCustomer.customer_type || '');
@@ -148,24 +142,18 @@ const KusamLeadFormPage = () => { // Changed to const for export default as Reac
           }
         } else {
           console.log('🆕 Customer not found, will show signup form for new customer');
-          // Do NOT create an anonymous customer record here. Wait for form submit.
-          // Just show empty form fields.
           setName('');
           setEmail('');
           setCustomerType('');
         }
-
       } catch (error) {
         console.error('❌ Customer initialization failed:', error);
-        // Don't throw here - just log the error and continue
-        // The app should still work even if customer data fails
       }
-
-      setIsLoadingCustomerStatus(false); // End loading
+      setIsLoadingCustomerStatus(false);
     };
 
     initializeCustomer();
-  }, [pathname, router, searchParams]); // Depend on relevant states/props
+  }, [pathname, router, searchParams, redirectFrom]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -188,25 +176,22 @@ const KusamLeadFormPage = () => { // Changed to const for export default as Reac
     const customerIdToUse = currentCustomerId;
     console.log('[handleSubmit] Using customer_id:', customerIdToUse);
 
-    // Check if customer exists
     const { data: existingCustomerCheck, error: fetchError } = await supabase
       .from('customers')
       .select('customer_id')
       .eq('customer_id', customerIdToUse)
       .maybeSingle();
 
-    if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116 is 'No rows found'
+    if (fetchError && fetchError.code !== 'PGRST116') {
       console.error('Error checking for existing customer during submit:', fetchError);
       alert('Hubo un error de base de datos. Por favor, intente de nuevo.');
       return;
     }
 
-
     let customerOpResult = null;
     let opType = '';
 
     if (existingCustomerCheck) {
-      // Update existing customer
       opType = 'update';
       const { data, error } = await supabase
         .from('customers')
@@ -232,7 +217,6 @@ const KusamLeadFormPage = () => { // Changed to const for export default as Reac
       console.log('Customer update result:', data);
       customerOpResult = data;
     } else {
-      // Insert new customer
       opType = 'insert';
       const { data, error } = await supabase
         .from('customers')
@@ -259,10 +243,8 @@ const KusamLeadFormPage = () => { // Changed to const for export default as Reac
       customerOpResult = data;
     }
 
-    // Log operation type and result
     console.log(`[handleSubmit] Customer DB op: ${opType}, Result:`, customerOpResult);
 
-    // Log QR scan if needed
     if (sourceQrCode) {
       const { error: logError } = await supabase
         .from('customer_qr_scans')
@@ -272,11 +254,13 @@ const KusamLeadFormPage = () => { // Changed to const for export default as Reac
       }
     }
 
-    // Redirect to instructions page after successful form submission (signup or update)
-    router.push(`/kusam/instructions?customer_id=${customerIdToUse}`);
+    // Redirect to the original destination if it exists, otherwise to instructions.
+    const redirectParams = new URLSearchParams(searchParams.toString());
+    redirectParams.delete('redirect_from');
+    const newRedirectPath = redirectFrom ? `${redirectFrom}?${redirectParams.toString()}` : `/kusam/instructions?customer_id=${customerIdToUse}`;
+    router.push(newRedirectPath);
   };
 
-  // NEW: Render loading state based on isLoadingCustomerStatus
   if (isLoadingCustomerStatus) {
     return (
       <div className="relative min-h-screen flex items-center justify-center p-4 bg-white">
@@ -302,14 +286,13 @@ const KusamLeadFormPage = () => { // Changed to const for export default as Reac
     );
   }
 
-  // --- Framer Motion Variants ---
   const containerVariants: Variants = {
     hidden: { opacity: 0, y: 50 },
     visible: {
       opacity: 1,
       y: 0,
       transition: {
-        type: "spring", // Removed 'as const' as it's not needed for string literal types
+        type: "spring",
         stiffness: 100,
         damping: 10,
         delay: 0.2
@@ -385,20 +368,18 @@ const KusamLeadFormPage = () => { // Changed to const for export default as Reac
           <div>
             <label htmlFor="whatsapp" className="block text-sm font-medium text-gray-700">WhatsApp</label>
             <div className="relative mt-1 flex rounded-md shadow-sm" ref={dropdownRef}>
-              {/* Flag and Dial Code Display */}
               <button
                 type="button"
                 className="relative z-10 inline-flex items-center space-x-2 px-3 py-2 border border-r-0 border-gray-300 rounded-l-md bg-gray-50 text-gray-900 text-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
               >
-                <span className="text-xl leading-none">{selectedCountry.emoji}</span> {/* Flag Emoji */}
+                <span className="text-xl leading-none">{selectedCountry.emoji}</span>
                 <span className="hidden sm:inline">{selectedCountry.dial_code}</span>
                 <svg className="-mr-1 h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                   <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.25 4.25a.75.75 0 01-1.06 0L5.23 8.29a.75.75 0 01.02-1.06z" clipRule="evenodd" />
                 </svg>
               </button>
 
-              {/* Country Dropdown (Hidden by default) */}
               {isDropdownOpen && (
                 <div className="absolute left-0 mt-12 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-20 max-h-60 overflow-y-auto">
                   <div className="py-1" role="menu" aria-orientation="vertical" aria-labelledby="country-select-button">
@@ -411,14 +392,14 @@ const KusamLeadFormPage = () => { // Changed to const for export default as Reac
                         onClick={(e) => {
                           e.preventDefault();
                           setSelectedCountry(country);
-                          if (country.dial_code === '') { // If "Otro" is selected
-                            setLocalWhatsapp(''); // Clear local, user manually enters full number
+                          if (country.dial_code === '') {
+                            setLocalWhatsapp('');
                           }
                           setIsDropdownOpen(false);
                         }}
                       >
 
-                        <span className="mr-2 text-lg leading-none">{country.emoji}</span> {/* Flag Emoji */}
+                        <span className="mr-2 text-lg leading-none">{country.emoji}</span>
                         {country.name} ({country.dial_code})
                       </a>
                     ))}
@@ -426,7 +407,6 @@ const KusamLeadFormPage = () => { // Changed to const for export default as Reac
                 </div>
               )}
 
-              {/* Local WhatsApp Number Input */}
               <input
                 type="tel"
                 id="localWhatsapp"
@@ -503,5 +483,4 @@ const KusamLeadFormPage = () => { // Changed to const for export default as Reac
     );
   }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export default KusamLeadFormPage as React.FunctionComponent<any>;
+export default KusamLeadFormPage;
