@@ -19,9 +19,10 @@ export default function CustomerIdInitializer() {
     hasCheckedStatus.current = true;
 
     const checkCustomerStatusAndRedirect = async () => {
-      // If we're already on the landing page, we don't need to check anything.
-      if (pathname === '/kusam') {
-        console.log('On landing page, no redirection needed.');
+      // If we're already on any event landing page, we don't need to check anything.
+      const eventLandingPages = ['/kusam', '/saltillo', '/vasconcelos'];
+      if (eventLandingPages.includes(pathname)) {
+        console.log('On event landing page, no redirection needed.');
         return;
       }
 
@@ -30,8 +31,11 @@ export default function CustomerIdInitializer() {
       // Case 1: No customer ID exists in local storage.
       if (!customerId) {
         console.log('No customer ID found, redirecting to landing page.');
-        // This will redirect to the sign-up form and save the original URL in the query.
-        const redirectPath = `/kusam?redirect_from=${encodeURIComponent(pathname)}&${searchParams.toString()}`;
+        // Redirect to the correct event landing page
+        let eventLanding = '/kusam';
+        if (pathname.startsWith('/saltillo')) eventLanding = '/saltillo';
+        else if (pathname.startsWith('/vasconcelos')) eventLanding = '/vasconcelos';
+        const redirectPath = `${eventLanding}?redirect_from=${encodeURIComponent(pathname)}&${searchParams.toString()}`;
         router.push(redirectPath);
         return;
       }
@@ -54,8 +58,10 @@ export default function CustomerIdInitializer() {
       // If the user has a customer ID but is still considered anonymous, redirect them.
       if (isAnonymous) {
         console.log('Customer is anonymous, redirecting to landing page for signup.');
-        // This preserves the product page link so they can be sent back there later.
-        const redirectPath = `/kusam?redirect_from=${encodeURIComponent(pathname)}&${searchParams.toString()}`;
+        let eventLanding = '/kusam';
+        if (pathname.startsWith('/saltillo')) eventLanding = '/saltillo';
+        else if (pathname.startsWith('/vasconcelos')) eventLanding = '/vasconcelos';
+        const redirectPath = `${eventLanding}?redirect_from=${encodeURIComponent(pathname)}&${searchParams.toString()}`;
         router.push(redirectPath);
       }
     };
