@@ -43,9 +43,9 @@ const cardData: BentoCardProps[] = [
   {
     color: '#F8F5F0',
     backgroundImage: 'url(/admin/customers.png)',
-    // title: 'Agregar Clientes',
+    // title: 'Agregar Clientes +',
     description: 'Registrar nuevos clientes desde el formulario de administración.',
-    label: 'Agregar Clientes'
+    label: 'Agregar Clientes +'
   },
   {
     color: '#F8F5F0',
@@ -685,7 +685,7 @@ const MagicBento: React.FC<BentoProps> = ({
         />
       )}
       <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ height: '80px', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: '2rem', marginBottom: '2rem' }}>
+        <div style={{ height: '80px', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: '2.5rem', marginBottom: '2rem' }}>
           <Image
             src="/kusam_main.webp"
             alt="Kusam Logo"
