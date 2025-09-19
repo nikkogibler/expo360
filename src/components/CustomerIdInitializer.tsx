@@ -19,10 +19,11 @@ export default function CustomerIdInitializer() {
     hasCheckedStatus.current = true;
 
     const checkCustomerStatusAndRedirect = async () => {
-      // If we're already on any event landing page, we don't need to check anything.
+      // If we're on any event landing page or admin, we don't need to check anything.
       const eventLandingPages = ['/kusam', '/saltillo', '/vasconcelos'];
-      if (eventLandingPages.includes(pathname)) {
-        console.log('On event landing page, no redirection needed.');
+      const isAdminPage = pathname.startsWith('/admin');
+      if (eventLandingPages.includes(pathname) || isAdminPage) {
+        console.log('On event landing or admin page, no redirection needed.');
         return;
       }
 
