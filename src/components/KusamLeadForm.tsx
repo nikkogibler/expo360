@@ -166,10 +166,11 @@ const KusamLeadForm = ({ variant = 'kusam' }: KusamLeadFormProps) => {
 			alert('Hubo un error de base de datos. Por favor, intente de nuevo.');
 			return;
 		}
-		// Removed unused variable declarations
+		let customerOpResult = null;
+		let opType = '';
 		if (existingCustomerCheck) {
-			// Removed unused variable assignment
-			const { error } = await supabase
+			opType = 'update';
+			const { data, error } = await supabase
 				.from('customers')
 				.update({
 					name,
@@ -183,10 +184,10 @@ const KusamLeadForm = ({ variant = 'kusam' }: KusamLeadFormProps) => {
 				alert('Hubo un error al actualizar sus datos. Por favor, intente de nuevo.');
 				return;
 			}
-			// Removed unused variable assignment
+			customerOpResult = data;
 		} else {
-			// Removed unused variable assignment
-			const { error } = await supabase
+			opType = 'insert';
+			const { data, error } = await supabase
 				.from('customers')
 				.insert({
 					customer_id: customerIdToUse,
@@ -200,7 +201,7 @@ const KusamLeadForm = ({ variant = 'kusam' }: KusamLeadFormProps) => {
 				alert('Hubo un error al registrar sus datos. Por favor, intente de nuevo.');
 				return;
 			}
-			// Removed unused variable assignment
+			customerOpResult = data;
 		}
 		if (sourceQrCode) {
 			await supabase
