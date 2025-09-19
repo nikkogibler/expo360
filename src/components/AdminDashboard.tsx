@@ -33,40 +33,39 @@ const MOBILE_BREAKPOINT = 768;
 const cardData: BentoCardProps[] = [
   {
     color: '#F8F5F0',
-    title: 'Reportes y KPIs',
+    // title: 'Reportes y KPIs',
     description: 'Ver ventas, desempeño y métricas clave en tiempo real.',
-    label: 'Analítica'
+    label: 'Analítica y Reportes'
   },
   {
     color: '#F8F5F0',
-    title: 'Agregar Cliente Nuevo',
     description: 'Registrar nuevos clientes desde el formulario de administración.',
-    label: 'Clientes'
+    label: 'Agregar Clientes'
   },
   {
     color: '#F8F5F0',
-    title: 'Catálogo de Productos',
+    // title: 'Catálogo de Productos',
     description: 'Explorar y gestionar el catálogo completo de Kusam.',
-    label: 'Catálogo'
+    label: 'Catálogo de Productos'
   },
   {
     color: '#F8F5F0',
-    title: 'Base de Datos Airtable',
+    // title: 'Base de Datos Airtable',
     description: 'Acceder y actualizar la base de datos de Kusam en Airtable.',
-    label: 'Airtable'
+    label: 'Base de Datos Airtable'
   },
   {
     color: '#F8F5F0',
-    title: 'Colaboración del Equipo',
-    description: 'Coordinar tareas y compartir actualizaciones con el equipo Kusam.',
-    label: 'Equipo'
+    // title: 'Colaboración del Equipo',
+    description: 'Asignar tareas y compartir actualizaciones con el equipo Kusam. Calendario, Tareas, Chat.',
+    label: 'Equipo Kusam'
   },
 
   {
     color: '#F8F5F0',
-    title: 'Soporte y Ayuda',
+   //  title: 'Soporte y Ayuda',
     description: 'Contactar soporte, ver preguntas frecuentes y tutoriales.',
-    label: 'Soporte'
+    label: 'Soporte Interzekt'
   },
 
 ];
@@ -682,7 +681,7 @@ const MagicBento: React.FC<BentoProps> = ({
           <img
             src="/kusam_main.webp"
             alt="Kusam Logo"
-            style={{ height: '100px', objectFit: 'contain', maxWidth: '320px', width: 'auto', display: 'block', margin: '2rem auto 1rem auto' }}
+            style={{ height: '100px', objectFit: 'contain', maxWidth: '320px', width: 'auto', display: 'block', margin: '3.5rem auto 1.5rem auto' }}
           />
         </div>
         <div style={{ flex: 1, width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
@@ -852,8 +851,25 @@ const MagicBento: React.FC<BentoProps> = ({
                     el.addEventListener('click', handleClick);
                   }}
                 >
-                  <div className="card__header flex justify-between gap-3 relative text-brown">
-                    <span className="card__label text-base" style={{ color: '#4B2E09', fontWeight: 'bold' }}>{card.label}</span>
+                  <div className="card__header flex justify-between gap-3 relative">
+                    {card.label === 'Soporte Interzekt' ? (
+                      <span className="card__label text-base" style={{ fontWeight: 'bold' }}>
+                        Soporte{' '}
+                        <span style={{
+                          background: 'linear-gradient(90deg, #8B5CF6, #2563EB, #EC4899)',
+                          WebkitBackgroundClip: 'text',
+                          WebkitTextFillColor: 'transparent',
+                          backgroundClip: 'text',
+                          color: 'transparent',
+                          fontWeight: 'bold',
+                          display: 'inline-block',
+                          position: 'relative',
+                          zIndex: 2
+                        }}>Interzekt</span>
+                      </span>
+                    ) : (
+                      <span className="card__label text-base" style={{ color: '#4B2E09', fontWeight: 'bold' }}>{card.label}</span>
+                    )}
                   </div>
                   <div className="card__content flex flex-col relative text-white">
                     <h3 className={`card__title font-bold text-base m-0 mb-1 ${textAutoHide ? 'text-clamp-1' : ''}`} style={{ color: '#4B2E09' }}>
@@ -870,6 +886,37 @@ const MagicBento: React.FC<BentoProps> = ({
     </BentoCardGrid>
     </div>
   </div>
+  <footer
+  className="px-8 py-4 text-xs text-center font-bold"
+  style={{ background: 'transparent', marginTop: '3rem' }}
+  >
+    <span>
+      <span style={{ color: 'black', fontWeight: 'normal' }}>
+        &copy; 2025
+      </span>
+      {' '}
+      <a
+        href="https://interzekt.com"
+        target="_blank"
+        rel="noopener noreferrer"
+        style={{
+          fontWeight: 'bold',
+          background: 'linear-gradient(90deg, #8B5CF6, #2563EB, #EC4899)',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+          backgroundClip: 'text',
+          color: 'transparent',
+          textDecoration: 'none',
+          padding: '0 2px',
+        }}
+      >
+        Interzekt.com
+      </a>
+      <span style={{ color: 'black', fontWeight: 'normal' }}>
+        {' '}All rights reserved.
+      </span>
+    </span>
+  </footer>
   </>
   );
 };
