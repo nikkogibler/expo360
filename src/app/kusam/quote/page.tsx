@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/utils/supabase';
+import { supabase } from '../../../utils/supabase';
 
 // Log quote event to Supabase
 async function logQuoteEvent({
@@ -17,55 +17,30 @@ async function logQuoteEvent({
   quoteId?: string | null;
   metadata?: unknown;
 }) {
-  // Get Supabase authenticated UID if available
-  let supabaseUid: string | null = null;
-  try {
-    const { data: { user } } = await supabase.auth.getUser();
-    supabaseUid = user?.id || null;
-    console.log('[logQuoteEvent] Supabase UID:', supabaseUid);
-  } catch (e) {
-    console.error('[logQuoteEvent] Error getting Supabase UID:', e);
-    supabaseUid = null;
-  }
-  // Use Supabase UID if authenticated, else fallback to provided customerId
-  const effectiveCustomerId = supabaseUid || customerId;
-  if (!effectiveCustomerId) {
-    console.error('[logQuoteEvent] No effective customer ID found.');
-    return;
-  }
+  if (!customerId) return;
   // Only allow one view_quote or print_or_download_quote event per customer
   if (eventType === 'view_quote' || eventType === 'print_or_download_quote') {
-    const { data: existing, error: existingError } = await supabase
+    const { data: existing } = await supabase
       .from('quote_events')
       .select('id')
       .eq('event_type', eventType)
-      .eq('customer_id', effectiveCustomerId)
+      .eq('customer_id', customerId)
       .limit(1)
       .maybeSingle();
-    if (existingError) {
-      console.error('[logQuoteEvent] Error checking for existing event:', existingError.message);
-    }
     if (existing) {
-      console.log(`[logQuoteEvent] ${eventType} already logged for customer`, effectiveCustomerId);
+      console.log(`[logQuoteEvent] ${eventType} already logged for customer`, customerId);
       return; // Already logged
     }
   }
-  console.log('[logQuoteEvent] Logging event', { eventType, customerId: effectiveCustomerId, quoteId, metadata });
-  const { error: insertError, data: insertData } = await supabase.from('quote_events').insert([
+  console.log('[logQuoteEvent] Logging event', { eventType, customerId, quoteId, metadata });
+  await supabase.from('quote_events').insert([
     {
       event_type: eventType,
-      customer_id: effectiveCustomerId,
+      customer_id: customerId,
       quote_id: quoteId,
       metadata,
     },
   ]);
-  if (insertError) {
-    console.error('[logQuoteEvent] Error inserting quote event:', insertError.message, insertError.details);
-    return false;
-  } else {
-    console.log('[logQuoteEvent] Inserted quote event:', insertData);
-    return true;
-  }
 }
 
 interface FavoriteItem {
@@ -115,12 +90,8 @@ export default function QuotePage() {
         if (typeof window !== 'undefined') {
           const sessionKey = `kusam_view_quote_logged_${customerId}`;
           if (!sessionStorage.getItem(sessionKey)) {
-            const result = await logQuoteEvent({ eventType: 'view_quote', customerId });
-            if (result === true) {
-              sessionStorage.setItem(sessionKey, '1');
-            } else {
-              console.warn('[QuotePage] view_quote event insert failed, not setting session key');
-            }
+            await logQuoteEvent({ eventType: 'view_quote', customerId });
+            sessionStorage.setItem(sessionKey, '1');
           } else {
             console.log('[QuotePage] view_quote already logged this session for', customerId);
           }

@@ -534,7 +534,7 @@ const MagicBento: React.FC<BentoProps> = ({
   const shouldDisableAnimations = disableAnimations || isMobile;
 
   return (
-    <>
+  <>
       <style>
         {`
           .bento-section {
@@ -674,10 +674,17 @@ const MagicBento: React.FC<BentoProps> = ({
           glowColor={glowColor}
         />
       )}
-
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', width: '100vw' }}>
-        <BentoCardGrid gridRef={gridRef}>
-          <div className="card-responsive grid gap-2">
+      <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        <div style={{ height: '120px', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1rem' }}>
+          <img
+            src="/kusam_main.webp"
+            alt="Kusam Logo"
+            style={{ height: '100px', objectFit: 'contain', maxWidth: '320px', width: 'auto', display: 'block', margin: '2rem auto 1rem auto' }}
+          />
+        </div>
+        <div style={{ flex: 1, width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+          <BentoCardGrid gridRef={gridRef}>
+            <div className="card-responsive grid gap-2">
             {cardData.map((card, index) => {
               const baseClassName = `card flex flex-col justify-between relative aspect-[4/3] min-h-[200px] w-full max-w-full p-5 rounded-[20px] border border-solid font-light overflow-hidden transition-all duration-300 ease-in-out hover:-translate-y-0.5 hover:shadow-[0_8px_25px_rgba(0,0,0,0.15)] ${
                 enableBorderGlow ? 'card--border-glow' : ''
@@ -854,9 +861,10 @@ const MagicBento: React.FC<BentoProps> = ({
               );
             })}
           </div>
-        </BentoCardGrid>
-      </div>
-    </>
+    </BentoCardGrid>
+    </div>
+  </div>
+  </>
   );
 };
 
