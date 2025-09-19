@@ -9,6 +9,7 @@ export interface BentoCardProps {
   label?: string;
   textAutoHide?: boolean;
   disableAnimations?: boolean;
+  backgroundImage?: string;
 }
 
 export interface BentoProps {
@@ -33,29 +34,35 @@ const MOBILE_BREAKPOINT = 768;
 const cardData: BentoCardProps[] = [
   {
     color: '#F8F5F0',
+    backgroundImage: 'url(/admin/analitica.png)',
     // title: 'Reportes y KPIs',
     description: 'Ver ventas, desempeño y métricas clave en tiempo real.',
     label: 'Analítica y Reportes'
   },
   {
     color: '#F8F5F0',
+    backgroundImage: 'url(/admin/customers.png)',
+    // title: 'Agregar Clientes',
     description: 'Registrar nuevos clientes desde el formulario de administración.',
     label: 'Agregar Clientes'
   },
   {
     color: '#F8F5F0',
+    backgroundImage: 'url(/admin/productos.png)',
     // title: 'Catálogo de Productos',
     description: 'Explorar y gestionar el catálogo completo de Kusam.',
     label: 'Catálogo de Productos'
   },
   {
     color: '#F8F5F0',
+    backgroundImage: 'url(/admin/airtable.png)',
     // title: 'Base de Datos Airtable',
     description: 'Acceder y actualizar la base de datos de Kusam en Airtable.',
     label: 'Base de Datos Airtable'
   },
   {
     color: '#F8F5F0',
+    backgroundImage: 'url(/admin/equipo.png)', // path is correct, matches public/admin/equipo.png
     // title: 'Colaboración del Equipo',
     description: 'Asignar tareas y compartir actualizaciones con el equipo Kusam. Calendario, Tareas, Chat.',
     label: 'Equipo Kusam'
@@ -702,7 +709,8 @@ const MagicBento: React.FC<BentoProps> = ({
                 '--glow-x': '50%',
                 '--glow-y': '50%',
                 '--glow-intensity': '0',
-                '--glow-radius': '200px'
+                '--glow-radius': '200px',
+                position: card.backgroundImage ? 'relative' : undefined,
               } as React.CSSProperties;
 
               if (enableStars) {
@@ -718,10 +726,40 @@ const MagicBento: React.FC<BentoProps> = ({
                     clickEffect={clickEffect}
                     enableMagnetism={enableMagnetism}
                   >
-                    <div className="card__header flex justify-between gap-3 relative">
-                      <span className="card__label text-base" style={{ color: '#4B2E09', fontWeight: 'bold' }}>{card.label}</span>
+                    {card.backgroundImage && (
+                      <>
+                        <span
+                          style={{
+                            position: 'absolute',
+                            inset: 0,
+                            zIndex: 0,
+                            backgroundImage: card.backgroundImage,
+                            backgroundSize: 'cover',
+                            backgroundPosition: 'center',
+                            backgroundRepeat: 'no-repeat',
+                            opacity: 0.5,
+                            borderRadius: '20px',
+                            pointerEvents: 'none',
+                            display: 'block',
+                          }}
+                        />
+                        <span
+                          style={{
+                            position: 'absolute',
+                            inset: 0,
+                            zIndex: 1,
+                            background: 'linear-gradient(to bottom, rgba(255,255,255,0.45) 0%, rgba(75,46,9,0.25) 100%)',
+                            borderRadius: '20px',
+                            pointerEvents: 'none',
+                            display: 'block',
+                          }}
+                        />
+                      </>
+                    )}
+                    <div className="card__header flex justify-between gap-3 relative" style={{ zIndex: 2 }}>
+                      <span className="card__label text-base" style={{ color: '#4B2E09', fontWeight: 'bold', display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%', height: '100%' }}>{card.label}</span>
                     </div>
-                    <div className="card__content flex flex-col relative">
+                    <div className="card__content flex flex-col relative" style={{ zIndex: 2 }}>
                       <h3 className={`card__title font-bold text-base m-0 mb-1 ${textAutoHide ? 'text-clamp-1' : ''}`} style={{ color: '#4B2E09' }}>
                         {card.title}
                       </h3>
@@ -887,8 +925,8 @@ const MagicBento: React.FC<BentoProps> = ({
     </div>
   </div>
   <footer
-  className="px-8 py-4 text-xs text-center font-bold"
-  style={{ background: 'transparent', marginTop: '3rem' }}
+    className="px-8 py-4 text-xs text-center font-bold"
+    style={{ background: 'transparent', marginTop: '3rem' }}
   >
     <span>
       <span style={{ color: 'black', fontWeight: 'normal' }}>
@@ -918,7 +956,7 @@ const MagicBento: React.FC<BentoProps> = ({
     </span>
   </footer>
   </>
-  );
+);
 };
 
 export default MagicBento;
