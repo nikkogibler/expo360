@@ -32,42 +32,45 @@ const MOBILE_BREAKPOINT = 768;
 
 const cardData: BentoCardProps[] = [
   {
-    color: '#F8F5F0', // Light cream, luxury
-    title: 'Analytics',
-    description: 'Track user behavior',
-    label: 'Insights'
+    color: '#F8F5F0',
+    title: 'Reportes y KPIs',
+    description: 'Ver ventas, desempeño y métricas clave en tiempo real.',
+    label: 'Analítica'
   },
   {
     color: '#F8F5F0',
-    title: 'Dashboard',
-    description: 'Centralized data view',
-    label: 'Overview'
+    title: 'Agregar Cliente Nuevo',
+    description: 'Registrar nuevos clientes desde el formulario de administración.',
+    label: 'Clientes'
   },
   {
     color: '#F8F5F0',
-    title: 'Collaboration',
-    description: 'Work together seamlessly',
-    label: 'Teamwork'
+    title: 'Catálogo de Productos',
+    description: 'Explorar y gestionar el catálogo completo de Kusam.',
+    label: 'Catálogo'
   },
   {
     color: '#F8F5F0',
-    title: 'Automation',
-    description: 'Streamline workflows',
-    label: 'Efficiency'
+    title: 'Base de Datos Airtable',
+    description: 'Acceder y actualizar la base de datos de Kusam en Airtable.',
+    label: 'Airtable'
   },
   {
     color: '#F8F5F0',
-    title: 'Integration',
-    description: 'Connect favorite tools',
-    label: 'Connectivity'
+    title: 'Colaboración del Equipo',
+    description: 'Coordinar tareas y compartir actualizaciones con el equipo Kusam.',
+    label: 'Equipo'
   },
+
   {
     color: '#F8F5F0',
-    title: 'Security',
-    description: 'Enterprise-grade protection',
-    label: 'Protection'
-  }
+    title: 'Soporte y Ayuda',
+    description: 'Contactar soporte, ver preguntas frecuentes y tutoriales.',
+    label: 'Soporte'
+  },
+
 ];
+// FIX: Add missing closing brace after cardData array
 
 const createParticleElement = (x: number, y: number, color: string = DEFAULT_GLOW_COLOR): HTMLDivElement => {
   const el = document.createElement('div');
@@ -674,7 +677,7 @@ const MagicBento: React.FC<BentoProps> = ({
           glowColor={glowColor}
         />
       )}
-      <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+      <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
         <div style={{ height: '120px', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1rem' }}>
           <img
             src="/kusam_main.webp"
@@ -684,16 +687,19 @@ const MagicBento: React.FC<BentoProps> = ({
         </div>
         <div style={{ flex: 1, width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
           <BentoCardGrid gridRef={gridRef}>
-            <div className="card-responsive grid gap-2">
+            <div className="card-responsive grid gap-2" style={{ transform: 'scale(1.2)', transformOrigin: 'center', width: '100%', marginTop: '4rem', marginBottom: '2rem', border: 'none' }}>
             {cardData.map((card, index) => {
               const baseClassName = `card flex flex-col justify-between relative aspect-[4/3] min-h-[200px] w-full max-w-full p-5 rounded-[20px] border border-solid font-light overflow-hidden transition-all duration-300 ease-in-out hover:-translate-y-0.5 hover:shadow-[0_8px_25px_rgba(0,0,0,0.15)] ${
                 enableBorderGlow ? 'card--border-glow' : ''
               }`;
 
               const cardStyle = {
-                  backgroundColor: '#F8F5F0', // Light background for luxury furniture
-                  borderColor: 'var(--border-color)',
-                  color: '#4B2E09', // Dark brown text for luxury furniture
+                backgroundColor: '#F8F5F0',
+                borderColor: 'var(--border-color)',
+                color: '#4B2E09',
+                minHeight: '300px',
+                fontSize: '1.65rem',
+                padding: '2.25rem',
                 '--glow-x': '50%',
                 '--glow-y': '50%',
                 '--glow-intensity': '0',
@@ -762,8 +768,8 @@ const MagicBento: React.FC<BentoProps> = ({
                       }
 
                       if (enableMagnetism) {
-                        const magnetX = (x - centerX) * 0.05;
-                        const magnetY = (y - centerY) * 0.05;
+                        const magnetX = (x - centerX) * 0.15;
+                        const magnetY = (y - centerY) * 0.15;
 
                         gsap.to(el, {
                           x: magnetX,
