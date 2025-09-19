@@ -685,13 +685,13 @@ const MagicBento: React.FC<BentoProps> = ({
         />
       )}
       <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ height: '120px', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1rem' }}>
+        <div style={{ height: '80px', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: '2rem', marginBottom: '2rem' }}>
           <Image
             src="/kusam_main.webp"
             alt="Kusam Logo"
-            width={320}
-            height={100}
-            style={{ objectFit: 'contain', display: 'block', margin: '3.5rem auto 1.5rem auto' }}
+            width={200}
+            height={60}
+            style={{ objectFit: 'contain', display: 'block', margin: '0 auto', maxWidth: '100%', maxHeight: '100%' }}
             priority
           />
         </div>
