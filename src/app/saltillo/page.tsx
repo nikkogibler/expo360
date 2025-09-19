@@ -2,8 +2,13 @@
 'use client';
 
 
+import React, { Suspense } from 'react';
 import KusamLeadForm from '../../components/KusamLeadForm';
 
 export default function SaltilloLanding() {
-  return <KusamLeadForm variant="saltillo" />;
+  return (
+    <Suspense>
+      <KusamLeadForm variant="saltillo" />
+    </Suspense>
+  );
 }

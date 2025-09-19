@@ -1,5 +1,6 @@
 "use client";
 import React, { useRef, useEffect, useState, useCallback } from 'react';
+import Image from 'next/image';
 import { gsap } from 'gsap';
 
 export interface BentoCardProps {
@@ -685,10 +686,13 @@ const MagicBento: React.FC<BentoProps> = ({
       )}
       <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
         <div style={{ height: '120px', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1rem' }}>
-          <img
+          <Image
             src="/kusam_main.webp"
             alt="Kusam Logo"
-            style={{ height: '100px', objectFit: 'contain', maxWidth: '320px', width: 'auto', display: 'block', margin: '3.5rem auto 1.5rem auto' }}
+            width={320}
+            height={100}
+            style={{ objectFit: 'contain', display: 'block', margin: '3.5rem auto 1.5rem auto' }}
+            priority
           />
         </div>
         <div style={{ flex: 1, width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
