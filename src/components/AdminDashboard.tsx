@@ -1,6 +1,7 @@
 "use client";
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import Image from 'next/image';
+import HamburgerMenu from './HamburgerMenu';
 import { gsap } from 'gsap';
 
 export interface BentoCardProps {
@@ -71,6 +72,7 @@ const cardData: BentoCardProps[] = [
 
   {
     color: '#F8F5F0',
+    backgroundImage: 'url(/admin/interzekt_dashboard_background.png)',
    //  title: 'Soporte y Ayuda',
     description: 'Contactar soporte, ver preguntas frecuentes y tutoriales.',
     label: 'Soporte Interzekt'
@@ -684,8 +686,8 @@ const MagicBento: React.FC<BentoProps> = ({
           glowColor={glowColor}
         />
       )}
-      <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ height: '80px', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: '2.5rem', marginBottom: '2rem' }}>
+      <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+        <div style={{ height: '80px', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: '2.5rem', marginBottom: '2rem', position: 'relative' }}>
           <Image
             src="/kusam_main.webp"
             alt="Kusam Logo"
@@ -694,6 +696,10 @@ const MagicBento: React.FC<BentoProps> = ({
             style={{ objectFit: 'contain', display: 'block', margin: '0 auto', maxWidth: '100%', maxHeight: '100%' }}
             priority
           />
+          {/* Hamburger menu button */}
+          <div style={{ position: 'absolute', right: 'calc(50% - 487px)', top: '74%', transform: 'translateY(-50%)', zIndex: 10 }}>
+            <HamburgerMenu />
+          </div>
         </div>
         <div style={{ flex: 1, width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
           <BentoCardGrid gridRef={gridRef}>
@@ -894,20 +900,9 @@ const MagicBento: React.FC<BentoProps> = ({
                   }}
                 >
                   <div className="card__header flex justify-between gap-3 relative">
-                    {card.label === 'Soporte Interzekt' ? (
-                      <span className="card__label text-base" style={{ fontWeight: 'bold' }}>
-                        Soporte{' '}
-                        <span style={{
-                          background: 'linear-gradient(90deg, #8B5CF6, #2563EB, #EC4899)',
-                          WebkitBackgroundClip: 'text',
-                          WebkitTextFillColor: 'transparent',
-                          backgroundClip: 'text',
-                          color: 'transparent',
-                          fontWeight: 'bold',
-                          display: 'inline-block',
-                          position: 'relative',
-                          zIndex: 2
-                        }}>Interzekt</span>
+                    {card.label === 'interzekt_logo_only' ? (
+                      <span className="card__label text-base" style={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%' }}>
+                        <img src="/interzekt_logo1.png" alt="Interzekt Logo" style={{ height: '2em', width: 'auto', display: 'inline-block', verticalAlign: 'middle' }} />
                       </span>
                     ) : (
                       <span className="card__label text-base" style={{ color: '#4B2E09', fontWeight: 'bold' }}>{card.label}</span>
