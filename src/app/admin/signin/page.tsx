@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 // import { adminList } from '../../../config/adminList';
 import Image from 'next/image';
-import { supabase } from '../../../../lib/supabaseClient';
+import { supabase } from "../../../../lib/supabaseClient";
 export default function AdminSignIn() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');

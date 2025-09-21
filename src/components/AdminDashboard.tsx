@@ -1,7 +1,8 @@
 "use client";
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import Image from 'next/image';
-import HamburgerMenu from './HamburgerMenu';
+import BurgerMenu from './BurgerMenu';
+import AdminMenu from './AdminMenu';
 import { gsap } from 'gsap';
 
 export interface BentoCardProps {
@@ -545,6 +546,9 @@ const MagicBento: React.FC<BentoProps> = ({
   const isMobile = useMobileDetection();
   const shouldDisableAnimations = disableAnimations || isMobile;
 
+  // Burger menu open state
+  const [burgerOpen, setBurgerOpen] = useState(false);
+
   return (
   <>
       <style>
@@ -687,18 +691,21 @@ const MagicBento: React.FC<BentoProps> = ({
         />
       )}
       <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
-        <div style={{ height: '80px', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: '2.5rem', marginBottom: '2rem', position: 'relative' }}>
-          <Image
-            src="/kusam_main.webp"
-            alt="Kusam Logo"
-            width={200}
-            height={60}
-            style={{ objectFit: 'contain', display: 'block', margin: '0 auto', maxWidth: '100%', maxHeight: '100%' }}
-            priority
-          />
-          {/* Hamburger menu button */}
-          <div style={{ position: 'absolute', right: 'calc(50% - 487px)', top: '74%', transform: 'translateY(-50%)', zIndex: 10 }}>
-            <HamburgerMenu />
+        <div style={{ height: '80px', width: '100%', position: 'relative', marginTop: '2.5rem', marginBottom: '2rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+            <Image
+              src="/kusam_main.webp"
+              alt="Kusam Logo"
+              width={200}
+              height={60}
+              style={{ objectFit: 'contain', display: 'block', margin: '0 auto', maxWidth: '100%', maxHeight: '100%' }}
+              priority
+            />
+          </div>
+          {/* Burger menu absolutely positioned, nudge with top/right */}
+          <div style={{ position: 'absolute', top: '68tion, hover effect%', right: 'calc(50% - 480px)', transform: 'translateY(-50%)', zIndex: 10 }}>
+            <BurgerMenu isOpen={burgerOpen} onClick={() => setBurgerOpen((o) => !o)} />
+            <AdminMenu open={burgerOpen} setOpen={setBurgerOpen} />
           </div>
         </div>
         <div style={{ flex: 1, width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
