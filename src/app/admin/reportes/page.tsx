@@ -43,6 +43,17 @@ const DashboardCard = ({
   onDrop?: (e: React.DragEvent, targetCardId: string) => void;
   isDragging?: boolean;
 }) => {
+  const [isHovered, setIsHovered] = useState(false);
+  const [isTouched, setIsTouched] = useState(false);
+  const [isTouchDevice, setIsTouchDevice] = useState(false);
+
+  // Detect if device supports touch
+  useEffect(() => {
+    setIsTouchDevice('ontouchstart' in window || navigator.maxTouchPoints > 0);
+  }, []);
+
+  // Determine if buttons should be visible
+  const shouldShowButtons = isTouchDevice ? isTouched : isHovered;
   const handleDragStart = (e: React.DragEvent) => {
     if (onDragStart) {
       onDragStart(e, cardId);
@@ -73,17 +84,29 @@ const DashboardCard = ({
       onDragEnd={onDragEnd}
       onDragOver={handleDragOver}
       onDrop={handleDrop}
+      onMouseEnter={() => !isTouchDevice && setIsHovered(true)}
+      onMouseLeave={() => !isTouchDevice && setIsHovered(false)}
+      onTouchStart={() => isTouchDevice && setIsTouched(true)}
+      onTouchEnd={() => isTouchDevice && setTimeout(() => setIsTouched(false), 3000)} // Hide after 3s
       style={{
         backgroundColor: "rgba(255, 255, 255, 0.95)",
         borderRadius: "12px",
         padding: "1.5rem",
         position: "relative",
         cursor: onClick ? "pointer" : "grab",
-        transform: isDragging ? "rotate(5deg) scale(1.05)" : "none",
+        transform: isDragging 
+          ? "rotate(5deg) scale(1.05)" 
+          : shouldShowButtons 
+            ? "scale(1.02) translateY(-2px)" 
+            : "scale(1) translateY(0px)",
         opacity: isDragging ? 0.8 : 1,
-        transition: "all 0.2s ease",
-        boxShadow: isDragging ? "0 8px 25px rgba(0,0,0,0.15)" : "0 2px 8px rgba(0,0,0,0.1)",
-        zIndex: isDragging ? 1000 : 1,
+        transition: "all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)",
+        boxShadow: isDragging 
+          ? "0 8px 25px rgba(0,0,0,0.15)" 
+          : shouldShowButtons 
+            ? "0 8px 20px rgba(0,0,0,0.12)" 
+            : "0 2px 8px rgba(0,0,0,0.1)",
+        zIndex: isDragging ? 1000 : shouldShowButtons ? 10 : 1,
         ...style
       }}
       onClick={onClick}
@@ -97,7 +120,7 @@ const DashboardCard = ({
         document.body.style.cursor = 'default';
       }}
     >
-      {/* Drag Handle - visible on hover */}
+      {/* Drag Handle - visible on hover/touch */}
       <div
         style={{
           position: "absolute",
@@ -115,22 +138,19 @@ const DashboardCard = ({
           cursor: "grab",
           fontSize: "12px",
           fontWeight: "bold",
-          zIndex: 10,
-          opacity: 0.6,
-          transition: "opacity 0.2s ease"
+          zIndex: 20,
+          opacity: shouldShowButtons ? 1 : 0,
+          visibility: shouldShowButtons ? "visible" : "hidden",
+          transform: shouldShowButtons ? "scale(1)" : "scale(0.8)",
+          transition: "all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)",
+          pointerEvents: shouldShowButtons ? "auto" : "none"
         }}
         title="Drag to reorder"
-        onMouseEnter={(e) => {
-          e.currentTarget.style.opacity = "1";
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.opacity = "0.6";
-        }}
       >
         ⋮⋮
       </div>
 
-      {/* Pin Button */}
+      {/* Pin Button - visible on hover/touch */}
       <button
         onClick={(e) => {
           e.stopPropagation();
@@ -152,7 +172,12 @@ const DashboardCard = ({
           cursor: "pointer",
           fontSize: "12px",
           fontWeight: "bold",
-          zIndex: 10
+          zIndex: 20,
+          opacity: shouldShowButtons ? 1 : 0,
+          visibility: shouldShowButtons ? "visible" : "hidden",
+          transform: shouldShowButtons ? "scale(1)" : "scale(0.8)",
+          transition: "all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)",
+          pointerEvents: shouldShowButtons ? "auto" : "none"
         }}
         title={isPinned ? "Unpin card" : "Pin card"}
       >
