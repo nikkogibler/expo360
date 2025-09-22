@@ -560,6 +560,9 @@ const MagicBento: React.FC<BentoProps> = ({
       case 'Analítica y Reportes':
         router.push('/admin/reportes');
         break;
+      case 'Agregar Clientes +':
+        router.push('/admin/sucursales');
+        break;
       case 'Soporte Interzekt':
         window.open('https://wa.me/528186931122', '_blank');
         break;

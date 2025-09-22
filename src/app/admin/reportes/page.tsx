@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useRef } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { ResponsiveBar } from "@nivo/bar";
 import { ResponsivePie } from "@nivo/pie";
 import BurgerMenu from "../../../components/BurgerMenu";
@@ -305,6 +306,9 @@ export default function ReportesPage() {
   // Authentication check
   const isAuthenticated = useAdminAuth();
   
+  // Router for navigation
+  const router = useRouter();
+  
   // All hooks must be called before any conditional returns
   // Date range state - default to 3MO
   const [dateRange, setDateRange] = useState<'7D' | '1MO' | '3MO' | '12MO' | '24MO'>('3MO');
@@ -467,6 +471,11 @@ export default function ReportesPage() {
     setLiveMetrics({ visitors: Math.floor(Math.random() * 100) });
     setGrowthPercentage(Math.floor(Math.random() * 20));
   }, [dateRange]); // Add dateRange as dependency
+
+  // Navigation function
+  const handleBackToAdmin = () => {
+    router.push('/admin');
+  };
 
   // Conditional rendering logic - all hooks must be called before this
   // Don't render anything while authentication is being checked
@@ -1113,20 +1122,63 @@ export default function ReportesPage() {
         flexDirection: "column",
         gap: "1rem"
       }}>
-        {/* Kusam Logo */}
-        <div style={{ height: '80px', width: '100%', position: 'relative', marginTop: '1.0rem', marginBottom: '2rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
-            <Image
-              src="/kusam_main.webp"
-              alt="Kusam Logo"
-              width={200}
-              height={60}
-              style={{ objectFit: 'contain', display: 'block', margin: '0 auto', maxWidth: '100%', maxHeight: '100%' }}
-              priority
-            />
+        {/* Header with Back Button and Logo */}
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center', 
+          padding: '0 1rem',
+          marginBottom: '1rem',
+          marginLeft: '-23px'  // ← Add this line (adjust value as needed)
+
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <button
+              onClick={handleBackToAdmin}
+              style={{
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                color: '#666',
+                padding: '8px',
+                borderRadius: '6px',
+                transition: 'all 0.2s ease',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginTop: '7px'  // ← Add this line
+
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = '#333';
+                e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.05)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = '#666';
+                e.currentTarget.style.backgroundColor = 'transparent';
+              }}
+            >
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M19 12H5M12 19L5 12L12 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
+            <div 
+              onClick={handleBackToAdmin}
+              style={{ cursor: 'pointer' }}
+            >
+              <Image
+                src="/kusam_main.webp"
+                alt="Kusam Logo"
+                width={120}
+                height={30}
+                style={{ objectFit: 'contain', height: 'auto' }}
+                priority
+              />
+            </div>
           </div>
-          {/* Date Range Menu - absolutely positioned like admin page */}
-          <div style={{ position: 'absolute', top: '72%', right: 'calc(50% - 695px)', transform: 'translateY(-50%)', zIndex: 10 }}>
+          
+          {/* Date Range Menu - positioned on the right */}
+          <div style={{ position: 'relative' }}>
             <div style={{ 
               display: "flex", 
               gap: "1rem", 
