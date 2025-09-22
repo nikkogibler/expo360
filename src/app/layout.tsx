@@ -5,6 +5,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import CustomerIdInitializer from '../components/CustomerIdInitializer'; // This is the correct import location
+import GoogleAnalytics from '../components/GoogleAnalytics'; // NEW: Import Google Analytics
 import { Suspense } from 'react'; // <--- NEW: Import Suspense
 import { Analytics } from "@vercel/analytics/next";
 
@@ -39,6 +40,7 @@ export default function RootLayout({
         {/* CORRECT LOCATION for Suspense: Wrap CustomerIdInitializer here */}
         <Suspense fallback={null}> {/* `null` for fallback as this component renders no UI */}
           <CustomerIdInitializer /> 
+          <GoogleAnalytics /> {/* NEW: Add Google Analytics tracking */}
         </Suspense>
         {children}
         <Analytics />

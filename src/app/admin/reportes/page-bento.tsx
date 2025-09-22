@@ -13,7 +13,7 @@ import {
   getVisitorsByDevice,
   transformForNivoPie,
   transformForNivoBar 
-} from "../../../utils/vercelAnalytics";
+} from "../../../utils/googleAnalytics";
 
 // Helper to map color name to image URL for fabric
 const getFabricImageUrl = (color: string) => {
@@ -139,27 +139,65 @@ export default function ReportesPage() {
       });
     
     
-    // Set mock data for analytics
-    setCountryData([
-      { id: 'Mexico', value: 150 },
-      { id: 'USA', value: 89 },
-      { id: 'Spain', value: 45 }
-    ]);
-    setBrowserData([
-      { id: 'Chrome', value: 180 },
-      { id: 'Safari', value: 65 },
-      { id: 'Firefox', value: 35 }
-    ]);
-    setReferrerData([
-      { id: 'Direct', value: 120 },
-      { id: 'Google', value: 80 },
-      { id: 'Social', value: 45 }
-    ]);
-    setDeviceData([
-      { id: 'Mobile', value: 180 },
-      { id: 'Desktop', value: 120 },
-      { id: 'Tablet', value: 25 }
-    ]);
+    // Load Vercel Analytics data
+    const analyticsStartDate = getDateRangeFilter(dateRange);
+    const analyticsEndDate = new Date().toISOString();
+    
+    const analyticsQuery = {
+      since: analyticsStartDate,
+      until: analyticsEndDate,
+      environment: 'production' as const
+    };
+    
+    Promise.all([
+      getVisitorsByCountry(analyticsQuery),
+      getVisitorsByBrowser(analyticsQuery), 
+      getVisitorsByReferrer(analyticsQuery),
+      getVisitorsByDevice(analyticsQuery)
+    ]).then(([countries, browsers, referrers, devices]) => {
+      console.log('✅ Vercel Analytics Data:', { countries, browsers, referrers, devices });
+      
+      // Transform and set country data
+      if (countries?.data && Array.isArray(countries.data) && countries.data.length > 0) {
+        setCountryData(transformForNivoPie(countries.data, 'visits', 'country'));
+      } else {
+        console.log('ℹ️ No country data available');
+        setCountryData([{ id: 'No data available', value: 1, label: 'No data available' }]);
+      }
+      
+      // Transform and set browser data
+      if (browsers?.data && Array.isArray(browsers.data) && browsers.data.length > 0) {
+        setBrowserData(transformForNivoPie(browsers.data, 'visits', 'browser'));
+      } else {
+        console.log('ℹ️ No browser data available');
+        setBrowserData([{ id: 'No data available', value: 1, label: 'No data available' }]);
+      }
+      
+      // Transform and set referrer data
+      if (referrers?.data && Array.isArray(referrers.data) && referrers.data.length > 0) {
+        setReferrerData(transformForNivoPie(referrers.data, 'visits', 'referrer'));
+      } else {
+        console.log('ℹ️ No referrer data available');
+        setReferrerData([{ id: 'No data available', value: 1, label: 'No data available' }]);
+      }
+      
+      // Transform and set device data
+      if (devices?.data && Array.isArray(devices.data) && devices.data.length > 0) {
+        setDeviceData(transformForNivoPie(devices.data, 'visits', 'device'));
+      } else {
+        console.log('ℹ️ No device data available');
+        setDeviceData([{ id: 'No data available', value: 1, label: 'No data available' }]);
+      }
+    }).catch(error => {
+      console.error('❌ Error loading Vercel Analytics:', error);
+      
+      // Set "error" state instead of dummy data
+      const errorData = [{ id: 'Analytics API Error', value: 1, label: 'Analytics API Error' }];
+      setCountryData(errorData);
+      setBrowserData(errorData);
+      setReferrerData(errorData);
+      setDeviceData(errorData);
+    });
     
     supabase
       .rpc("get_product_views_over_time")

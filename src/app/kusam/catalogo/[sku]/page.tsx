@@ -8,6 +8,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { v4 as uuidv4 } from 'uuid';
 import { supabase } from '@/utils/supabase';
 import { PostgrestError } from '@supabase/supabase-js';
+import { trackProductView, trackProductFavorite, trackProductCustomization } from '../../../../utils/googleAnalytics';
 
 // Utility function to preload images
 const preloadImage = (src: string): Promise<void> => {
@@ -152,6 +153,10 @@ const ProductDetailPage = ({ params }: ProductDetailPageProps) => {
 
         if (productData) {
           setProduct(productData as Product);
+
+          // Track product view with Google Analytics
+          trackProductView(productData.id, productData.name);
+          console.log('📊 Tracked product view:', productData.name);
 
           if (productData.image_url) {
             preloadImage(productData.image_url)
@@ -367,6 +372,10 @@ const ProductDetailPage = ({ params }: ProductDetailPageProps) => {
             .select();
           if (error) throw error;
           console.log('Favorite updated successfully in Supabase:', data);
+          
+          // Track product favorite with Google Analytics
+          trackProductFavorite(product.id, product.name);
+          console.log('📊 Tracked product favorite:', product.name);
         } else {
           console.log('Inserting new configured favorite item.');
           const { data, error } = await supabase
@@ -375,6 +384,16 @@ const ProductDetailPage = ({ params }: ProductDetailPageProps) => {
             .select();
           if (error) throw error;
           console.log('New configured favorite item registered successfully in Supabase:', data);
+          
+          // Track product favorite with Google Analytics
+          trackProductFavorite(product.id, product.name);
+          console.log('📊 Tracked product favorite:', product.name);
+          
+          // Track product customization if colors were selected
+          if (selectedFabricName || selectedFrameName) {
+            trackProductCustomization(product.id, product.name, selectedFabricName || undefined, selectedFrameName || undefined);
+            console.log('📊 Tracked product customization:', product.name, { fabric: selectedFabricName, frame: selectedFrameName });
+          }
         }
         setIsLiked(true);
       } else if (isLikeAction) {

@@ -15,7 +15,7 @@ import {
   getVisitorsByDevice,
   transformForNivoPie,
   transformForNivoBar 
-} from "../../../utils/vercelAnalytics";
+} from "../../../utils/googleAnalytics";
 
 // Reusable Card Component with Pin functionality and Drag & Drop
 const DashboardCard = ({ 
@@ -1034,27 +1034,68 @@ export default function ReportesPage() {
       });
     
     
-    // Set mock data for analytics
-    setCountryData([
-      { id: 'Mexico', value: 150 },
-      { id: 'USA', value: 89 },
-      { id: 'Spain', value: 45 }
-    ]);
-    setBrowserData([
-      { id: 'Chrome', value: 180 },
-      { id: 'Safari', value: 65 },
-      { id: 'Firefox', value: 35 }
-    ]);
-    setReferrerData([
-      { id: 'Direct', value: 120 },
-      { id: 'Google', value: 80 },
-      { id: 'Social', value: 45 }
-    ]);
-    setDeviceData([
-      { id: 'Mobile', value: 180 },
-      { id: 'Desktop', value: 120 },
-      { id: 'Tablet', value: 25 }
-    ]);
+    // Note: Vercel Analytics API endpoints don't exist for retrieving data
+    // Load Google Analytics data
+    const analyticsStartDate = getDateRangeFilter(dateRange);
+    const analyticsEndDate = new Date().toISOString();
+    
+    const analyticsQuery = {
+      since: analyticsStartDate,
+      until: analyticsEndDate,
+      environment: 'production' as const
+    };
+    
+    console.log('📊 Loading Google Analytics data...');
+    
+    Promise.all([
+      getVisitorsByCountry(analyticsQuery),
+      getVisitorsByBrowser(analyticsQuery), 
+      getVisitorsByReferrer(analyticsQuery),
+      getVisitorsByDevice(analyticsQuery)
+    ]).then(([countries, browsers, referrers, devices]) => {
+      console.log('✅ Google Analytics Data loaded:', { countries, browsers, referrers, devices });
+      
+      // Transform and set country data
+      if (countries?.data && Array.isArray(countries.data) && countries.data.length > 0) {
+        setCountryData(transformForNivoPie(countries.data, 'visits', 'country'));
+      } else {
+        console.log('ℹ️ No country data available - this is normal for a new GA4 property');
+        setCountryData([{ id: 'No data yet', value: 1, label: 'New GA4 property - data will appear after site visits' }]);
+      }
+      
+      // Transform and set browser data
+      if (browsers?.data && Array.isArray(browsers.data) && browsers.data.length > 0) {
+        setBrowserData(transformForNivoPie(browsers.data, 'visits', 'browser'));
+      } else {
+        console.log('ℹ️ No browser data available - this is normal for a new GA4 property');
+        setBrowserData([{ id: 'No data yet', value: 1, label: 'New GA4 property - data will appear after site visits' }]);
+      }
+      
+      // Transform and set referrer data
+      if (referrers?.data && Array.isArray(referrers.data) && referrers.data.length > 0) {
+        setReferrerData(transformForNivoPie(referrers.data, 'visits', 'referrer'));
+      } else {
+        console.log('ℹ️ No referrer data available - this is normal for a new GA4 property');
+        setReferrerData([{ id: 'No data yet', value: 1, label: 'New GA4 property - data will appear after site visits' }]);
+      }
+      
+      // Transform and set device data
+      if (devices?.data && Array.isArray(devices.data) && devices.data.length > 0) {
+        setDeviceData(transformForNivoPie(devices.data, 'visits', 'device'));
+      } else {
+        console.log('ℹ️ No device data available - this is normal for a new GA4 property');
+        setDeviceData([{ id: 'No data yet', value: 1, label: 'New GA4 property - data will appear after site visits' }]);
+      }
+    }).catch(error => {
+      console.error('❌ Error loading Google Analytics:', error);
+      
+      // Set "error" state
+      const errorData = [{ id: 'Analytics Error', value: 1, label: 'Error loading analytics data' }];
+      setCountryData(errorData);
+      setBrowserData(errorData);
+      setReferrerData(errorData);
+      setDeviceData(errorData);
+    });
     
     supabase
       .rpc("get_product_views_over_time")
