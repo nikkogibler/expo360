@@ -183,6 +183,41 @@ const DashboardCard = ({
       >
         📌
       </button>
+
+      {/* Expand Icon - centered overlay on hover/touch */}
+      {onClick && (
+        <div
+          style={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: `translate(-50%, -50%) ${shouldShowButtons ? "scale(1)" : "scale(0.7)"}`,
+            opacity: shouldShowButtons ? 0.6 : 0,
+            visibility: shouldShowButtons ? "visible" : "hidden",
+            transition: "all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)",
+            pointerEvents: "none",
+            zIndex: 15
+          }}
+        >
+          <svg
+            width="48"
+            height="48"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            style={{
+              color: "#666",
+              filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.1))"
+            }}
+          >
+            <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
+            <circle cx="12" cy="12" r="3"/>
+          </svg>
+        </div>
+      )}
       {children}
     </div>
   );
