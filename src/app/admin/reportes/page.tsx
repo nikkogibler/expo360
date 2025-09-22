@@ -861,7 +861,13 @@ export default function ReportesPage() {
             style={{
               display: "flex",
               flexDirection: "column",
-              justifyContent: "space-between"
+              justifyContent: "space-between",
+              backgroundImage: "url('/mockdata.png')",
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+              backgroundRepeat: "no-repeat",
+              backgroundBlendMode: "overlay",
+              backgroundColor: "rgba(255, 255, 255, 0.85)"
             }}
           >
             <h3 style={{ color: "#42A5F5", margin: "0 0 1rem 0", fontSize: "1rem" }}>Visitors</h3>
@@ -883,7 +889,13 @@ export default function ReportesPage() {
             style={{
               display: "flex",
               flexDirection: "column",
-              justifyContent: "space-between"
+              justifyContent: "space-between",
+              backgroundImage: "url('/mockdata.png')",
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+              backgroundRepeat: "no-repeat",
+              backgroundBlendMode: "overlay",
+              backgroundColor: "rgba(255, 255, 255, 0.85)"
             }}
           >
             <h3 style={{ color: "#42A5F5", margin: "0 0 1rem 0", fontSize: "1rem" }}>Browsers</h3>
@@ -905,7 +917,13 @@ export default function ReportesPage() {
             style={{
               display: "flex",
               flexDirection: "column",
-              justifyContent: "space-between"
+              justifyContent: "space-between",
+              backgroundImage: "url('/mockdata.png')",
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+              backgroundRepeat: "no-repeat",
+              backgroundBlendMode: "overlay",
+              backgroundColor: "rgba(255, 255, 255, 0.85)"
             }}
           >
             <h3 style={{ color: "#42A5F5", margin: "0 0 1rem 0", fontSize: "1rem" }}>Devices</h3>
@@ -928,7 +946,13 @@ export default function ReportesPage() {
               display: "flex",
               flexDirection: "column",
               justifyContent: "center",
-              alignItems: "center"
+              alignItems: "center",
+              backgroundImage: "url('/mockdata.png')",
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+              backgroundRepeat: "no-repeat",
+              backgroundBlendMode: "overlay",
+              backgroundColor: "rgba(255, 255, 255, 0.85)"
             }}
           >
             <h3 style={{ color: "#42A5F5", margin: "0 0 0.5rem 0", fontSize: "1rem" }}>Active Now</h3>
@@ -949,7 +973,13 @@ export default function ReportesPage() {
               display: "flex",
               flexDirection: "column",
               justifyContent: "center",
-              alignItems: "center"
+              alignItems: "center",
+              backgroundImage: "url('/mockdata.png')",
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+              backgroundRepeat: "no-repeat",
+              backgroundBlendMode: "overlay",
+              backgroundColor: "rgba(255, 255, 255, 0.85)"
             }}
           >
             <h3 style={{ color: "#42A5F5", margin: "0 0 0.5rem 0", fontSize: "1rem" }}>Conversion Rate</h3>
@@ -972,7 +1002,13 @@ export default function ReportesPage() {
               display: "flex",
               flexDirection: "column",
               justifyContent: "center",
-              alignItems: "center"
+              alignItems: "center",
+              backgroundImage: "url('/mockdata.png')",
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+              backgroundRepeat: "no-repeat",
+              backgroundBlendMode: "overlay",
+              backgroundColor: "rgba(255, 255, 255, 0.85)"
             }}
           >
             <h3 style={{ color: "#42A5F5", margin: "0 0 0.5rem 0", fontSize: "1rem" }}>Avg Session</h3>
@@ -993,7 +1029,13 @@ export default function ReportesPage() {
               display: "flex",
               flexDirection: "column",
               justifyContent: "center",
-              alignItems: "center"
+              alignItems: "center",
+              backgroundImage: "url('/mockdata.png')",
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+              backgroundRepeat: "no-repeat",
+              backgroundBlendMode: "overlay",
+              backgroundColor: "rgba(255, 255, 255, 0.85)"
             }}
           >
             <h3 style={{ color: "#42A5F5", margin: "0 0 0.5rem 0", fontSize: "1rem" }}>Bounce Rate</h3>
@@ -1014,7 +1056,13 @@ export default function ReportesPage() {
               display: "flex",
               flexDirection: "column",
               justifyContent: "center",
-              alignItems: "center"
+              alignItems: "center",
+              backgroundImage: "url('/mockdata.png')",
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+              backgroundRepeat: "no-repeat",
+              backgroundBlendMode: "overlay",
+              backgroundColor: "rgba(255, 255, 255, 0.85)"
             }}
           >
             <h3 style={{ color: "#42A5F5", margin: "0 0 0.5rem 0", fontSize: "1rem" }}>Revenue</h3>

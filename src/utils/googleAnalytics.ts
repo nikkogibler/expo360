@@ -87,7 +87,7 @@ export const trackProductCustomization = (productId: string, productName: string
 };
 
 // Since GA4 doesn't provide a simple API for real-time data retrieval,
-// we'll create mock data that represents what Google Analytics would track
+// we'll use our Google Analytics service for actual data
 // In a production environment, you would use the Google Analytics Reporting API
 // with proper authentication and service account setup.
 
@@ -97,24 +97,25 @@ export interface AnalyticsData extends Record<string, unknown> {
   label?: string;
 }
 
-// Mock function to simulate Google Analytics data
-// In production, this would call the Google Analytics Reporting API
+// Updated function to use actual Google Analytics Data API
 export const getGoogleAnalyticsData = async (
   metric: 'countries' | 'browsers' | 'referrers' | 'devices',
   dateRange: { since: string; until: string }
 ): Promise<{ data: AnalyticsData[] }> => {
-  // Simulate API delay
-  await new Promise(resolve => setTimeout(resolve, 500));
-
-  // Return empty data for now since we just set up GA4
-  // Once traffic starts coming in, you would implement the actual GA4 Reporting API calls
-  
-  console.log(`📊 Google Analytics: Fetching ${metric} data from ${dateRange.since} to ${dateRange.until}`);
-  console.log('ℹ️ Note: This is a new GA4 property. Data will appear after users visit the site.');
-
-  return {
-    data: []
-  };
+  try {
+    // Call our internal API routes that use the Google Analytics Data API
+    const response = await fetch(`/api/analytics/${metric}?since=${dateRange.since}&until=${dateRange.until}`);
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch ${metric} data: ${response.statusText}`);
+    }
+    
+    const result = await response.json();
+    return { data: result.data || [] };
+  } catch (error) {
+    console.error(`Error fetching ${metric} data:`, error);
+    return { data: [] };
+  }
 };
 
 // Get visitors by country (placeholder for GA4 Reporting API)
