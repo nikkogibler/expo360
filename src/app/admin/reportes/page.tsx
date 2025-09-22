@@ -393,15 +393,26 @@ export default function ReportesPage() {
   }, [dateRange]); // Add dateRange as dependency
 
   return (
-    <div
-      style={{
-        padding: "1.5rem",
-        minHeight: "100vh",
-        backgroundImage: "url('/vine_2b.png')",
-        backgroundRepeat: "repeat",
-        backgroundSize: "300px 300px",
-      }}
-    >
+    <>
+      <style jsx>{`
+        @keyframes subtlePulse {
+          0%, 100% {
+            opacity: 1;
+          }
+          50% {
+            opacity: 0.6;
+          }
+        }
+      `}</style>
+      <div
+        style={{
+          padding: "1.5rem",
+          minHeight: "100vh",
+          backgroundImage: "url('/vine_2b.png')",
+          backgroundRepeat: "repeat",
+          backgroundSize: "300px 300px",
+        }}
+      >
       <div style={{ 
         maxWidth: "1400px", 
         margin: "0 auto",
@@ -429,61 +440,6 @@ export default function ReportesPage() {
               alignItems: "center",
               position: "relative"
             }}>
-              {/* Navigation arrows */}
-              <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
-                <button
-                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                  disabled={currentPage === 1}
-                  style={{
-                    background: currentPage === 1 ? '#e0e0e0' : '#42A5F5',
-                    color: currentPage === 1 ? '#999' : 'white',
-                    border: 'none',
-                    borderRadius: '6px',
-                    width: '32px',
-                    height: '32px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
-                    fontSize: '16px',
-                    fontWeight: 'bold'
-                  }}
-                >
-                  ←
-                </button>
-                
-                <span style={{ 
-                  color: "#42A5F5", 
-                  fontSize: "0.9rem", 
-                  fontWeight: "bold",
-                  minWidth: "40px",
-                  textAlign: "center"
-                }}>
-                  {currentPage}/{totalPages}
-                </span>
-                
-                <button
-                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                  disabled={currentPage === totalPages}
-                  style={{
-                    background: currentPage === totalPages ? '#e0e0e0' : '#42A5F5',
-                    color: currentPage === totalPages ? '#999' : 'white',
-                    border: 'none',
-                    borderRadius: '6px',
-                    width: '32px',
-                    height: '32px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
-                    fontSize: '16px',
-                    fontWeight: 'bold'
-                  }}
-                >
-                  →
-                </button>
-              </div>
-              
               <span style={{ color: "#42A5F5", fontWeight: "bold", marginRight: "0.5rem", fontSize: "0.9rem" }}>
                 Date Range: {dateRange === '7D' ? '7 Days' : 
                             dateRange === '1MO' ? '1 Month' : 
@@ -513,20 +469,35 @@ export default function ReportesPage() {
             style={{
               position: "absolute",
               left: "-50px",
-              top: "50%",
+              top: "45%",
               transform: "translateY(-50%)",
-              background: currentPage === 1 ? '#e0e0e0' : '#42A5F5',
-              color: currentPage === 1 ? '#999' : 'white',
+              background: 'transparent',
               border: 'none',
-              borderRadius: '50%',
-              width: '40px',
-              height: '40px',
               cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
-              fontSize: '18px',
-              zIndex: 10
+              padding: '8px',
+              zIndex: 10,
+              opacity: currentPage === 1 ? 0.4 : 1,
+              animation: 'subtlePulse 3s ease-in-out infinite'
             }}
           >
-            ←
+            <svg 
+              width="24" 
+              height="24" 
+              viewBox="0 0 24 24" 
+              fill="none" 
+              xmlns="http://www.w3.org/2000/svg"
+              style={{
+                filter: 'drop-shadow(1px 1px 2px rgba(0,0,0,0.1))'
+              }}
+            >
+              <path 
+                d="M15 18L9 12L15 6" 
+                stroke={currentPage === 1 ? '#ccc' : '#666'} 
+                strokeWidth="2" 
+                strokeLinecap="round" 
+                strokeLinejoin="round"
+              />
+            </svg>
           </button>
 
           <button
@@ -535,20 +506,35 @@ export default function ReportesPage() {
             style={{
               position: "absolute",
               right: "-50px",
-              top: "50%",
+              top: "45%",
               transform: "translateY(-50%)",
-              background: currentPage === totalPages ? '#e0e0e0' : '#42A5F5',
-              color: currentPage === totalPages ? '#999' : 'white',
+              background: 'transparent',
               border: 'none',
-              borderRadius: '50%',
-              width: '40px',
-              height: '40px',
               cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
-              fontSize: '18px',
-              zIndex: 10
+              padding: '8px',
+              zIndex: 10,
+              opacity: currentPage === totalPages ? 0.4 : 1,
+              animation: 'subtlePulse 3s ease-in-out infinite'
             }}
           >
-            →
+            <svg 
+              width="24" 
+              height="24" 
+              viewBox="0 0 24 24" 
+              fill="none" 
+              xmlns="http://www.w3.org/2000/svg"
+              style={{
+                filter: 'drop-shadow(1px 1px 2px rgba(0,0,0,0.1))'
+              }}
+            >
+              <path 
+                d="M9 18L15 12L9 6" 
+                stroke={currentPage === totalPages ? '#ccc' : '#666'} 
+                strokeWidth="2" 
+                strokeLinecap="round" 
+                strokeLinejoin="round"
+              />
+            </svg>
           </button>
 
           <div style={{
@@ -1200,6 +1186,7 @@ export default function ReportesPage() {
           </span>
         </span>
       </footer>
-    </div>
+      </div>
+    </>
   );
 }
