@@ -17,14 +17,19 @@ import {
   transformForNivoBar 
 } from "../../../utils/vercelAnalytics";
 
-// Reusable Card Component with Pin functionality
+// Reusable Card Component with Pin functionality and Drag & Drop
 const DashboardCard = ({ 
   cardId, 
   children, 
   isPinned, 
   onTogglePin, 
   onClick,
-  style = {} 
+  style = {},
+  onDragStart,
+  onDragEnd,
+  onDragOver,
+  onDrop,
+  isDragging = false
 }: {
   cardId: string;
   children: React.ReactNode;
@@ -32,19 +37,99 @@ const DashboardCard = ({
   onTogglePin: (cardId: string) => void;
   onClick?: () => void;
   style?: React.CSSProperties;
+  onDragStart?: (e: React.DragEvent, cardId: string) => void;
+  onDragEnd?: (e: React.DragEvent) => void;
+  onDragOver?: (e: React.DragEvent) => void;
+  onDrop?: (e: React.DragEvent, targetCardId: string) => void;
+  isDragging?: boolean;
 }) => {
+  const handleDragStart = (e: React.DragEvent) => {
+    if (onDragStart) {
+      onDragStart(e, cardId);
+    }
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', cardId);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (onDragOver) {
+      onDragOver(e);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    if (onDrop) {
+      onDrop(e, cardId);
+    }
+  };
+
   return (
     <div 
+      draggable
+      onDragStart={handleDragStart}
+      onDragEnd={onDragEnd}
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
       style={{
         backgroundColor: "rgba(255, 255, 255, 0.95)",
         borderRadius: "12px",
         padding: "1.5rem",
         position: "relative",
-        cursor: onClick ? "pointer" : "default",
+        cursor: onClick ? "pointer" : "grab",
+        transform: isDragging ? "rotate(5deg) scale(1.05)" : "none",
+        opacity: isDragging ? 0.8 : 1,
+        transition: "all 0.2s ease",
+        boxShadow: isDragging ? "0 8px 25px rgba(0,0,0,0.15)" : "0 2px 8px rgba(0,0,0,0.1)",
+        zIndex: isDragging ? 1000 : 1,
         ...style
       }}
       onClick={onClick}
+      onMouseDown={() => {
+        // Change cursor to grabbing when mouse is down
+        if (!onClick) {
+          document.body.style.cursor = 'grabbing';
+        }
+      }}
+      onMouseUp={() => {
+        document.body.style.cursor = 'default';
+      }}
     >
+      {/* Drag Handle - visible on hover */}
+      <div
+        style={{
+          position: "absolute",
+          top: "0.5rem",
+          left: "0.5rem",
+          background: "rgba(66, 165, 245, 0.1)",
+          color: "#42A5F5",
+          border: "1px solid rgba(66, 165, 245, 0.3)",
+          borderRadius: "4px",
+          width: "24px",
+          height: "24px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          cursor: "grab",
+          fontSize: "12px",
+          fontWeight: "bold",
+          zIndex: 10,
+          opacity: 0.6,
+          transition: "opacity 0.2s ease"
+        }}
+        title="Drag to reorder"
+        onMouseEnter={(e) => {
+          e.currentTarget.style.opacity = "1";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.opacity = "0.6";
+        }}
+      >
+        ⋮⋮
+      </div>
+
       {/* Pin Button */}
       <button
         onClick={(e) => {
@@ -190,6 +275,19 @@ export default function ReportesPage() {
   // Pinned cards state
   const [pinnedCards, setPinnedCards] = useState<Set<string>>(new Set());
   
+  // Drag and drop state
+  const [draggedCard, setDraggedCard] = useState<string | null>(null);
+  const [cardOrder, setCardOrder] = useState<{[key: number]: string[]}>({
+    1: [
+      "total-favorites", "top-product", "top-fabric", "top-frame",
+      "favorite-products-chart", "fabric-colors-chart", "frame-colors-chart",
+      "visitors-analytics", "browsers-analytics", "devices-analytics", "active-now"
+    ],
+    2: [
+      "conversion-rate", "avg-session", "bounce-rate", "revenue"
+    ]
+  });
+  
   // Helper function to toggle pinned cards
   const togglePinCard = (cardId: string) => {
     setPinnedCards(prev => {
@@ -201,6 +299,525 @@ export default function ReportesPage() {
       }
       return newSet;
     });
+  };
+
+  // Drag and drop handlers
+  const handleDragStart = (e: React.DragEvent, cardId: string) => {
+    setDraggedCard(cardId);
+    // Add visual feedback
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragEnd = (e: React.DragEvent) => {
+    setDraggedCard(null);
+    document.body.style.cursor = 'default';
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDrop = (e: React.DragEvent, targetCardId: string) => {
+    e.preventDefault();
+    
+    if (!draggedCard || draggedCard === targetCardId) {
+      return;
+    }
+
+    setCardOrder(prev => {
+      const newOrder = { ...prev };
+      
+      // Find which page contains the dragged card and target card
+      let sourcePage = 0;
+      let targetPage = 0;
+      
+      for (const [page, cards] of Object.entries(newOrder)) {
+        if (cards.includes(draggedCard)) sourcePage = parseInt(page);
+        if (cards.includes(targetCardId)) targetPage = parseInt(page);
+      }
+
+      // Remove dragged card from its current position
+      if (sourcePage > 0) {
+        newOrder[sourcePage] = newOrder[sourcePage].filter(id => id !== draggedCard);
+      }
+
+      // Add dragged card to target position
+      if (targetPage > 0 && newOrder[targetPage]) {
+        const targetIndex = newOrder[targetPage].indexOf(targetCardId);
+        newOrder[targetPage].splice(targetIndex, 0, draggedCard);
+      }
+
+      return newOrder;
+    });
+
+    setDraggedCard(null);
+  };
+
+  // Helper function to render a card based on its ID
+  const renderCard = (cardId: string) => {
+    const commonProps = {
+      cardId,
+      isPinned: pinnedCards.has(cardId),
+      onTogglePin: togglePinCard,
+      onDragStart: handleDragStart,
+      onDragEnd: handleDragEnd,
+      onDragOver: handleDragOver,
+      onDrop: handleDrop,
+      isDragging: draggedCard === cardId
+    };
+
+    switch (cardId) {
+      case "total-favorites":
+        return (
+          <DashboardCard
+            {...commonProps}
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "center",
+              alignItems: "center"
+            }}
+          >
+            <h3 style={{ color: "#42A5F5", margin: "0 0 0.5rem 0", fontSize: "1rem" }}>Total Favorites</h3>
+            <div style={{ color: "#42A5F5", fontSize: "2.5rem", fontWeight: "bold" }}>
+              {favoriteData.reduce((sum, item) => sum + item.favorite_count, 0)}
+            </div>
+            <div style={{ color: "#666", fontSize: "0.9rem" }}>
+              <p className="text-sm text-green-600">
+                {isClient ? `+${growthPercentage}% desde ayer` : '+0% desde ayer'}
+              </p>
+            </div>
+          </DashboardCard>
+        );
+
+      case "top-product":
+        return (
+          <DashboardCard
+            {...commonProps}
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "center",
+              alignItems: "center"
+            }}
+          >
+            <h3 style={{ color: "#42A5F5", margin: "0 0 0.5rem 0", fontSize: "1rem" }}>Top Product</h3>
+            <div style={{ color: "#42A5F5", fontSize: "1.2rem", fontWeight: "bold", textAlign: "center" }}>
+              {favoriteData.length > 0 ? favoriteData[0].product_name : "Loading..."}
+            </div>
+            <div style={{ color: "#666", fontSize: "0.9rem" }}>
+              {favoriteData.length > 0 ? `${favoriteData[0].favorite_count} favorites` : ""}
+            </div>
+          </DashboardCard>
+        );
+
+      case "top-fabric":
+        return (
+          <DashboardCard
+            {...commonProps}
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "center",
+              alignItems: "center"
+            }}
+          >
+            <h3 style={{ color: "#42A5F5", margin: "0 0 0.5rem 0", fontSize: "1rem" }}>Top Fabric</h3>
+            <div style={{ color: "#42A5F5", fontSize: "1.2rem", fontWeight: "bold", textAlign: "center" }}>
+              {fabricColorData.length > 0 ? fabricColorData[0].color : "Loading..."}
+            </div>
+            <div style={{ color: "#666", fontSize: "0.9rem" }}>
+              {fabricColorData.length > 0 ? `${fabricColorData[0].count} selections` : ""}
+            </div>
+          </DashboardCard>
+        );
+
+      case "top-frame":
+        return (
+          <DashboardCard
+            {...commonProps}
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "center",
+              alignItems: "center"
+            }}
+          >
+            <h3 style={{ color: "#42A5F5", margin: "0 0 0.5rem 0", fontSize: "1rem" }}>Top Frame</h3>
+            <div style={{ color: "#42A5F5", fontSize: "1.2rem", fontWeight: "bold", textAlign: "center" }}>
+              {frameColorData.length > 0 ? frameColorData[0].color : "Loading..."}
+            </div>
+            <div style={{ color: "#666", fontSize: "0.9rem" }}>
+              {frameColorData.length > 0 ? `${frameColorData[0].count} selections` : ""}
+            </div>
+          </DashboardCard>
+        );
+
+      case "favorite-products-chart":
+        return (
+          <DashboardCard
+            {...commonProps}
+            style={{ gridColumn: "1 / 3" }}
+            onClick={() => setEnlargedChart({
+              type: 'bar',
+              title: 'Most Favorited Products',
+              data: favoriteData,
+              config: {}
+            })}
+          >
+            <h3 style={{ color: "#42A5F5", margin: "0 0 1rem 0", fontSize: "1.1rem" }}>Most Favorited Products</h3>
+            <div style={{ height: "220px" }}>
+              <ResponsiveBar
+                data={favoriteData.length > 0 ? favoriteData.slice(0, 8) : [{ product_name: "No Data", favorite_count: 0 }]}
+                keys={["favorite_count"]}
+                indexBy="product_name"
+                theme={chartTheme}
+                margin={{ top: 20, right: 20, bottom: 60, left: 50 }}
+                padding={0.3}
+                valueScale={{ type: "linear" }}
+                indexScale={{ type: "band", round: true }}
+                colors={(datum) => {
+                  const dataToUse = favoriteData.length > 0 ? favoriteData.slice(0, 8) : [{ product_name: "No Data", favorite_count: 0 }];
+                  const colors = assignBarColors(dataToUse);
+                  const index = dataToUse.findIndex(item => item.product_name === datum.indexValue);
+                  return colors[index] || blueGradientColors[0];
+                }}
+                borderColor={{ from: "color", modifiers: [["darker", 1.6]] }}
+                axisTop={null}
+                axisRight={null}
+                axisBottom={{
+                  tickSize: 5,
+                  tickPadding: 5,
+                  tickRotation: -45,
+                  legend: "",
+                  legendPosition: "middle",
+                  legendOffset: 50,
+                }}
+                axisLeft={{
+                  tickSize: 5,
+                  tickPadding: 5,
+                  tickRotation: 0,
+                  legend: "",
+                  legendPosition: "middle",
+                  legendOffset: -40,
+                }}
+                labelSkipWidth={12}
+                labelSkipHeight={12}
+                labelTextColor={{ from: "color", modifiers: [["darker", 1.6]] }}
+                animate={true}
+              />
+            </div>
+          </DashboardCard>
+        );
+
+      case "fabric-colors-chart":
+        return (
+          <DashboardCard
+            {...commonProps}
+            onClick={() => setEnlargedChart({
+              type: 'pie',
+              title: 'Most Chosen Fabric Colors',
+              data: fabricColorData.length > 0
+                ? fabricColorData.map((v, index) => ({ 
+                    id: v.color, 
+                    value: v.count
+                  }))
+                : [{ id: "No Data", value: 1 }],
+              config: {
+                defs: fabricColorData.length > 0
+                  ? fabricColorData.map((v) => ({
+                      id: `fabric-${v.color.replace(/\s+/g, '_')}`,
+                      type: 'patternLines',
+                      background: 'inherit',
+                      color: 'rgba(255, 255, 255, 0.3)',
+                      rotation: -45,
+                      lineWidth: 6,
+                      spacing: 10,
+                    }))
+                  : [],
+                fill: fabricColorData.length > 0
+                  ? fabricColorData.map((v) => ({
+                      match: { id: v.color },
+                      id: `fabric-${v.color.replace(/\s+/g, '_')}`
+                    }))
+                  : [],
+                colors: ["#FF6F61", "#FFB347", "#FFD700", "#B0E57C", "#50BFE6", "#FF7F50", "#C2B280", "#B565A7", "#009B77", "#DD4124"]
+              }
+            })}
+          >
+            <h3 style={{ color: "#42A5F5", margin: "0 0 1rem 0", fontSize: "1.1rem" }}>Fabric Colors</h3>
+            <div style={{ height: "220px" }}>
+              <ResponsivePie
+                data={fabricColorData.length > 0 
+                  ? fabricColorData.slice(0, 6).map((v) => ({ id: v.color, value: v.count }))
+                  : [{ id: "No Data", value: 1 }]
+                }
+                theme={chartTheme}
+                margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
+                innerRadius={0.4}
+                padAngle={2}
+                cornerRadius={3}
+                activeOuterRadiusOffset={4}
+                borderWidth={1}
+                borderColor={{ from: "color", modifiers: [["darker", 0.2]] }}
+                arcLinkLabelsSkipAngle={15}
+                arcLinkLabelsTextColor="#42A5F5"
+                arcLinkLabelsThickness={2}
+                arcLinkLabelsColor={{ from: "color" }}
+                arcLabelsSkipAngle={15}
+                arcLabelsTextColor={{ from: "color", modifiers: [["darker", 2]] }}
+                colors={["#FF6F61", "#FFB347", "#FFD700", "#B0E57C", "#50BFE6", "#FF7F50"]}
+                animate={true}
+              />
+            </div>
+          </DashboardCard>
+        );
+
+      case "frame-colors-chart":
+        return (
+          <DashboardCard
+            {...commonProps}
+            onClick={() => setEnlargedChart({
+              type: 'pie',
+              title: 'Most Chosen Frame Colors',
+              data: frameColorData.length > 0
+                ? frameColorData.map((v, index) => ({ 
+                    id: v.color, 
+                    value: v.count
+                  }))
+                : [{ id: "No Data", value: 1 }],
+              config: {
+                defs: frameColorData.length > 0
+                  ? frameColorData.map((v) => ({
+                      id: `frame-${v.color.replace(/\s+/g, '_')}`,
+                      type: 'patternLines',
+                      background: 'inherit',
+                      color: 'rgba(255, 255, 255, 0.3)',
+                      rotation: 45,
+                      lineWidth: 4,
+                      spacing: 8,
+                    }))
+                  : [],
+                fill: frameColorData.length > 0
+                  ? frameColorData.map((v) => ({
+                      match: { id: v.color },
+                      id: `frame-${v.color.replace(/\s+/g, '_')}`
+                    }))
+                  : [],
+                colors: frameColorspalette
+              }
+            })}
+          >
+            <h3 style={{ color: "#42A5F5", margin: "0 0 1rem 0", fontSize: "1.1rem" }}>Frame Colors</h3>
+            <div style={{ height: "220px" }}>
+              <ResponsivePie
+                data={frameColorData.length > 0 
+                  ? frameColorData.slice(0, 6).map((v) => ({ id: v.color, value: v.count }))
+                  : [{ id: "No Data", value: 1 }]
+                }
+                theme={chartTheme}
+                margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
+                innerRadius={0.4}
+                padAngle={2}
+                cornerRadius={3}
+                activeOuterRadiusOffset={4}
+                borderWidth={1}
+                borderColor={{ from: "color", modifiers: [["darker", 0.2]] }}
+                arcLinkLabelsSkipAngle={15}
+                arcLinkLabelsTextColor="#42A5F5"
+                arcLinkLabelsThickness={2}
+                arcLinkLabelsColor={{ from: "color" }}
+                arcLabelsSkipAngle={15}
+                arcLabelsTextColor={{ from: "color", modifiers: [["darker", 2]] }}
+                colors={(datum) => {
+                  const dataToUse = frameColorData.length > 0 ? frameColorData.slice(0, 6) : [{ color: "No Data", count: 1 }];
+                  const colors = assignFrameColors(dataToUse);
+                  const index = dataToUse.findIndex(item => item.color === datum.id);
+                  return colors[index] || frameColorspalette[0];
+                }}
+                animate={true}
+              />
+            </div>
+          </DashboardCard>
+        );
+
+      case "visitors-analytics":
+        return (
+          <DashboardCard
+            {...commonProps}
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "space-between"
+            }}
+          >
+            <h3 style={{ color: "#42A5F5", margin: "0 0 1rem 0", fontSize: "1rem" }}>Visitors</h3>
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+              {countryData.slice(0, 3).map((country, index) => (
+                <div key={country.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span style={{ color: "#42A5F5", fontSize: "0.9rem" }}>{country.id}</span>
+                  <span style={{ color: "#42A5F5", fontWeight: "bold", fontSize: "0.9rem" }}>{country.value}</span>
+                </div>
+              ))}
+            </div>
+          </DashboardCard>
+        );
+
+      case "browsers-analytics":
+        return (
+          <DashboardCard
+            {...commonProps}
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "space-between"
+            }}
+          >
+            <h3 style={{ color: "#42A5F5", margin: "0 0 1rem 0", fontSize: "1rem" }}>Browsers</h3>
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+              {browserData.slice(0, 3).map((browser, index) => (
+                <div key={browser.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span style={{ color: "#42A5F5", fontSize: "0.9rem" }}>{browser.id}</span>
+                  <span style={{ color: "#42A5F5", fontWeight: "bold", fontSize: "0.9rem" }}>{browser.value}</span>
+                </div>
+              ))}
+            </div>
+          </DashboardCard>
+        );
+
+      case "devices-analytics":
+        return (
+          <DashboardCard
+            {...commonProps}
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "space-between"
+            }}
+          >
+            <h3 style={{ color: "#42A5F5", margin: "0 0 1rem 0", fontSize: "1rem" }}>Devices</h3>
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+              {deviceData.slice(0, 3).map((device, index) => (
+                <div key={device.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span style={{ color: "#42A5F5", fontSize: "0.9rem" }}>{device.id}</span>
+                  <span style={{ color: "#42A5F5", fontWeight: "bold", fontSize: "0.9rem" }}>{device.value}</span>
+                </div>
+              ))}
+            </div>
+          </DashboardCard>
+        );
+
+      case "active-now":
+        return (
+          <DashboardCard
+            {...commonProps}
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "center",
+              alignItems: "center"
+            }}
+          >
+            <h3 style={{ color: "#42A5F5", margin: "0 0 0.5rem 0", fontSize: "1rem" }}>Active Now</h3>
+            <div style={{ color: "#42A5F5", fontSize: "2rem", fontWeight: "bold" }}>
+              {liveMetrics.visitors}
+            </div>
+            <div style={{ color: "#666", fontSize: "0.9rem" }}>
+              Live visitors
+            </div>
+          </DashboardCard>
+        );
+
+      case "conversion-rate":
+        return (
+          <DashboardCard
+            {...commonProps}
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "center",
+              alignItems: "center"
+            }}
+          >
+            <h3 style={{ color: "#42A5F5", margin: "0 0 0.5rem 0", fontSize: "1rem" }}>Conversion Rate</h3>
+            <div style={{ color: "#42A5F5", fontSize: "2.5rem", fontWeight: "bold" }}>
+              3.2%
+            </div>
+            <div style={{ color: "#666", fontSize: "0.9rem" }}>
+              <p className="text-sm text-green-600">
+                +0.5% this week
+              </p>
+            </div>
+          </DashboardCard>
+        );
+
+      case "avg-session":
+        return (
+          <DashboardCard
+            {...commonProps}
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "center",
+              alignItems: "center"
+            }}
+          >
+            <h3 style={{ color: "#42A5F5", margin: "0 0 0.5rem 0", fontSize: "1rem" }}>Avg Session</h3>
+            <div style={{ color: "#42A5F5", fontSize: "1.8rem", fontWeight: "bold" }}>
+              2m 34s
+            </div>
+            <div style={{ color: "#666", fontSize: "0.9rem" }}>
+              Session duration
+            </div>
+          </DashboardCard>
+        );
+
+      case "bounce-rate":
+        return (
+          <DashboardCard
+            {...commonProps}
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "center",
+              alignItems: "center"
+            }}
+          >
+            <h3 style={{ color: "#42A5F5", margin: "0 0 0.5rem 0", fontSize: "1rem" }}>Bounce Rate</h3>
+            <div style={{ color: "#42A5F5", fontSize: "2rem", fontWeight: "bold" }}>
+              42%
+            </div>
+            <div style={{ color: "#666", fontSize: "0.9rem" }}>
+              Exit rate
+            </div>
+          </DashboardCard>
+        );
+
+      case "revenue":
+        return (
+          <DashboardCard
+            {...commonProps}
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "center",
+              alignItems: "center"
+            }}
+          >
+            <h3 style={{ color: "#42A5F5", margin: "0 0 0.5rem 0", fontSize: "1rem" }}>Revenue</h3>
+            <div style={{ color: "#42A5F5", fontSize: "1.8rem", fontWeight: "bold" }}>
+              $12,450
+            </div>
+            <div style={{ color: "#666", fontSize: "0.9rem" }}>
+              This month
+            </div>
+          </DashboardCard>
+        );
+
+      default:
+        return null;
+    }
   };
   
   // Helper function to get date range
@@ -544,484 +1161,31 @@ export default function ReportesPage() {
             gap: "1rem",
             height: "calc(100vh - 150px)" // Fit above the fold
           }}>
-          {currentPage === 1 && (
-            <>
-              {/* Page 1 - Main Analytics */}
-              {/* Top Row - Key Metrics */}
-              <DashboardCard
-                cardId="total-favorites"
-                isPinned={pinnedCards.has("total-favorites")}
-                onTogglePin={togglePinCard}
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  justifyContent: "center",
-                  alignItems: "center"
-                }}
-              >
-                <h3 style={{ color: "#42A5F5", margin: "0 0 0.5rem 0", fontSize: "1rem" }}>Total Favorites</h3>
-                <div style={{ color: "#42A5F5", fontSize: "2.5rem", fontWeight: "bold" }}>
-                  {favoriteData.reduce((sum, item) => sum + item.favorite_count, 0)}
-                </div>
-                <div style={{ color: "#666", fontSize: "0.9rem" }}>
-                  <p className="text-sm text-green-600">
-                    {isClient ? `+${growthPercentage}% desde ayer` : '+0% desde ayer'}
-                  </p>
-                </div>
-              </DashboardCard>
+          {/* Render cards in custom order */}
+          {cardOrder[currentPage]?.map((cardId, index) => (
+            <React.Fragment key={cardId}>
+              {renderCard(cardId)}
+            </React.Fragment>
+          ))}
+          
+          {/* Show pinned cards from other pages */}
+          {currentPage === 2 && Array.from(pinnedCards).map((cardId) => {
+            // Only show pinned cards that are not in the current page order
+            if (!cardOrder[currentPage]?.includes(cardId)) {
+              return (
+                <React.Fragment key={`pinned-${cardId}`}>
+                  {renderCard(cardId)}
+                </React.Fragment>
+              );
+            }
+            return null;
+          })}
 
-              <DashboardCard
-                cardId="top-product"
-                isPinned={pinnedCards.has("top-product")}
-                onTogglePin={togglePinCard}
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  justifyContent: "center",
-                  alignItems: "center"
-                }}
-              >
-                <h3 style={{ color: "#42A5F5", margin: "0 0 0.5rem 0", fontSize: "1rem" }}>Top Product</h3>
-                <div style={{ color: "#42A5F5", fontSize: "1.2rem", fontWeight: "bold", textAlign: "center" }}>
-                  {favoriteData.length > 0 ? favoriteData[0].product_name : "Loading..."}
-                </div>
-                <div style={{ color: "#666", fontSize: "0.9rem" }}>
-                  {favoriteData.length > 0 ? `${favoriteData[0].favorite_count} favorites` : ""}
-                </div>
-              </DashboardCard>
-
-              <DashboardCard
-                cardId="top-fabric"
-                isPinned={pinnedCards.has("top-fabric")}
-                onTogglePin={togglePinCard}
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  justifyContent: "center",
-                  alignItems: "center"
-                }}
-              >
-                <h3 style={{ color: "#42A5F5", margin: "0 0 0.5rem 0", fontSize: "1rem" }}>Top Fabric</h3>
-                <div style={{ color: "#42A5F5", fontSize: "1.2rem", fontWeight: "bold", textAlign: "center" }}>
-                  {fabricColorData.length > 0 ? fabricColorData[0].color : "Loading..."}
-                </div>
-                <div style={{ color: "#666", fontSize: "0.9rem" }}>
-                  {fabricColorData.length > 0 ? `${fabricColorData[0].count} selections` : ""}
-                </div>
-              </DashboardCard>
-
-              <DashboardCard 
-                cardId="top-frame"
-                isPinned={pinnedCards.has("top-frame")}
-                onTogglePin={togglePinCard}
-              >
-                <h3 style={{ color: "#42A5F5", margin: "0 0 0.5rem 0", fontSize: "1rem" }}>Top Frame</h3>
-                <div style={{ color: "#42A5F5", fontSize: "1.2rem", fontWeight: "bold", textAlign: "center" }}>
-                  {frameColorData.length > 0 ? frameColorData[0].color : "Loading..."}
-                </div>
-                <div style={{ color: "#666", fontSize: "0.9rem" }}>
-                  {frameColorData.length > 0 ? `${frameColorData[0].count} selections` : ""}
-                </div>
-              </DashboardCard>
-
-              {/* Middle Row - Main Chart (spans 2 columns) */}
-              <DashboardCard
-                cardId="favorite-products-chart"
-                isPinned={pinnedCards.has("favorite-products-chart")}
-                onTogglePin={togglePinCard}
-                style={{ gridColumn: "1 / 3" }}
-                onClick={() => setEnlargedChart({
-                  type: 'bar',
-                  title: 'Most Favorited Products',
-                  data: favoriteData,
-                  config: {}
-                })}
-              >
-                <h3 style={{ color: "#42A5F5", margin: "0 0 1rem 0", fontSize: "1.1rem" }}>Most Favorited Products</h3>
-                <div style={{ height: "220px" }}>
-                  <ResponsiveBar
-                    data={favoriteData.length > 0 ? favoriteData.slice(0, 8) : [{ product_name: "No Data", favorite_count: 0 }]}
-                    keys={["favorite_count"]}
-                    indexBy="product_name"
-                    theme={chartTheme}
-                    margin={{ top: 20, right: 20, bottom: 60, left: 50 }}
-                    padding={0.3}
-                    valueScale={{ type: "linear" }}
-                    indexScale={{ type: "band", round: true }}
-                    colors={(datum) => {
-                      const dataToUse = favoriteData.length > 0 ? favoriteData.slice(0, 8) : [{ product_name: "No Data", favorite_count: 0 }];
-                      const colors = assignBarColors(dataToUse);
-                      const index = dataToUse.findIndex(item => item.product_name === datum.indexValue);
-                      return colors[index] || blueGradientColors[0];
-                    }}
-                    borderColor={{ from: "color", modifiers: [["darker", 1.6]] }}
-                    axisTop={null}
-                    axisRight={null}
-                    axisBottom={{
-                      tickSize: 5,
-                      tickPadding: 5,
-                      tickRotation: -45,
-                      legend: "",
-                      legendPosition: "middle",
-                      legendOffset: 50,
-                    }}
-                    axisLeft={{
-                      tickSize: 5,
-                      tickPadding: 5,
-                      tickRotation: 0,
-                      legend: "",
-                      legendPosition: "middle",
-                      legendOffset: -40,
-                    }}
-                    labelSkipWidth={12}
-                    labelSkipHeight={12}
-                    labelTextColor={{ from: "color", modifiers: [["darker", 1.6]] }}
-                    animate={true}
-                  />
-                </div>
-              </DashboardCard>
-
-              {/* Fabric Colors Chart */}
-              <DashboardCard
-                cardId="fabric-colors-chart"
-                isPinned={pinnedCards.has("fabric-colors-chart")}
-                onTogglePin={togglePinCard}
-                onClick={() => setEnlargedChart({
-                  type: 'pie',
-                  title: 'Most Chosen Fabric Colors',
-                  data: fabricColorData.length > 0
-                    ? fabricColorData.map((v, index) => ({ 
-                        id: v.color, 
-                        value: v.count
-                      }))
-                    : [{ id: "No Data", value: 1 }],
-                  config: {
-                    defs: fabricColorData.length > 0
-                      ? fabricColorData.map((v) => ({
-                          id: `fabric-${v.color.replace(/\s+/g, '_')}`,
-                          type: 'patternLines',
-                          background: 'inherit',
-                          color: 'rgba(255, 255, 255, 0.3)',
-                          rotation: -45,
-                          lineWidth: 6,
-                          spacing: 10,
-                        }))
-                      : [],
-                    fill: fabricColorData.length > 0
-                      ? fabricColorData.map((v) => ({
-                          match: { id: v.color },
-                          id: `fabric-${v.color.replace(/\s+/g, '_')}`
-                        }))
-                      : [],
-                    colors: ["#FF6F61", "#FFB347", "#FFD700", "#B0E57C", "#50BFE6", "#FF7F50", "#C2B280", "#B565A7", "#009B77", "#DD4124"]
-                  }
-                })}
-              >
-                <h3 style={{ color: "#42A5F5", margin: "0 0 1rem 0", fontSize: "1.1rem" }}>Fabric Colors</h3>
-                <div style={{ height: "220px" }}>
-                  <ResponsivePie
-                    data={fabricColorData.length > 0 
-                      ? fabricColorData.slice(0, 6).map((v) => ({ id: v.color, value: v.count }))
-                      : [{ id: "No Data", value: 1 }]
-                    }
-                    theme={chartTheme}
-                    margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
-                    innerRadius={0.4}
-                    padAngle={2}
-                    cornerRadius={3}
-                    activeOuterRadiusOffset={4}
-                    borderWidth={1}
-                    borderColor={{ from: "color", modifiers: [["darker", 0.2]] }}
-                    arcLinkLabelsSkipAngle={15}
-                    arcLinkLabelsTextColor="#42A5F5"
-                    arcLinkLabelsThickness={2}
-                    arcLinkLabelsColor={{ from: "color" }}
-                    arcLabelsSkipAngle={15}
-                    arcLabelsTextColor={{ from: "color", modifiers: [["darker", 2]] }}
-                    colors={["#FF6F61", "#FFB347", "#FFD700", "#B0E57C", "#50BFE6", "#FF7F50"]}
-                    animate={true}
-                  />
-                </div>
-              </DashboardCard>
-
-              {/* Frame Colors Chart */}
-              <DashboardCard
-                cardId="frame-colors-chart"
-                isPinned={pinnedCards.has("frame-colors-chart")}
-                onTogglePin={togglePinCard}
-                onClick={() => setEnlargedChart({
-                  type: 'pie',
-                  title: 'Most Chosen Frame Colors',
-                  data: frameColorData.length > 0
-                    ? frameColorData.map((v, index) => ({ 
-                        id: v.color, 
-                        value: v.count
-                      }))
-                    : [{ id: "No Data", value: 1 }],
-                  config: {
-                    defs: frameColorData.length > 0
-                      ? frameColorData.map((v) => ({
-                          id: `frame-${v.color.replace(/\s+/g, '_')}`,
-                          type: 'patternLines',
-                          background: 'inherit',
-                          color: 'rgba(255, 255, 255, 0.3)',
-                          rotation: 45,
-                          lineWidth: 4,
-                          spacing: 8,
-                        }))
-                      : [],
-                    fill: frameColorData.length > 0
-                      ? frameColorData.map((v) => ({
-                          match: { id: v.color },
-                          id: `frame-${v.color.replace(/\s+/g, '_')}`
-                        }))
-                      : [],
-                    colors: frameColorspalette
-                  }
-                })}
-              >
-                <h3 style={{ color: "#42A5F5", margin: "0 0 1rem 0", fontSize: "1.1rem" }}>Frame Colors</h3>
-                <div style={{ height: "220px" }}>
-                  <ResponsivePie
-                    data={frameColorData.length > 0 
-                      ? frameColorData.slice(0, 6).map((v) => ({ id: v.color, value: v.count }))
-                      : [{ id: "No Data", value: 1 }]
-                    }
-                    theme={chartTheme}
-                    margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
-                    innerRadius={0.4}
-                    padAngle={2}
-                    cornerRadius={3}
-                    activeOuterRadiusOffset={4}
-                    borderWidth={1}
-                    borderColor={{ from: "color", modifiers: [["darker", 0.2]] }}
-                    arcLinkLabelsSkipAngle={15}
-                    arcLinkLabelsTextColor="#42A5F5"
-                    arcLinkLabelsThickness={2}
-                    arcLinkLabelsColor={{ from: "color" }}
-                    arcLabelsSkipAngle={15}
-                    arcLabelsTextColor={{ from: "color", modifiers: [["darker", 2]] }}
-                    colors={(datum) => {
-                      const dataToUse = frameColorData.length > 0 ? frameColorData.slice(0, 6) : [{ color: "No Data", count: 1 }];
-                      const colors = assignFrameColors(dataToUse);
-                      const index = dataToUse.findIndex(item => item.color === datum.id);
-                      return colors[index] || frameColorspalette[0];
-                    }}
-                    animate={true}
-                  />
-                </div>
-              </DashboardCard>
-
-              {/* Bottom Row - Analytics Overview */}
-              <DashboardCard
-                cardId="visitors-analytics"
-                isPinned={pinnedCards.has("visitors-analytics")}
-                onTogglePin={togglePinCard}
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  justifyContent: "space-between"
-                }}
-              >
-                <h3 style={{ color: "#42A5F5", margin: "0 0 1rem 0", fontSize: "1rem" }}>Visitors</h3>
-                <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-                  {countryData.slice(0, 3).map((country, index) => (
-                    <div key={country.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <span style={{ color: "#42A5F5", fontSize: "0.9rem" }}>{country.id}</span>
-                      <span style={{ color: "#42A5F5", fontWeight: "bold", fontSize: "0.9rem" }}>{country.value}</span>
-                    </div>
-                  ))}
-                </div>
-              </DashboardCard>
-
-              <DashboardCard
-                cardId="browsers-analytics"
-                isPinned={pinnedCards.has("browsers-analytics")}
-                onTogglePin={togglePinCard}
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  justifyContent: "space-between"
-                }}
-              >
-                <h3 style={{ color: "#42A5F5", margin: "0 0 1rem 0", fontSize: "1rem" }}>Browsers</h3>
-                <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-                  {browserData.slice(0, 3).map((browser, index) => (
-                    <div key={browser.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <span style={{ color: "#42A5F5", fontSize: "0.9rem" }}>{browser.id}</span>
-                      <span style={{ color: "#42A5F5", fontWeight: "bold", fontSize: "0.9rem" }}>{browser.value}</span>
-                    </div>
-                  ))}
-                </div>
-              </DashboardCard>
-
-              <DashboardCard
-                cardId="devices-analytics"
-                isPinned={pinnedCards.has("devices-analytics")}
-                onTogglePin={togglePinCard}
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  justifyContent: "space-between"
-                }}
-              >
-                <h3 style={{ color: "#42A5F5", margin: "0 0 1rem 0", fontSize: "1rem" }}>Devices</h3>
-                <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-                  {deviceData.slice(0, 3).map((device, index) => (
-                    <div key={device.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <span style={{ color: "#42A5F5", fontSize: "0.9rem" }}>{device.id}</span>
-                      <span style={{ color: "#42A5F5", fontWeight: "bold", fontSize: "0.9rem" }}>{device.value}</span>
-                    </div>
-                  ))}
-                </div>
-              </DashboardCard>
-
-              <DashboardCard
-                cardId="active-now"
-                isPinned={pinnedCards.has("active-now")}
-                onTogglePin={togglePinCard}
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  justifyContent: "center",
-                  alignItems: "center"
-                }}
-              >
-                <h3 style={{ color: "#42A5F5", margin: "0 0 0.5rem 0", fontSize: "1rem" }}>Active Now</h3>
-                <div style={{ color: "#42A5F5", fontSize: "2rem", fontWeight: "bold" }}>
-                  {liveMetrics.visitors}
-                </div>
-                <div style={{ color: "#666", fontSize: "0.9rem" }}>
-                  Live visitors
-                </div>
-              </DashboardCard>
-            </>
-          )}
-
-          {currentPage === 2 && (
-            <>
-              {/* Page 2 - Performance Analytics */}
-              {/* Show pinned cards first if any */}
-              {Array.from(pinnedCards).map((cardId) => {
-                // Render pinned cards from page 1 if this is page 2
-                if (cardId === "total-favorites") {
-                  return (
-                    <DashboardCard
-                      key={cardId}
-                      cardId="total-favorites"
-                      isPinned={true}
-                      onTogglePin={togglePinCard}
-                      style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        justifyContent: "center",
-                        alignItems: "center"
-                      }}
-                    >
-                      <h3 style={{ color: "#42A5F5", margin: "0 0 0.5rem 0", fontSize: "1rem" }}>Total Favorites</h3>
-                      <div style={{ color: "#42A5F5", fontSize: "2.5rem", fontWeight: "bold" }}>
-                        {favoriteData.reduce((sum, item) => sum + item.favorite_count, 0)}
-                      </div>
-                      <div style={{ color: "#666", fontSize: "0.9rem" }}>
-                        <p className="text-sm text-green-600">
-                          {isClient ? `+${growthPercentage}% desde ayer` : '+0% desde ayer'}
-                        </p>
-                      </div>
-                    </DashboardCard>
-                  );
-                }
-                // Add more pinned card templates here as needed
-                return null;
-              })}
-
-              {/* Fill remaining slots with new Page 2 content */}
-              <DashboardCard
-                cardId="conversion-rate"
-                isPinned={pinnedCards.has("conversion-rate")}
-                onTogglePin={togglePinCard}
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  justifyContent: "center",
-                  alignItems: "center"
-                }}
-              >
-                <h3 style={{ color: "#42A5F5", margin: "0 0 0.5rem 0", fontSize: "1rem" }}>Conversion Rate</h3>
-                <div style={{ color: "#42A5F5", fontSize: "2.5rem", fontWeight: "bold" }}>
-                  3.2%
-                </div>
-                <div style={{ color: "#666", fontSize: "0.9rem" }}>
-                  <p className="text-sm text-green-600">
-                    +0.5% this week
-                  </p>
-                </div>
-              </DashboardCard>
-
-              <DashboardCard
-                cardId="avg-session"
-                isPinned={pinnedCards.has("avg-session")}
-                onTogglePin={togglePinCard}
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  justifyContent: "center",
-                  alignItems: "center"
-                }}
-              >
-                <h3 style={{ color: "#42A5F5", margin: "0 0 0.5rem 0", fontSize: "1rem" }}>Avg Session</h3>
-                <div style={{ color: "#42A5F5", fontSize: "1.8rem", fontWeight: "bold" }}>
-                  2m 34s
-                </div>
-                <div style={{ color: "#666", fontSize: "0.9rem" }}>
-                  Session duration
-                </div>
-              </DashboardCard>
-
-              <DashboardCard
-                cardId="bounce-rate"
-                isPinned={pinnedCards.has("bounce-rate")}
-                onTogglePin={togglePinCard}
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  justifyContent: "center",
-                  alignItems: "center"
-                }}
-              >
-                <h3 style={{ color: "#42A5F5", margin: "0 0 0.5rem 0", fontSize: "1rem" }}>Bounce Rate</h3>
-                <div style={{ color: "#42A5F5", fontSize: "2rem", fontWeight: "bold" }}>
-                  42%
-                </div>
-                <div style={{ color: "#666", fontSize: "0.9rem" }}>
-                  Exit rate
-                </div>
-              </DashboardCard>
-
-              <DashboardCard
-                cardId="revenue"
-                isPinned={pinnedCards.has("revenue")}
-                onTogglePin={togglePinCard}
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  justifyContent: "center",
-                  alignItems: "center"
-                }}
-              >
-                <h3 style={{ color: "#42A5F5", margin: "0 0 0.5rem 0", fontSize: "1rem" }}>Revenue</h3>
-                <div style={{ color: "#42A5F5", fontSize: "1.8rem", fontWeight: "bold" }}>
-                  $12,450
-                </div>
-                <div style={{ color: "#666", fontSize: "0.9rem" }}>
-                  This month
-                </div>
-              </DashboardCard>
-
-              {/* Add more Page 2 specific cards to fill the grid */}
-              <div style={{ gridColumn: "1 / 5", textAlign: "center", color: "#42A5F5", fontSize: "1.2rem" }}>
-                🚧 Page 2 - Performance Analytics Dashboard 🚧
-              </div>
-            </>
+          {/* Page 2 placeholder if no cards */}
+          {currentPage === 2 && (!cardOrder[currentPage] || cardOrder[currentPage].length === 0) && (
+            <div style={{ gridColumn: "1 / 5", textAlign: "center", color: "#42A5F5", fontSize: "1.2rem" }}>
+              🚧 Page 2 - Performance Analytics Dashboard 🚧
+            </div>
           )}
         </div>
         </div>
