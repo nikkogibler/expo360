@@ -1,5 +1,6 @@
 'use client';
 
+import Script from 'next/script';
 import { GA_MEASUREMENT_ID } from '../utils/googleAnalytics';
 
 export default function GoogleAnalytics() {
@@ -11,20 +12,18 @@ export default function GoogleAnalytics() {
   return (
     <>
       {/* Google tag (gtag.js) */}
-      <script
-        async
+      <Script
         src="https://www.googletagmanager.com/gtag/js?id=G-75WMS9GCTE"
+        strategy="afterInteractive"
       />
-      <script
-        dangerouslySetInnerHTML={{
-          __html: `
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
-            gtag('js', new Date());
-            gtag('config', 'G-75WMS9GCTE');
-          `,
-        }}
-      />
+      <Script id="google-analytics" strategy="afterInteractive">
+        {`
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', 'G-75WMS9GCTE');
+        `}
+      </Script>
     </>
   );
 }

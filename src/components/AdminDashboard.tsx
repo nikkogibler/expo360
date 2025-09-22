@@ -909,7 +909,7 @@ const MagicBento: React.FC<BentoProps> = ({
                   <div className="card__header flex justify-between gap-3 relative">
                     {card.label === 'interzekt_logo_only' ? (
                       <span className="card__label text-base" style={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%' }}>
-                        <img src="/interzekt_logo1.png" alt="Interzekt Logo" style={{ height: '2em', width: 'auto', display: 'inline-block', verticalAlign: 'middle' }} />
+                        <Image src="/interzekt_logo1.png" alt="Interzekt Logo" width={64} height={32} style={{ height: '2em', width: 'auto', display: 'inline-block', verticalAlign: 'middle' }} />
                       </span>
                     ) : (
                       <span className="card__label text-base" style={{ color: '#4B2E09', fontWeight: 'bold' }}>{card.label}</span>

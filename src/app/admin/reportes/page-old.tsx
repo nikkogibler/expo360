@@ -6,31 +6,6 @@ import { ResponsiveBar } from "@nivo/bar";
 import { ResponsivePie } from "@nivo/pie";
 import { ResponsiveLine } from "@nivo/line";
 import { ResponsiveFunnel } from "@nivo/funnel";
-import { 
-  getVisitorsByCountry, 
-  getVisitorsByBrowser, 
-  getVisitorsByReferrer, 
-  getVisitorsByDevice,
-  transformForNivoPie,
-  transformForNivoBar 
-} from "../../../utils/vercelAnalytics";
-
-// Helper to map color name to image URL for fabric
-const getFabricImageUrl = (color: string) => {
-  // Convert color name to match file naming convention
-  const fileName = color.trim().replace(/\s+/g, '_').toUpperCase();
-  const imageUrl = `/fabric/${fileName}.png`;
-  console.log('Fabric URL for "' + color + '" -> "' + fileName + '" :', imageUrl);
-  return imageUrl;
-};
-// Helper to map color name to image URL for estructura
-const getFrameImageUrl = (color: string) => {
-  // Convert color name to match file naming convention
-  const fileName = color.trim().replace(/\s+/g, '_').toUpperCase();
-  const imageUrl = `/estructura/${fileName}.png`;
-  console.log('Frame URL for "' + color + '" -> "' + fileName + '" :', imageUrl);
-  return imageUrl;
-};
 
 export default function ReportesPage() {
   // Date range state
@@ -69,14 +44,14 @@ export default function ReportesPage() {
   // Most Chosen Frame Colors
   const [frameColorData, setFrameColorData] = useState<Array<{ color: string; count: number }>>([]);
   // Product Views Over Time
-  const [viewsData, setViewsData] = useState<any[]>([]);
+  const [viewsData, setViewsData] = useState<Array<{ id: string; data: Array<{ x: number; y: number }> }>>([]);
   // Vercel Analytics Data
-  const [countryData, setCountryData] = useState<any[]>([]);
-  const [browserData, setBrowserData] = useState<any[]>([]);
-  const [referrerData, setReferrerData] = useState<any[]>([]);
-  const [deviceData, setDeviceData] = useState<any[]>([]);
+  const [countryData, setCountryData] = useState<Array<{ id: string; value: number; label?: string }>>([]);
+  const [browserData, setBrowserData] = useState<Array<{ id: string; value: number; label?: string }>>([]);
+  const [referrerData, setReferrerData] = useState<Array<{ id: string; value: number; label?: string }>>([]);
+  const [deviceData, setDeviceData] = useState<Array<{ id: string; value: number; label?: string }>>([]);
   // Customer Journey Funnel
-  const [funnelData, setFunnelData] = useState<any[]>([]);
+  const [funnelData, setFunnelData] = useState<Array<{ id: string; value: number; stage?: string; count?: number }>>([]);
   // Live Metrics
   const [liveMetrics, setLiveMetrics] = useState({ visitors: 0 });
   
@@ -84,8 +59,8 @@ export default function ReportesPage() {
   const [enlargedChart, setEnlargedChart] = useState<{
     type: 'bar' | 'pie' | 'line' | 'funnel';
     title: string;
-    data: any;
-    config?: any;
+    data: unknown;
+    config?: Record<string, unknown>;
   } | null>(null);
 
   // Common theme for all charts with dark brown tooltips
@@ -301,7 +276,7 @@ export default function ReportesPage() {
               type: 'pie',
               title: 'Most Chosen Fabric Colors',
               data: fabricColorData.length > 0
-                ? fabricColorData.map((v, index) => ({ 
+                ? fabricColorData.map((v) => ({ 
                     id: v.color, 
                     value: v.count
                   }))
@@ -331,7 +306,7 @@ export default function ReportesPage() {
             <ResponsivePie
               data={
                 fabricColorData.length > 0
-                  ? fabricColorData.map((v, index) => ({ 
+                  ? fabricColorData.map((v) => ({ 
                       id: v.color, 
                       value: v.count
                     }))
@@ -371,7 +346,7 @@ export default function ReportesPage() {
               type: 'pie',
               title: 'Most Chosen Frame Colors',
               data: frameColorData.length > 0
-                ? frameColorData.map((v, index) => ({ 
+                ? frameColorData.map((v) => ({ 
                     id: v.color, 
                     value: v.count
                   }))
@@ -401,7 +376,7 @@ export default function ReportesPage() {
             <ResponsivePie
               data={
                 frameColorData.length > 0
-                  ? frameColorData.map((v, index) => ({ 
+                  ? frameColorData.map((v) => ({ 
                       id: v.color, 
                       value: v.count
                     }))
@@ -589,7 +564,7 @@ export default function ReportesPage() {
             <div style={{ flex: 1, minHeight: 0 }}>
               {enlargedChart.type === 'pie' && (
                 <ResponsivePie
-                  data={enlargedChart.data}
+                  data={enlargedChart.data as Array<{ id: string; value: number; label?: string }>}
                   theme={chartTheme}
                   margin={{ top: 60, right: 80, bottom: 60, left: 80 }}
                   innerRadius={0.4}
@@ -604,15 +579,15 @@ export default function ReportesPage() {
                   arcLinkLabelsColor={{ from: 'color' }}
                   arcLabelsSkipAngle={10}
                   arcLabelsTextColor={{ from: 'color', modifiers: [['darker', 2]] }}
-                  colors={enlargedChart.config.colors}
-                  defs={enlargedChart.config.defs}
-                  fill={enlargedChart.config.fill}
+                  colors={enlargedChart.config?.colors as string[]}
+                  defs={enlargedChart.config?.defs as Array<{ id: string; [key: string]: unknown }>}
+                  fill={enlargedChart.config?.fill as Array<{ id: string; match: Record<string, unknown> }>}
                   animate={true}
                 />
               )}
               {enlargedChart.type === 'bar' && (
                 <ResponsiveBar
-                  data={enlargedChart.data}
+                  data={enlargedChart.data as Array<{ product_name: string; favorite_count: number }>}
                   theme={chartTheme}
                   keys={['count']}
                   indexBy="name"

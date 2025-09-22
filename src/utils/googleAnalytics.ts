@@ -3,8 +3,8 @@
 
 declare global {
   interface Window {
-    gtag: (...args: any[]) => void;
-    dataLayer: any[];
+    gtag: (...args: unknown[]) => void;
+    dataLayer: unknown[];
   }
 }
 
@@ -25,8 +25,8 @@ export const initGA = () => {
 
   // Initialize gtag
   window.dataLayer = window.dataLayer || [];
-  window.gtag = function gtag() {
-    window.dataLayer.push(arguments);
+  window.gtag = function gtag(...args: unknown[]) {
+    window.dataLayer.push(args);
   };
   window.gtag('js', new Date());
   window.gtag('config', GA_MEASUREMENT_ID, {
@@ -48,7 +48,7 @@ export const trackPageView = (url: string, title?: string) => {
 };
 
 // Track custom events
-export const trackEvent = (eventName: string, parameters?: Record<string, any>) => {
+export const trackEvent = (eventName: string, parameters?: Record<string, unknown>) => {
   if (typeof window !== 'undefined' && window.gtag) {
     window.gtag('event', eventName, {
       ...parameters,
@@ -91,7 +91,7 @@ export const trackProductCustomization = (productId: string, productName: string
 // In a production environment, you would use the Google Analytics Reporting API
 // with proper authentication and service account setup.
 
-interface AnalyticsData {
+export interface AnalyticsData extends Record<string, unknown> {
   id: string;
   value: number;
   label?: string;
@@ -138,7 +138,7 @@ export async function getVisitorsByDevice(query: { since: string; until: string;
 }
 
 // Transform data for Nivo charts (same format as before)
-export const transformForNivoPie = (data: any[], valueKey: string, labelKey: string) => {
+export const transformForNivoPie = (data: Record<string, unknown>[], valueKey: string, labelKey: string) => {
   return data.map(item => ({
     id: item[labelKey] || item.name || item.country || item.browser || item.device,
     value: item[valueKey] || item.visits || item.pageViews || item.count,
@@ -146,7 +146,7 @@ export const transformForNivoPie = (data: any[], valueKey: string, labelKey: str
   }));
 };
 
-export const transformForNivoBar = (data: any[], valueKey: string, labelKey: string) => {
+export const transformForNivoBar = (data: Record<string, unknown>[], valueKey: string, labelKey: string) => {
   return data.map(item => ({
     [labelKey]: item[labelKey] || item.name || item.country || item.browser || item.device,
     [valueKey]: item[valueKey] || item.visits || item.pageViews || item.count

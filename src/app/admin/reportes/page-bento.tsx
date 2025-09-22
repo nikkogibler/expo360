@@ -4,33 +4,13 @@ import { useEffect, useState } from "react";
 import { supabase } from "../../../../lib/supabaseClient";
 import { ResponsiveBar } from "@nivo/bar";
 import { ResponsivePie } from "@nivo/pie";
-import { ResponsiveLine } from "@nivo/line";
-import { ResponsiveFunnel } from "@nivo/funnel";
 import { 
   getVisitorsByCountry, 
   getVisitorsByBrowser, 
   getVisitorsByReferrer, 
   getVisitorsByDevice,
-  transformForNivoPie,
-  transformForNivoBar 
+  transformForNivoPie
 } from "../../../utils/googleAnalytics";
-
-// Helper to map color name to image URL for fabric
-const getFabricImageUrl = (color: string) => {
-  // Convert color name to match file naming convention
-  const fileName = color.trim().replace(/\s+/g, '_').toUpperCase();
-  const imageUrl = `/fabric/${fileName}.png`;
-  console.log('Fabric URL for "' + color + '" -> "' + fileName + '" :', imageUrl);
-  return imageUrl;
-};
-// Helper to map color name to image URL for estructura
-const getFrameImageUrl = (color: string) => {
-  // Convert color name to match file naming convention
-  const fileName = color.trim().replace(/\s+/g, '_').toUpperCase();
-  const imageUrl = `/estructura/${fileName}.png`;
-  console.log('Frame URL for "' + color + '" -> "' + fileName + '" :', imageUrl);
-  return imageUrl;
-};
 
 export default function ReportesPage() {
   // Date range state
@@ -68,23 +48,18 @@ export default function ReportesPage() {
   const [fabricColorData, setFabricColorData] = useState<Array<{ color: string; count: number }>>([]);
   // Most Chosen Frame Colors
   const [frameColorData, setFrameColorData] = useState<Array<{ color: string; count: number }>>([]);
-  // Product Views Over Time
-  const [viewsData, setViewsData] = useState<any[]>([]);
   // Vercel Analytics Data
-  const [countryData, setCountryData] = useState<any[]>([]);
-  const [browserData, setBrowserData] = useState<any[]>([]);
-  const [referrerData, setReferrerData] = useState<any[]>([]);
-  const [deviceData, setDeviceData] = useState<any[]>([]);
-  // Customer Journey Funnel
-  const [funnelData, setFunnelData] = useState<any[]>([]);
+  const [countryData, setCountryData] = useState<Array<{ id: string; value: number; label?: string }>>([]);
+  const [browserData, setBrowserData] = useState<Array<{ id: string; value: number; label?: string }>>([]);
+  const [deviceData, setDeviceData] = useState<Array<{ id: string; value: number; label?: string }>>([]);
   // Live Metrics
   const [liveMetrics, setLiveMetrics] = useState<{ visitors: number }>({ visitors: 0 });
   // Modal state for enlarged charts
   const [enlargedChart, setEnlargedChart] = useState<{
     type: 'bar' | 'pie' | 'line' | 'funnel';
     title: string;
-    data: any[];
-    config: any;
+    data: unknown;
+    config: Record<string, unknown>;
   } | null>(null);
 
   // Chart theme
@@ -152,14 +127,13 @@ export default function ReportesPage() {
     Promise.all([
       getVisitorsByCountry(analyticsQuery),
       getVisitorsByBrowser(analyticsQuery), 
-      getVisitorsByReferrer(analyticsQuery),
       getVisitorsByDevice(analyticsQuery)
-    ]).then(([countries, browsers, referrers, devices]) => {
-      console.log('✅ Vercel Analytics Data:', { countries, browsers, referrers, devices });
+    ]).then(([countries, browsers, devices]) => {
+      console.log('✅ Vercel Analytics Data:', { countries, browsers, devices });
       
       // Transform and set country data
       if (countries?.data && Array.isArray(countries.data) && countries.data.length > 0) {
-        setCountryData(transformForNivoPie(countries.data, 'visits', 'country'));
+        setCountryData(transformForNivoPie(countries.data, 'visits', 'country') as Array<{ id: string; value: number; label?: string }>);
       } else {
         console.log('ℹ️ No country data available');
         setCountryData([{ id: 'No data available', value: 1, label: 'No data available' }]);
@@ -167,23 +141,15 @@ export default function ReportesPage() {
       
       // Transform and set browser data
       if (browsers?.data && Array.isArray(browsers.data) && browsers.data.length > 0) {
-        setBrowserData(transformForNivoPie(browsers.data, 'visits', 'browser'));
+        setBrowserData(transformForNivoPie(browsers.data, 'visits', 'browser') as Array<{ id: string; value: number; label?: string }>);
       } else {
         console.log('ℹ️ No browser data available');
         setBrowserData([{ id: 'No data available', value: 1, label: 'No data available' }]);
       }
       
-      // Transform and set referrer data
-      if (referrers?.data && Array.isArray(referrers.data) && referrers.data.length > 0) {
-        setReferrerData(transformForNivoPie(referrers.data, 'visits', 'referrer'));
-      } else {
-        console.log('ℹ️ No referrer data available');
-        setReferrerData([{ id: 'No data available', value: 1, label: 'No data available' }]);
-      }
-      
       // Transform and set device data
       if (devices?.data && Array.isArray(devices.data) && devices.data.length > 0) {
-        setDeviceData(transformForNivoPie(devices.data, 'visits', 'device'));
+        setDeviceData(transformForNivoPie(devices.data, 'visits', 'device') as Array<{ id: string; value: number; label?: string }>);
       } else {
         console.log('ℹ️ No device data available');
         setDeviceData([{ id: 'No data available', value: 1, label: 'No data available' }]);
@@ -195,16 +161,9 @@ export default function ReportesPage() {
       const errorData = [{ id: 'Analytics API Error', value: 1, label: 'Analytics API Error' }];
       setCountryData(errorData);
       setBrowserData(errorData);
-      setReferrerData(errorData);
       setDeviceData(errorData);
     });
     
-    supabase
-      .rpc("get_product_views_over_time")
-      .then((res) => setViewsData(res.data ?? []));    
-    supabase
-      .rpc("get_customer_journey_funnel")
-      .then((res) => setFunnelData(res.data ?? []));
     // Live Metrics (stub, replace with real-time source)
     setLiveMetrics({ visitors: Math.floor(Math.random() * 100) });
   }, [dateRange]); // Add dateRange as dependency
@@ -432,7 +391,7 @@ export default function ReportesPage() {
             type: 'pie',
             title: 'Most Chosen Fabric Colors',
             data: fabricColorData.length > 0
-              ? fabricColorData.map((v, index) => ({ 
+              ? fabricColorData.map((v) => ({ 
                   id: v.color, 
                   value: v.count
                 }))
@@ -498,7 +457,7 @@ export default function ReportesPage() {
             type: 'pie',
             title: 'Most Chosen Frame Colors',
             data: frameColorData.length > 0
-              ? frameColorData.map((v, index) => ({ 
+              ? frameColorData.map((v) => ({ 
                   id: v.color, 
                   value: v.count
                 }))
@@ -564,7 +523,7 @@ export default function ReportesPage() {
           }}>
             <h3 style={{ color: "#4B2E09", margin: "0 0 1rem 0", fontSize: "1rem" }}>Visitors</h3>
             <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-              {countryData.slice(0, 3).map((country, index) => (
+              {countryData.slice(0, 3).map((country) => (
                 <div key={country.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <span style={{ color: "#4B2E09", fontSize: "0.9rem" }}>{country.id}</span>
                   <span style={{ color: "#8B4513", fontWeight: "bold", fontSize: "0.9rem" }}>{country.value}</span>
@@ -584,7 +543,7 @@ export default function ReportesPage() {
           }}>
             <h3 style={{ color: "#4B2E09", margin: "0 0 1rem 0", fontSize: "1rem" }}>Browsers</h3>
             <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-              {browserData.slice(0, 3).map((browser, index) => (
+              {browserData.slice(0, 3).map((browser) => (
                 <div key={browser.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <span style={{ color: "#4B2E09", fontSize: "0.9rem" }}>{browser.id}</span>
                   <span style={{ color: "#8B4513", fontWeight: "bold", fontSize: "0.9rem" }}>{browser.value}</span>
@@ -604,7 +563,7 @@ export default function ReportesPage() {
           }}>
             <h3 style={{ color: "#4B2E09", margin: "0 0 1rem 0", fontSize: "1rem" }}>Devices</h3>
             <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-              {deviceData.slice(0, 3).map((device, index) => (
+              {deviceData.slice(0, 3).map((device) => (
                 <div key={device.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <span style={{ color: "#4B2E09", fontSize: "0.9rem" }}>{device.id}</span>
                   <span style={{ color: "#8B4513", fontWeight: "bold", fontSize: "0.9rem" }}>{device.value}</span>
@@ -686,7 +645,7 @@ export default function ReportesPage() {
             <div style={{ flex: 1, minHeight: 0 }}>
               {enlargedChart.type === 'pie' && (
                 <ResponsivePie
-                  data={enlargedChart.data}
+                  data={enlargedChart.data as Array<{ id: string; value: number; label?: string }>}
                   theme={chartTheme}
                   margin={{ top: 60, right: 80, bottom: 60, left: 80 }}
                   innerRadius={0.4}
@@ -701,15 +660,15 @@ export default function ReportesPage() {
                   arcLinkLabelsColor={{ from: 'color' }}
                   arcLabelsSkipAngle={10}
                   arcLabelsTextColor={{ from: 'color', modifiers: [['darker', 2]] }}
-                  colors={enlargedChart.config.colors}
-                  defs={enlargedChart.config.defs}
-                  fill={enlargedChart.config.fill}
+                  colors={enlargedChart.config.colors as string[]}
+                  defs={enlargedChart.config.defs as Array<{ id: string; [key: string]: unknown }>}
+                  fill={enlargedChart.config.fill as Array<{ id: string; match: Record<string, unknown> }>}
                   animate={true}
                 />
               )}
               {enlargedChart.type === 'bar' && (
                 <ResponsiveBar
-                  data={enlargedChart.data}
+                  data={enlargedChart.data as Array<{ product_name: string; favorite_count: number }>}
                   theme={chartTheme}
                   keys={['favorite_count']}
                   indexBy="product_name"

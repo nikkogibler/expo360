@@ -5,16 +5,13 @@ import Image from "next/image";
 import { supabase } from "../../../../lib/supabaseClient";
 import { ResponsiveBar } from "@nivo/bar";
 import { ResponsivePie } from "@nivo/pie";
-import { ResponsiveLine } from "@nivo/line";
-import { ResponsiveFunnel } from "@nivo/funnel";
 import BurgerMenu from "../../../components/BurgerMenu";
 import { 
   getVisitorsByCountry, 
   getVisitorsByBrowser, 
   getVisitorsByReferrer, 
   getVisitorsByDevice,
-  transformForNivoPie,
-  transformForNivoBar 
+  transformForNivoPie
 } from "../../../utils/googleAnalytics";
 
 // Reusable Card Component with Pin functionality and Drag & Drop
@@ -221,23 +218,6 @@ const DashboardCard = ({
       {children}
     </div>
   );
-};
-
-// Helper to map color name to image URL for fabric
-const getFabricImageUrl = (color: string) => {
-  // Convert color name to match file naming convention
-  const fileName = color.trim().replace(/\s+/g, '_').toUpperCase();
-  const imageUrl = `/fabric/${fileName}.png`;
-  console.log('Fabric URL for "' + color + '" -> "' + fileName + '" :', imageUrl);
-  return imageUrl;
-};
-// Helper to map color name to image URL for estructura
-const getFrameImageUrl = (color: string) => {
-  // Convert color name to match file naming convention
-  const fileName = color.trim().replace(/\s+/g, '_').toUpperCase();
-  const imageUrl = `/estructura/${fileName}.png`;
-  console.log('Frame URL for "' + color + '" -> "' + fileName + '" :', imageUrl);
-  return imageUrl;
 };
 
 // Date Range Menu Component
@@ -579,7 +559,7 @@ export default function ReportesPage() {
               type: 'pie',
               title: 'Most Chosen Fabric Colors',
               data: fabricColorData.length > 0
-                ? fabricColorData.map((v, index) => ({ 
+                ? fabricColorData.map((v) => ({ 
                     id: v.color, 
                     value: v.count
                   }))
@@ -642,7 +622,7 @@ export default function ReportesPage() {
               type: 'pie',
               title: 'Most Chosen Frame Colors',
               data: frameColorData.length > 0
-                ? frameColorData.map((v, index) => ({ 
+                ? frameColorData.map((v) => ({ 
                     id: v.color, 
                     value: v.count
                   }))
@@ -714,7 +694,7 @@ export default function ReportesPage() {
           >
             <h3 style={{ color: "#42A5F5", margin: "0 0 1rem 0", fontSize: "1rem" }}>Visitors</h3>
             <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-              {countryData.slice(0, 3).map((country, index) => (
+              {countryData.slice(0, 3).map((country) => (
                 <div key={country.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <span style={{ color: "#42A5F5", fontSize: "0.9rem" }}>{country.id}</span>
                   <span style={{ color: "#42A5F5", fontWeight: "bold", fontSize: "0.9rem" }}>{country.value}</span>
@@ -736,7 +716,7 @@ export default function ReportesPage() {
           >
             <h3 style={{ color: "#42A5F5", margin: "0 0 1rem 0", fontSize: "1rem" }}>Browsers</h3>
             <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-              {browserData.slice(0, 3).map((browser, index) => (
+              {browserData.slice(0, 3).map((browser) => (
                 <div key={browser.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <span style={{ color: "#42A5F5", fontSize: "0.9rem" }}>{browser.id}</span>
                   <span style={{ color: "#42A5F5", fontWeight: "bold", fontSize: "0.9rem" }}>{browser.value}</span>
@@ -758,7 +738,7 @@ export default function ReportesPage() {
           >
             <h3 style={{ color: "#42A5F5", margin: "0 0 1rem 0", fontSize: "1rem" }}>Devices</h3>
             <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-              {deviceData.slice(0, 3).map((device, index) => (
+              {deviceData.slice(0, 3).map((device) => (
                 <div key={device.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <span style={{ color: "#42A5F5", fontSize: "0.9rem" }}>{device.id}</span>
                   <span style={{ color: "#42A5F5", fontWeight: "bold", fontSize: "0.9rem" }}>{device.value}</span>
@@ -912,15 +892,10 @@ export default function ReportesPage() {
   const [fabricColorData, setFabricColorData] = useState<Array<{ color: string; count: number }>>([]);
   // Most Chosen Frame Colors
   const [frameColorData, setFrameColorData] = useState<Array<{ color: string; count: number }>>([]);
-  // Product Views Over Time
-  const [viewsData, setViewsData] = useState<any[]>([]);
   // Vercel Analytics Data
-  const [countryData, setCountryData] = useState<any[]>([]);
-  const [browserData, setBrowserData] = useState<any[]>([]);
-  const [referrerData, setReferrerData] = useState<any[]>([]);
-  const [deviceData, setDeviceData] = useState<any[]>([]);
-  // Customer Journey Funnel
-  const [funnelData, setFunnelData] = useState<any[]>([]);
+  const [countryData, setCountryData] = useState<Array<{ id: string; value: number; label?: string }>>([]);
+  const [browserData, setBrowserData] = useState<Array<{ id: string; value: number; label?: string }>>([]);
+  const [deviceData, setDeviceData] = useState<Array<{ id: string; value: number; label?: string }>>([]);
   // Live Metrics
   const [liveMetrics, setLiveMetrics] = useState<{ visitors: number }>({ visitors: 0 });
   // Random percentage for growth display
@@ -931,8 +906,8 @@ export default function ReportesPage() {
   const [enlargedChart, setEnlargedChart] = useState<{
     type: 'bar' | 'pie' | 'line' | 'funnel';
     title: string;
-    data: any[];
-    config: any;
+    data: unknown;
+    config: Record<string, unknown>;
   } | null>(null);
 
   // Blue gradient color palette (darkest to lightest)
@@ -1050,14 +1025,13 @@ export default function ReportesPage() {
     Promise.all([
       getVisitorsByCountry(analyticsQuery),
       getVisitorsByBrowser(analyticsQuery), 
-      getVisitorsByReferrer(analyticsQuery),
       getVisitorsByDevice(analyticsQuery)
-    ]).then(([countries, browsers, referrers, devices]) => {
-      console.log('✅ Google Analytics Data loaded:', { countries, browsers, referrers, devices });
+    ]).then(([countries, browsers, devices]) => {
+      console.log('✅ Google Analytics Data loaded:', { countries, browsers, devices });
       
       // Transform and set country data
       if (countries?.data && Array.isArray(countries.data) && countries.data.length > 0) {
-        setCountryData(transformForNivoPie(countries.data, 'visits', 'country'));
+        setCountryData(transformForNivoPie(countries.data, 'visits', 'country') as Array<{ id: string; value: number; label?: string }>);
       } else {
         console.log('ℹ️ No country data available - this is normal for a new GA4 property');
         setCountryData([{ id: 'No data yet', value: 1, label: 'New GA4 property - data will appear after site visits' }]);
@@ -1065,23 +1039,15 @@ export default function ReportesPage() {
       
       // Transform and set browser data
       if (browsers?.data && Array.isArray(browsers.data) && browsers.data.length > 0) {
-        setBrowserData(transformForNivoPie(browsers.data, 'visits', 'browser'));
+        setBrowserData(transformForNivoPie(browsers.data, 'visits', 'browser') as Array<{ id: string; value: number; label?: string }>);
       } else {
         console.log('ℹ️ No browser data available - this is normal for a new GA4 property');
         setBrowserData([{ id: 'No data yet', value: 1, label: 'New GA4 property - data will appear after site visits' }]);
       }
       
-      // Transform and set referrer data
-      if (referrers?.data && Array.isArray(referrers.data) && referrers.data.length > 0) {
-        setReferrerData(transformForNivoPie(referrers.data, 'visits', 'referrer'));
-      } else {
-        console.log('ℹ️ No referrer data available - this is normal for a new GA4 property');
-        setReferrerData([{ id: 'No data yet', value: 1, label: 'New GA4 property - data will appear after site visits' }]);
-      }
-      
       // Transform and set device data
       if (devices?.data && Array.isArray(devices.data) && devices.data.length > 0) {
-        setDeviceData(transformForNivoPie(devices.data, 'visits', 'device'));
+        setDeviceData(transformForNivoPie(devices.data, 'visits', 'device') as Array<{ id: string; value: number; label?: string }>);
       } else {
         console.log('ℹ️ No device data available - this is normal for a new GA4 property');
         setDeviceData([{ id: 'No data yet', value: 1, label: 'New GA4 property - data will appear after site visits' }]);
@@ -1093,16 +1059,8 @@ export default function ReportesPage() {
       const errorData = [{ id: 'Analytics Error', value: 1, label: 'Error loading analytics data' }];
       setCountryData(errorData);
       setBrowserData(errorData);
-      setReferrerData(errorData);
       setDeviceData(errorData);
     });
-    
-    supabase
-      .rpc("get_product_views_over_time")
-      .then((res) => setViewsData(res.data ?? []));    
-    supabase
-      .rpc("get_customer_journey_funnel")
-      .then((res) => setFunnelData(res.data ?? []));
     
     // Set random values only on client side to avoid hydration mismatch
     setIsClient(true);
@@ -1263,7 +1221,7 @@ export default function ReportesPage() {
             height: "calc(100vh - 150px)" // Fit above the fold
           }}>
           {/* Render cards in custom order */}
-          {cardOrder[currentPage]?.map((cardId, index) => (
+          {cardOrder[currentPage]?.map((cardId) => (
             <React.Fragment key={cardId}>
               {renderCard(cardId)}
             </React.Fragment>
@@ -1344,7 +1302,7 @@ export default function ReportesPage() {
             <div style={{ flex: 1, minHeight: 0 }}>
               {enlargedChart.type === 'pie' && (
                 <ResponsivePie
-                  data={enlargedChart.data}
+                  data={enlargedChart.data as Array<{ id: string; value: number }>}
                   theme={chartTheme}
                   margin={{ top: 60, right: 80, bottom: 60, left: 80 }}
                   innerRadius={0.4}
@@ -1362,21 +1320,24 @@ export default function ReportesPage() {
                   colors={(datum) => {
                     // Check if this is frame colors data based on the title
                     if (enlargedChart.title === 'Most Chosen Frame Colors') {
-                      const colors = assignFrameColors(enlargedChart.data.map(d => ({ color: d.id, count: d.value })));
-                      const index = enlargedChart.data.findIndex(item => item.id === datum.id);
+                      const data = enlargedChart.data as Array<{ id: string; value: number }>;
+                      const colors = assignFrameColors(data.map(d => ({ color: d.id, count: d.value })));
+                      const index = data.findIndex(item => item.id === datum.id);
                       return colors[index] || frameColorspalette[0];
                     }
                     // Fallback to config colors for other charts
-                    return enlargedChart.config.colors[enlargedChart.data.findIndex(item => item.id === datum.id)] || enlargedChart.config.colors[0];
+                    const data = enlargedChart.data as Array<{ id: string; value: number }>;
+                    const colors = enlargedChart.config.colors as string[];
+                    return colors[data.findIndex(item => item.id === datum.id)] || colors[0];
                   }}
-                  defs={enlargedChart.config.defs}
-                  fill={enlargedChart.config.fill}
+                  defs={enlargedChart.config.defs as Array<{ id: string; [key: string]: unknown }>}
+                  fill={enlargedChart.config.fill as Array<{ id: string; match: Record<string, unknown> }>}
                   animate={true}
                 />
               )}
               {enlargedChart.type === 'bar' && (
                 <ResponsiveBar
-                  data={enlargedChart.data}
+                  data={enlargedChart.data as Array<{ product_name: string; favorite_count: number }>}
                   theme={chartTheme}
                   keys={['favorite_count']}
                   indexBy="product_name"
@@ -1385,8 +1346,9 @@ export default function ReportesPage() {
                   valueScale={{ type: 'linear' }}
                   indexScale={{ type: 'band', round: true }}
                   colors={(datum) => {
-                    const colors = assignBarColors(enlargedChart.data);
-                    const index = enlargedChart.data.findIndex(item => item.product_name === datum.indexValue);
+                    const data = enlargedChart.data as Array<{ product_name: string; favorite_count: number }>;
+                    const colors = assignBarColors(data);
+                    const index = data.findIndex(item => item.product_name === datum.indexValue);
                     return colors[index] || blueGradientColors[0];
                   }}
                   borderColor={{ from: 'color', modifiers: [['darker', 1.6]] }}

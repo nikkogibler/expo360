@@ -68,13 +68,13 @@ export async function GET(request: NextRequest) {
     
     // Step 3: Process the data
     const productNameMap: Record<string, string> = {};
-    (productsData || []).forEach((product: any) => {
+    (productsData || []).forEach((product: { id: string; name: string }) => {
       productNameMap[product.id] = product.name;
     });
     
     // Count favorites per product
     const productCounts: Record<string, number> = {};
-    favoritesData.forEach((favorite: any) => {
+    favoritesData.forEach((favorite: { product_id?: string }) => {
       if (favorite.product_id) {
         productCounts[favorite.product_id] = (productCounts[favorite.product_id] || 0) + 1;
       }
@@ -93,7 +93,7 @@ export async function GET(request: NextRequest) {
     const fabricMap: Record<string, number> = {};
     const frameMap: Record<string, number> = {};
     
-    favoritesData.forEach((row: any) => {
+    favoritesData.forEach((row: { fabric_color?: string; frame_color?: string }) => {
       if (row.fabric_color) {
         fabricMap[row.fabric_color] = (fabricMap[row.fabric_color] || 0) + 1;
       }

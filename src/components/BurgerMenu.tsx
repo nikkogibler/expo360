@@ -18,7 +18,7 @@ const linearConfig = {
   duration: 100
 };
 
-const topRect = async (next: any, isOpen: boolean) => {
+const topRect = async (next: (values: Record<string, unknown>) => Promise<unknown>, isOpen: boolean) => {
   // Stage 1
   await next({
     transform: isOpen
@@ -36,17 +36,17 @@ const topRect = async (next: any, isOpen: boolean) => {
   });
 };
 
-const mediumRect = async (next: any, isOpen: boolean) => {
+const mediumRect = async (next: (values: Record<string, unknown>) => Promise<unknown>, isOpen: boolean) => {
   // Medium rect has only Stage 1
   await next({
     opacity: isOpen ? 0 : 1,
     // Make delay when isOpen changed from true to false
-    delay: !isOpen && 100,
+    delay: !isOpen ? 100 : undefined,
     config: linearConfig
   });
 };
 
-const bottomRect = async (next: any, isOpen: boolean) => {
+const bottomRect = async (next: (values: Record<string, unknown>) => Promise<unknown>, isOpen: boolean) => {
   // Stage 1
   await next({
     transform: isOpen
@@ -110,5 +110,7 @@ const BurgerMenu = memo(({ isOpen, onClick }: BurgerMenuProps) => {
     </>
   );
 });
+
+BurgerMenu.displayName = 'BurgerMenu';
 
 export default BurgerMenu;

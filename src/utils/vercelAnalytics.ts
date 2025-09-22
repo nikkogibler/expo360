@@ -1,6 +1,8 @@
 // Vercel Analytics API integration via Next.js API routes
 // This calls our internal API routes which proxy to Vercel's API
 
+import type { AnalyticsData } from './googleAnalytics';
+
 interface AnalyticsQuery {
   since?: string;
   until?: string;
@@ -76,17 +78,17 @@ export async function getVisitorsByDevice(query: AnalyticsQuery = {}) {
 }
 
 // Transform data for Nivo charts
-export const transformForNivoBar = (data: any[], valueKey: string, labelKey: string) => {
+export const transformForNivoBar = (data: AnalyticsData[], valueKey: string, labelKey: string) => {
   return data.map(item => ({
     [labelKey]: item[labelKey] || item.name || item.country || item.browser || item.device,
     [valueKey]: item[valueKey] || item.visits || item.pageViews || item.count
   }));
 };
 
-export const transformForNivoPie = (data: any[], valueKey: string, labelKey: string) => {
+export const transformForNivoPie = (data: AnalyticsData[], valueKey: string, labelKey: string): { id: string; value: number; label?: string }[] => {
   return data.map(item => ({
-    id: item[labelKey] || item.name || item.country || item.browser || item.device,
-    value: item[valueKey] || item.visits || item.pageViews || item.count,
-    label: item[labelKey] || item.name || item.country || item.browser || item.device
-  }));
+    id: String(item[labelKey] || item.name || item.country || item.browser || item.device || ''),
+    value: Number(item[valueKey] || item.visits || item.pageViews || item.count || 0),
+    label: String(item[labelKey] || item.name || item.country || item.browser || item.device || '')
+  })) as { id: string; value: number; label?: string }[];
 };
