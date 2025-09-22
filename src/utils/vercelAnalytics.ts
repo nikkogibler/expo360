@@ -1,12 +1,5 @@
-// Vercel Analytics API integration
-// You'll need to get your team ID and create an API token from Vercel dashboard
-
-const VERCEL_API_BASE = 'https://api.vercel.com';
-
-// You'll need to set these in your environment variables
-const VERCEL_TOKEN = process.env.NEXT_PUBLIC_VERCEL_TOKEN;
-const VERCEL_TEAM_ID = process.env.NEXT_PUBLIC_VERCEL_TEAM_ID;
-const VERCEL_PROJECT_ID = process.env.NEXT_PUBLIC_VERCEL_PROJECT_ID;
+// Vercel Analytics API integration via Next.js API routes
+// This calls our internal API routes which proxy to Vercel's API
 
 interface AnalyticsQuery {
   since?: string;
@@ -14,70 +7,15 @@ interface AnalyticsQuery {
   environment?: 'production' | 'preview';
 }
 
-// Get page views data
-export async function getPageViews(query: AnalyticsQuery = {}) {
-  const params = new URLSearchParams({
-    projectId: VERCEL_PROJECT_ID || '',
-    since: query.since || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days ago
-    until: query.until || new Date().toISOString(),
-    environment: query.environment || 'production',
-    ...VERCEL_TEAM_ID && { teamId: VERCEL_TEAM_ID }
-  });
-
-  const response = await fetch(`${VERCEL_API_BASE}/v1/analytics/page-views?${params}`, {
-    headers: {
-      'Authorization': `Bearer ${VERCEL_TOKEN}`,
-      'Content-Type': 'application/json',
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error(`Failed to fetch page views: ${response.statusText}`);
-  }
-
-  return response.json();
-}
-
-// Get top pages data
-export async function getTopPages(query: AnalyticsQuery = {}) {
-  const params = new URLSearchParams({
-    projectId: VERCEL_PROJECT_ID || '',
-    since: query.since || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-    until: query.until || new Date().toISOString(),
-    environment: query.environment || 'production',
-    ...VERCEL_TEAM_ID && { teamId: VERCEL_TEAM_ID }
-  });
-
-  const response = await fetch(`${VERCEL_API_BASE}/v1/analytics/top-pages?${params}`, {
-    headers: {
-      'Authorization': `Bearer ${VERCEL_TOKEN}`,
-      'Content-Type': 'application/json',
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error(`Failed to fetch top pages: ${response.statusText}`);
-  }
-
-  return response.json();
-}
-
 // Get visitors by country
 export async function getVisitorsByCountry(query: AnalyticsQuery = {}) {
   const params = new URLSearchParams({
-    projectId: VERCEL_PROJECT_ID || '',
     since: query.since || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
     until: query.until || new Date().toISOString(),
-    environment: query.environment || 'production',
-    ...VERCEL_TEAM_ID && { teamId: VERCEL_TEAM_ID }
+    environment: query.environment || 'production'
   });
 
-  const response = await fetch(`${VERCEL_API_BASE}/v1/analytics/top-countries?${params}`, {
-    headers: {
-      'Authorization': `Bearer ${VERCEL_TOKEN}`,
-      'Content-Type': 'application/json',
-    },
-  });
+  const response = await fetch(`/api/analytics/countries?${params}`);
 
   if (!response.ok) {
     throw new Error(`Failed to fetch visitors by country: ${response.statusText}`);
@@ -89,19 +27,12 @@ export async function getVisitorsByCountry(query: AnalyticsQuery = {}) {
 // Get visitors by referrer
 export async function getVisitorsByReferrer(query: AnalyticsQuery = {}) {
   const params = new URLSearchParams({
-    projectId: VERCEL_PROJECT_ID || '',
     since: query.since || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
     until: query.until || new Date().toISOString(),
-    environment: query.environment || 'production',
-    ...VERCEL_TEAM_ID && { teamId: VERCEL_TEAM_ID }
+    environment: query.environment || 'production'
   });
 
-  const response = await fetch(`${VERCEL_API_BASE}/v1/analytics/top-referrers?${params}`, {
-    headers: {
-      'Authorization': `Bearer ${VERCEL_TOKEN}`,
-      'Content-Type': 'application/json',
-    },
-  });
+  const response = await fetch(`/api/analytics/referrers?${params}`);
 
   if (!response.ok) {
     throw new Error(`Failed to fetch visitors by referrer: ${response.statusText}`);
@@ -113,19 +44,12 @@ export async function getVisitorsByReferrer(query: AnalyticsQuery = {}) {
 // Get visitors by browser
 export async function getVisitorsByBrowser(query: AnalyticsQuery = {}) {
   const params = new URLSearchParams({
-    projectId: VERCEL_PROJECT_ID || '',
     since: query.since || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
     until: query.until || new Date().toISOString(),
-    environment: query.environment || 'production',
-    ...VERCEL_TEAM_ID && { teamId: VERCEL_TEAM_ID }
+    environment: query.environment || 'production'
   });
 
-  const response = await fetch(`${VERCEL_API_BASE}/v1/analytics/top-browsers?${params}`, {
-    headers: {
-      'Authorization': `Bearer ${VERCEL_TOKEN}`,
-      'Content-Type': 'application/json',
-    },
-  });
+  const response = await fetch(`/api/analytics/browsers?${params}`);
 
   if (!response.ok) {
     throw new Error(`Failed to fetch visitors by browser: ${response.statusText}`);
@@ -137,19 +61,12 @@ export async function getVisitorsByBrowser(query: AnalyticsQuery = {}) {
 // Get visitors by device
 export async function getVisitorsByDevice(query: AnalyticsQuery = {}) {
   const params = new URLSearchParams({
-    projectId: VERCEL_PROJECT_ID || '',
     since: query.since || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
     until: query.until || new Date().toISOString(),
-    environment: query.environment || 'production',
-    ...VERCEL_TEAM_ID && { teamId: VERCEL_TEAM_ID }
+    environment: query.environment || 'production'
   });
 
-  const response = await fetch(`${VERCEL_API_BASE}/v1/analytics/top-devices?${params}`, {
-    headers: {
-      'Authorization': `Bearer ${VERCEL_TOKEN}`,
-      'Content-Type': 'application/json',
-    },
-  });
+  const response = await fetch(`/api/analytics/devices?${params}`);
 
   if (!response.ok) {
     throw new Error(`Failed to fetch visitors by device: ${response.statusText}`);
