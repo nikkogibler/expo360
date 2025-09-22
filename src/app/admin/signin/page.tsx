@@ -1,9 +1,10 @@
 "use client";
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-// import { adminList } from '../../../config/adminList';
+import { adminList } from '../../../config/adminList';
 import Image from 'next/image';
 import { supabase } from "../../../../lib/supabaseClient";
+
 export default function AdminSignIn() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -11,6 +12,28 @@ export default function AdminSignIn() {
   const [welcomeName, setWelcomeName] = useState('');
   const [genderedWelcome, setGenderedWelcome] = useState('');
   const router = useRouter();
+
+  // Check if user is already authenticated
+  useEffect(() => {
+    const getCookie = (name: string) => {
+      const value = `; ${document.cookie}`;
+      const parts = value.split(`; ${name}=`);
+      if (parts.length === 2) {
+        return parts.pop()?.split(';').shift();
+      }
+      return null;
+    };
+
+    const userEmail = getCookie('user_email');
+    if (userEmail) {
+      const decodedEmail = decodeURIComponent(userEmail);
+      if (adminList.includes(decodedEmail)) {
+        // User is already authenticated, redirect to admin
+        router.push('/admin');
+        return;
+      }
+    }
+  }, [router]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -44,7 +67,11 @@ export default function AdminSignIn() {
       welcomeWord = 'Bienvenido';
     }
     setGenderedWelcome(welcomeWord);
-    document.cookie = `user_email=${email.trim().toLowerCase()}; path=/`;
+    
+    // Set cookie with better persistence and security
+    const cookieValue = `user_email=${encodeURIComponent(email.trim().toLowerCase())}; path=/; max-age=86400; SameSite=Lax`;
+    document.cookie = cookieValue;
+    
     setTimeout(() => {
       router.push('/admin');
     }, 1500);

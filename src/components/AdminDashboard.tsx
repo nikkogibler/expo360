@@ -1,6 +1,7 @@
 "use client";
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import BurgerMenu from './BurgerMenu';
 import AdminMenu from './AdminMenu';
 import { gsap } from 'gsap';
@@ -126,6 +127,7 @@ const ParticleCard: React.FC<{
   enableTilt?: boolean;
   clickEffect?: boolean;
   enableMagnetism?: boolean;
+  onClick?: () => void;
 }> = ({
   children,
   className = '',
@@ -135,7 +137,8 @@ const ParticleCard: React.FC<{
   glowColor = DEFAULT_GLOW_COLOR,
   enableTilt = true,
   clickEffect = false,
-  enableMagnetism = false
+  enableMagnetism = false,
+  onClick
 }) => {
   const cardRef = useRef<HTMLDivElement>(null);
   const particlesRef = useRef<HTMLDivElement[]>([]);
@@ -355,8 +358,9 @@ const ParticleCard: React.FC<{
   return (
     <div
       ref={cardRef}
-      className={`${className} relative overflow-hidden`}
+      className={`${className} relative overflow-hidden cursor-pointer`}
       style={{ ...style, position: 'relative', overflow: 'hidden' }}
+      onClick={onClick}
     >
       {children}
     </div>
@@ -543,11 +547,29 @@ const MagicBento: React.FC<BentoProps> = ({
   enableMagnetism = true
 }) => {
   const gridRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
   const isMobile = useMobileDetection();
   const shouldDisableAnimations = disableAnimations || isMobile;
 
   // Burger menu open state
   const [burgerOpen, setBurgerOpen] = useState(false);
+
+  // Handle card navigation
+  const handleCardClick = (cardLabel: string) => {
+    switch (cardLabel) {
+      case 'Analítica y Reportes':
+        router.push('/admin/reportes');
+        break;
+      case 'Soporte Interzekt':
+        window.open('https://wa.me/528186931122', '_blank');
+        break;
+      // Add more navigation cases here for other cards
+      default:
+        // For now, other cards don't have navigation
+        console.log(`Clicked on card: ${cardLabel}`);
+        break;
+    }
+  };
 
   return (
   <>
@@ -742,6 +764,7 @@ const MagicBento: React.FC<BentoProps> = ({
                     enableTilt={enableTilt}
                     clickEffect={clickEffect}
                     enableMagnetism={enableMagnetism}
+                    onClick={() => handleCardClick(card.label || '')}
                   >
                     {card.backgroundImage && (
                       <>
@@ -857,6 +880,10 @@ const MagicBento: React.FC<BentoProps> = ({
                     };
 
                     const handleClick = (e: MouseEvent) => {
+                      // Handle navigation first
+                      handleCardClick(card.label || '');
+
+                      // Then handle visual effects
                       if (!clickEffect || shouldDisableAnimations) return;
 
                       const rect = el.getBoundingClientRect();

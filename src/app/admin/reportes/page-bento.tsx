@@ -1,21 +1,39 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { supabase } from "../../../../lib/supabaseClient";
 import { ResponsiveBar } from "@nivo/bar";
 import { ResponsivePie } from "@nivo/pie";
+import { useAdminAuth } from "../../../hooks/useAdminAuth";
 import { 
   getVisitorsByCountry, 
   getVisitorsByBrowser, 
-  getVisitorsByReferrer, 
   getVisitorsByDevice,
   transformForNivoPie
 } from "../../../utils/googleAnalytics";
 
 export default function ReportesPage() {
+  // Authentication check
+  const isAuthenticated = useAdminAuth();
+  
+  // All hooks must be called before any conditional returns
   // Date range state
   const [dateRange, setDateRange] = useState<'7D' | '1MO' | '3MO' | '12MO' | '24MO'>('1MO');
   
+  // Data state hooks
+  const [favoriteData, setFavoriteData] = useState<Array<{ product_name: string; favorite_count: number }>>([]);
+  const [fabricColorData, setFabricColorData] = useState<Array<{ color: string; count: number }>>([]);
+  const [frameColorData, setFrameColorData] = useState<Array<{ color: string; count: number }>>([]);
+  const [countryData, setCountryData] = useState<Array<{ id: string; value: number; label?: string }>>([]);
+  const [browserData, setBrowserData] = useState<Array<{ id: string; value: number; label?: string }>>([]);
+  const [deviceData, setDeviceData] = useState<Array<{ id: string; value: number; label?: string }>>([]);
+  const [liveMetrics, setLiveMetrics] = useState<{ visitors: number }>({ visitors: 0 });
+  const [enlargedChart, setEnlargedChart] = useState<{
+    type: 'bar' | 'pie' | 'line' | 'funnel';
+    title: string;
+    data: unknown;
+    config: Record<string, unknown>;
+  } | null>(null);
+
   // Helper function to get date range
   const getDateRangeFilter = (range: '7D' | '1MO' | '3MO' | '12MO' | '24MO') => {
     const now = new Date();
@@ -42,26 +60,6 @@ export default function ReportesPage() {
     return startDate.toISOString();
   };
   
-  // Top 10 Most Favorited Products
-  const [favoriteData, setFavoriteData] = useState<Array<{ product_name: string; favorite_count: number }>>([]);
-  // Most Chosen Fabric Colors
-  const [fabricColorData, setFabricColorData] = useState<Array<{ color: string; count: number }>>([]);
-  // Most Chosen Frame Colors
-  const [frameColorData, setFrameColorData] = useState<Array<{ color: string; count: number }>>([]);
-  // Vercel Analytics Data
-  const [countryData, setCountryData] = useState<Array<{ id: string; value: number; label?: string }>>([]);
-  const [browserData, setBrowserData] = useState<Array<{ id: string; value: number; label?: string }>>([]);
-  const [deviceData, setDeviceData] = useState<Array<{ id: string; value: number; label?: string }>>([]);
-  // Live Metrics
-  const [liveMetrics, setLiveMetrics] = useState<{ visitors: number }>({ visitors: 0 });
-  // Modal state for enlarged charts
-  const [enlargedChart, setEnlargedChart] = useState<{
-    type: 'bar' | 'pie' | 'line' | 'funnel';
-    title: string;
-    data: unknown;
-    config: Record<string, unknown>;
-  } | null>(null);
-
   // Chart theme
   const chartTheme = {
     tooltip: {
@@ -77,7 +75,12 @@ export default function ReportesPage() {
     axis: { ticks: { text: { fill: "#4B2E09" } } }
   };
 
+  // All hooks must be called before any conditional returns
   useEffect(() => {
+    // Only fetch data if authenticated
+    if (!isAuthenticated) {
+      return;
+    }
     console.log('Starting data fetch...');
     
     // Load customer favorites data from API (uses admin client server-side)
@@ -166,7 +169,30 @@ export default function ReportesPage() {
     
     // Live Metrics (stub, replace with real-time source)
     setLiveMetrics({ visitors: Math.floor(Math.random() * 100) });
-  }, [dateRange]); // Add dateRange as dependency
+  }, [dateRange, isAuthenticated]); // Add dateRange and isAuthenticated as dependencies
+
+  // Conditional rendering logic - all hooks must be called before this
+  // Don't render anything while authentication is being checked
+  if (isAuthenticated === null) {
+    return (
+      <div style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundImage: "url('/vine_2b.png')",
+        backgroundRepeat: 'repeat',
+        backgroundSize: '400px 400px',
+      }}>
+        <div style={{ color: '#444', fontSize: '18px' }}>Verificando autenticación...</div>
+      </div>
+    );
+  }
+
+  // Don't render the page if not authenticated (redirect will happen in useAdminAuth)
+  if (!isAuthenticated) {
+    return null;
+  }
 
   return (
     <div

@@ -2,14 +2,13 @@
 
 import React, { useEffect, useState, useRef } from "react";
 import Image from "next/image";
-import { supabase } from "../../../../lib/supabaseClient";
 import { ResponsiveBar } from "@nivo/bar";
 import { ResponsivePie } from "@nivo/pie";
 import BurgerMenu from "../../../components/BurgerMenu";
+import { useAdminAuth } from "../../../hooks/useAdminAuth";
 import { 
   getVisitorsByCountry, 
   getVisitorsByBrowser, 
-  getVisitorsByReferrer, 
   getVisitorsByDevice,
   transformForNivoPie
 } from "../../../utils/googleAnalytics";
@@ -303,6 +302,10 @@ const DateRangeMenu = ({ open, setOpen, dateRange, setDateRange }: {
 };
 
 export default function ReportesPage() {
+  // Authentication check
+  const isAuthenticated = useAdminAuth();
+  
+  // All hooks must be called before any conditional returns
   // Date range state - default to 3MO
   const [dateRange, setDateRange] = useState<'7D' | '1MO' | '3MO' | '12MO' | '24MO'>('3MO');
   // Menu state
@@ -328,6 +331,166 @@ export default function ReportesPage() {
     ]
   });
   
+  // Data state hooks
+  const [favoriteData, setFavoriteData] = useState<Array<{ product_name: string; favorite_count: number }>>([]);
+  const [fabricColorData, setFabricColorData] = useState<Array<{ color: string; count: number }>>([]);
+  const [frameColorData, setFrameColorData] = useState<Array<{ color: string; count: number }>>([]);
+  const [countryData, setCountryData] = useState<Array<{ id: string; value: number; label?: string }>>([]);
+  const [browserData, setBrowserData] = useState<Array<{ id: string; value: number; label?: string }>>([]);
+  const [deviceData, setDeviceData] = useState<Array<{ id: string; value: number; label?: string }>>([]);
+  const [liveMetrics, setLiveMetrics] = useState<{ visitors: number }>({ visitors: 0 });
+  const [growthPercentage, setGrowthPercentage] = useState<number>(0);
+  const [isClient, setIsClient] = useState(false);
+  const [enlargedChart, setEnlargedChart] = useState<{
+    type: 'bar' | 'pie' | 'line' | 'funnel';
+    title: string;
+    data: unknown;
+    config: Record<string, unknown>;
+  } | null>(null);
+
+  // Helper function to get date range
+  const getDateRangeFilter = (range: '7D' | '1MO' | '3MO' | '12MO' | '24MO') => {
+    const now = new Date();
+    const startDate = new Date();
+    
+    switch (range) {
+      case '7D':
+        startDate.setDate(now.getDate() - 7);
+        break;
+      case '1MO':
+        startDate.setMonth(now.getMonth() - 1);
+        break;
+      case '3MO':
+        startDate.setMonth(now.getMonth() - 3);
+        break;
+      case '12MO':
+        startDate.setFullYear(now.getFullYear() - 1);
+        break;
+      case '24MO':
+        startDate.setFullYear(now.getFullYear() - 2);
+        break;
+    }
+    
+    return startDate.toISOString();
+  };
+
+  // Data fetching useEffect - must be called before conditional rendering
+  useEffect(() => {
+    console.log('Starting data fetch...');
+    
+    // Load customer favorites data from API (uses admin client server-side)
+    const startDate = getDateRangeFilter(dateRange);
+    const apiUrl = `/api/admin/customer-data?startDate=${encodeURIComponent(startDate)}`;
+    
+    fetch(apiUrl)
+      .then(response => response.json())
+      .then(data => {
+        console.log('Admin API response:', data);
+        
+        if (data.error) {
+          console.error('API Error:', data.error);
+          // Set fallback data
+          setFavoriteData([
+            { product_name: 'No data (API Error)', favorite_count: 0 }
+          ]);
+          setFabricColorData([]);
+          setFrameColorData([]);
+        } else {
+          setFavoriteData(data.favoriteProducts || []);
+          setFabricColorData(data.fabricColors || []);
+          setFrameColorData(data.frameColors || []);
+        }
+      })
+      .catch(error => {
+        console.error('Fetch error:', error);
+        setFavoriteData([
+          { product_name: 'Error loading data', favorite_count: 0 }
+        ]);
+        setFabricColorData([]);
+        setFrameColorData([]);
+      });
+
+    // Load Google Analytics data
+    const analyticsStartDate = getDateRangeFilter(dateRange);
+    const analyticsEndDate = new Date().toISOString();
+    
+    const analyticsQuery = {
+      since: analyticsStartDate,
+      until: analyticsEndDate,
+      environment: 'production' as const
+    };
+    
+    console.log('📊 Loading Google Analytics data...');
+    
+    Promise.all([
+      getVisitorsByCountry(analyticsQuery),
+      getVisitorsByBrowser(analyticsQuery), 
+      getVisitorsByDevice(analyticsQuery)
+    ]).then(([countries, browsers, devices]) => {
+      console.log('✅ Google Analytics Data loaded:', { countries, browsers, devices });
+      
+      // Transform and set country data
+      if (countries?.data && Array.isArray(countries.data) && countries.data.length > 0) {
+        setCountryData(transformForNivoPie(countries.data, 'visits', 'country') as Array<{ id: string; value: number; label?: string }>);
+      } else {
+        console.log('ℹ️ No country data available - this is normal for a new GA4 property');
+        setCountryData([{ id: 'No data yet', value: 1, label: 'New GA4 property - data will appear after site visits' }]);
+      }
+      
+      // Transform and set browser data
+      if (browsers?.data && Array.isArray(browsers.data) && browsers.data.length > 0) {
+        setBrowserData(transformForNivoPie(browsers.data, 'visits', 'browser') as Array<{ id: string; value: number; label?: string }>);
+      } else {
+        console.log('ℹ️ No browser data available - this is normal for a new GA4 property');
+        setBrowserData([{ id: 'No data yet', value: 1, label: 'New GA4 property - data will appear after site visits' }]);
+      }
+      
+      // Transform and set device data
+      if (devices?.data && Array.isArray(devices.data) && devices.data.length > 0) {
+        setDeviceData(transformForNivoPie(devices.data, 'visits', 'device') as Array<{ id: string; value: number; label?: string }>);
+      } else {
+        console.log('ℹ️ No device data available - this is normal for a new GA4 property');
+        setDeviceData([{ id: 'No data yet', value: 1, label: 'New GA4 property - data will appear after site visits' }]);
+      }
+    }).catch(error => {
+      console.error('❌ Error loading Google Analytics:', error);
+      
+      // Set "error" state
+      const errorData = [{ id: 'Analytics Error', value: 1, label: 'Error loading analytics data' }];
+      setCountryData(errorData);
+      setBrowserData(errorData);
+      setDeviceData(errorData);
+    });
+    
+    // Set random values only on client side to avoid hydration mismatch
+    setIsClient(true);
+    setLiveMetrics({ visitors: Math.floor(Math.random() * 100) });
+    setGrowthPercentage(Math.floor(Math.random() * 20));
+  }, [dateRange]); // Add dateRange as dependency
+
+  // Conditional rendering logic - all hooks must be called before this
+  // Don't render anything while authentication is being checked
+  if (isAuthenticated === null) {
+    return (
+      <div style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundImage: "url('/vine_2b.png')",
+        backgroundRepeat: 'repeat',
+        backgroundSize: '400px 400px',
+      }}>
+        <div style={{ color: '#444', fontSize: '18px' }}>Verificando autenticación...</div>
+      </div>
+    );
+  }
+
+  // Don't render the page if not authenticated (redirect will happen in useAdminAuth)
+  if (!isAuthenticated) {
+    return null;
+  }
+  
   // Helper function to toggle pinned cards
   const togglePinCard = (cardId: string) => {
     setPinnedCards(prev => {
@@ -348,7 +511,7 @@ export default function ReportesPage() {
     e.dataTransfer.effectAllowed = 'move';
   };
 
-  const handleDragEnd = (e: React.DragEvent) => {
+  const handleDragEnd = () => {
     setDraggedCard(null);
     document.body.style.cursor = 'default';
   };
@@ -860,56 +1023,6 @@ export default function ReportesPage() {
     }
   };
   
-  // Helper function to get date range
-  const getDateRangeFilter = (range: '7D' | '1MO' | '3MO' | '12MO' | '24MO') => {
-    const now = new Date();
-    const startDate = new Date();
-    
-    switch (range) {
-      case '7D':
-        startDate.setDate(now.getDate() - 7);
-        break;
-      case '1MO':
-        startDate.setMonth(now.getMonth() - 1);
-        break;
-      case '3MO':
-        startDate.setMonth(now.getMonth() - 3);
-        break;
-      case '12MO':
-        startDate.setFullYear(now.getFullYear() - 1);
-        break;
-      case '24MO':
-        startDate.setFullYear(now.getFullYear() - 2);
-        break;
-    }
-    
-    return startDate.toISOString();
-  };
-  
-  // Top 10 Most Favorited Products
-  const [favoriteData, setFavoriteData] = useState<Array<{ product_name: string; favorite_count: number }>>([]);
-  // Most Chosen Fabric Colors
-  const [fabricColorData, setFabricColorData] = useState<Array<{ color: string; count: number }>>([]);
-  // Most Chosen Frame Colors
-  const [frameColorData, setFrameColorData] = useState<Array<{ color: string; count: number }>>([]);
-  // Vercel Analytics Data
-  const [countryData, setCountryData] = useState<Array<{ id: string; value: number; label?: string }>>([]);
-  const [browserData, setBrowserData] = useState<Array<{ id: string; value: number; label?: string }>>([]);
-  const [deviceData, setDeviceData] = useState<Array<{ id: string; value: number; label?: string }>>([]);
-  // Live Metrics
-  const [liveMetrics, setLiveMetrics] = useState<{ visitors: number }>({ visitors: 0 });
-  // Random percentage for growth display
-  const [growthPercentage, setGrowthPercentage] = useState<number>(0);
-  // Client-side hydration flag
-  const [isClient, setIsClient] = useState(false);
-  // Modal state for enlarged charts
-  const [enlargedChart, setEnlargedChart] = useState<{
-    type: 'bar' | 'pie' | 'line' | 'funnel';
-    title: string;
-    data: unknown;
-    config: Record<string, unknown>;
-  } | null>(null);
-
   // Blue gradient color palette (darkest to lightest)
   const blueGradientColors = [
     "#42A5F5", // Middle Blue (darkest)
@@ -971,102 +1084,6 @@ export default function ReportesPage() {
     labels: { text: { fill: "#42A5F5" } },
     axis: { ticks: { text: { fill: "#42A5F5" } } }
   };
-
-  useEffect(() => {
-    console.log('Starting data fetch...');
-    
-    // Load customer favorites data from API (uses admin client server-side)
-    const startDate = getDateRangeFilter(dateRange);
-    const apiUrl = `/api/admin/customer-data?startDate=${encodeURIComponent(startDate)}`;
-    
-    fetch(apiUrl)
-      .then(response => response.json())
-      .then(data => {
-        console.log('Admin API response:', data);
-        
-        if (data.error) {
-          console.error('API Error:', data.error);
-          // Set fallback data
-          setFavoriteData([
-            { product_name: 'No data (API Error)', favorite_count: 0 }
-          ]);
-          setFabricColorData([]);
-          setFrameColorData([]);
-        } else {
-          console.log('✅ Successfully loaded customer data from API');
-          setFavoriteData(data.favoriteProducts || []);
-          setFabricColorData(data.fabricColors || []);
-          setFrameColorData(data.frameColors || []);
-        }
-      })
-      .catch(error => {
-        console.error('❌ Failed to fetch customer data:', error);
-        setFavoriteData([
-          { product_name: 'Error Loading Data', favorite_count: 0 }
-        ]);
-        setFabricColorData([]);
-        setFrameColorData([]);
-      });
-    
-    
-    // Note: Vercel Analytics API endpoints don't exist for retrieving data
-    // Load Google Analytics data
-    const analyticsStartDate = getDateRangeFilter(dateRange);
-    const analyticsEndDate = new Date().toISOString();
-    
-    const analyticsQuery = {
-      since: analyticsStartDate,
-      until: analyticsEndDate,
-      environment: 'production' as const
-    };
-    
-    console.log('📊 Loading Google Analytics data...');
-    
-    Promise.all([
-      getVisitorsByCountry(analyticsQuery),
-      getVisitorsByBrowser(analyticsQuery), 
-      getVisitorsByDevice(analyticsQuery)
-    ]).then(([countries, browsers, devices]) => {
-      console.log('✅ Google Analytics Data loaded:', { countries, browsers, devices });
-      
-      // Transform and set country data
-      if (countries?.data && Array.isArray(countries.data) && countries.data.length > 0) {
-        setCountryData(transformForNivoPie(countries.data, 'visits', 'country') as Array<{ id: string; value: number; label?: string }>);
-      } else {
-        console.log('ℹ️ No country data available - this is normal for a new GA4 property');
-        setCountryData([{ id: 'No data yet', value: 1, label: 'New GA4 property - data will appear after site visits' }]);
-      }
-      
-      // Transform and set browser data
-      if (browsers?.data && Array.isArray(browsers.data) && browsers.data.length > 0) {
-        setBrowserData(transformForNivoPie(browsers.data, 'visits', 'browser') as Array<{ id: string; value: number; label?: string }>);
-      } else {
-        console.log('ℹ️ No browser data available - this is normal for a new GA4 property');
-        setBrowserData([{ id: 'No data yet', value: 1, label: 'New GA4 property - data will appear after site visits' }]);
-      }
-      
-      // Transform and set device data
-      if (devices?.data && Array.isArray(devices.data) && devices.data.length > 0) {
-        setDeviceData(transformForNivoPie(devices.data, 'visits', 'device') as Array<{ id: string; value: number; label?: string }>);
-      } else {
-        console.log('ℹ️ No device data available - this is normal for a new GA4 property');
-        setDeviceData([{ id: 'No data yet', value: 1, label: 'New GA4 property - data will appear after site visits' }]);
-      }
-    }).catch(error => {
-      console.error('❌ Error loading Google Analytics:', error);
-      
-      // Set "error" state
-      const errorData = [{ id: 'Analytics Error', value: 1, label: 'Error loading analytics data' }];
-      setCountryData(errorData);
-      setBrowserData(errorData);
-      setDeviceData(errorData);
-    });
-    
-    // Set random values only on client side to avoid hydration mismatch
-    setIsClient(true);
-    setLiveMetrics({ visitors: Math.floor(Math.random() * 100) });
-    setGrowthPercentage(Math.floor(Math.random() * 20));
-  }, [dateRange]); // Add dateRange as dependency
 
   return (
     <>
