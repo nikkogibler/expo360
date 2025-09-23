@@ -2,6 +2,7 @@
 // This service handles authentication and data retrieval from Google Analytics 4
 
 import { BetaAnalyticsDataClient } from '@google-analytics/data';
+import type { protos } from '@google-analytics/data';
 
 export interface AnalyticsData {
   country?: string;
@@ -12,6 +13,9 @@ export interface AnalyticsData {
   pageViews: number;
   sessions: number;
 }
+
+// Type alias for Google Analytics API response row
+type AnalyticsRow = protos.google.analytics.data.v1beta.IRow;
 
 export interface AnalyticsResponse {
   data: AnalyticsData[];
@@ -78,7 +82,7 @@ class GoogleAnalyticsService {
         limit: query.limit || 10,
       });
 
-      const data: AnalyticsData[] = response.rows?.map((row: any) => ({
+      const data: AnalyticsData[] = response.rows?.map((row: AnalyticsRow) => ({
         country: row.dimensionValues?.[0]?.value || 'Unknown',
         visits: parseInt(row.metricValues?.[0]?.value || '0'),
         sessions: parseInt(row.metricValues?.[1]?.value || '0'),
@@ -149,7 +153,7 @@ class GoogleAnalyticsService {
         limit: query.limit || 10,
       });
 
-      const data: AnalyticsData[] = response.rows?.map((row: any) => ({
+      const data: AnalyticsData[] = response.rows?.map((row: AnalyticsRow) => ({
         browser: row.dimensionValues?.[0]?.value || 'Unknown',
         visits: parseInt(row.metricValues?.[0]?.value || '0'),
         sessions: parseInt(row.metricValues?.[1]?.value || '0'),
@@ -205,7 +209,7 @@ class GoogleAnalyticsService {
         limit: query.limit || 10,
       });
 
-      const data: AnalyticsData[] = response.rows?.map((row: any) => ({
+      const data: AnalyticsData[] = response.rows?.map((row: AnalyticsRow) => ({
         device: row.dimensionValues?.[0]?.value || 'Unknown',
         visits: parseInt(row.metricValues?.[0]?.value || '0'),
         sessions: parseInt(row.metricValues?.[1]?.value || '0'),
@@ -262,7 +266,7 @@ class GoogleAnalyticsService {
         limit: query.limit || 10,
       });
 
-      const data: AnalyticsData[] = response.rows?.map((row: any) => ({
+      const data: AnalyticsData[] = response.rows?.map((row: AnalyticsRow) => ({
         referrer: row.dimensionValues?.[0]?.value || 'Unknown',
         visits: parseInt(row.metricValues?.[0]?.value || '0'),
         sessions: parseInt(row.metricValues?.[1]?.value || '0'),
