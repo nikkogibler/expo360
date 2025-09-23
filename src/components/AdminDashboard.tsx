@@ -563,6 +563,9 @@ const MagicBento: React.FC<BentoProps> = ({
       case 'Agregar Clientes +':
         router.push('/admin/sucursales');
         break;
+      case 'Catálogo de Productos':
+        router.push('/admin/catalogo');
+        break;
       case 'Base de Datos Airtable':
         window.open('https://airtable.com/appRBsiKS1NXvQycF/tblD5ZvT8tj9Jw9LD/viwwYkpy2F9d1pgGJ?blocks=hide', '_blank');
         break;
