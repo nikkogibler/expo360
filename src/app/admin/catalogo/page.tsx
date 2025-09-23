@@ -961,23 +961,6 @@ export default function AdminCatalogPage() {
                             />
                           </div>
 
-                          {/* Price */}
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                              Precio (MXN) <span className="text-red-500">*</span>
-                            </label>
-                            <input 
-                              type="number" 
-                              value={newProduct.price}
-                              onChange={(e) => setNewProduct({...newProduct, price: e.target.value})}
-                              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500 custom-text-input custom-placeholder"
-                              placeholder="Ej: 25000"
-                              min="0"
-                              step="0.01"
-                              required
-                            />
-                          </div>
-
                           {/* Category */}
                           <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -986,7 +969,8 @@ export default function AdminCatalogPage() {
                             <select 
                               value={newProduct.category}
                               onChange={(e) => setNewProduct({...newProduct, category: e.target.value})}
-                              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500 custom-text-input"
+                              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-gray-300 focus:border-gray-300 custom-text-input custom-placeholder"
+                              style={{ color: '#b0a187' }}
                               required
                             >
                               <option value="">Seleccionar categoría...</option>
@@ -1007,7 +991,8 @@ export default function AdminCatalogPage() {
                             <select 
                               value={newProduct.colección}
                               onChange={(e) => setNewProduct({...newProduct, colección: e.target.value})}
-                              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500 custom-text-input"
+                              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-gray-300 focus:border-gray-300 custom-text-input custom-placeholder"
+                              style={{ color: '#b0a187' }}
                             >
                               <option value="">Seleccionar colección...</option>
                               {collections.map(collection => (
@@ -1017,6 +1002,21 @@ export default function AdminCatalogPage() {
                               ))}
                               <option value="__new__">➕ Nueva Colección</option>
                             </select>
+                          </div>
+
+                          {/* Price */}
+                          <div className="md:col-span-2">
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Precio (MXN) <span className="text-red-500">*</span>
+                            </label>
+                            <input 
+                              type="text" 
+                              value={newProduct.price}
+                              onChange={(e) => setNewProduct({...newProduct, price: e.target.value})}
+                              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500 custom-text-input custom-placeholder"
+                              placeholder="Ej: 25000"
+                              required
+                            />
                           </div>
 
                           {/* Medidas */}
