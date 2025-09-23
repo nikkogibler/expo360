@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback } from 'react';
 import { motion, Variants, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
-import Head from 'next/head';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/utils/supabase';
 import { PostgrestError } from '@supabase/supabase-js';
@@ -279,6 +278,8 @@ export default function AdminCatalogPage() {
   
   // Modal state
   const [showAddProductModal, setShowAddProductModal] = useState(false);
+  const [modalStep, setModalStep] = useState<1 | 2 | 'success'>(1); // 1 for first page, 2 for second page, 'success' for completion
+  const [copySuccess, setCopySuccess] = useState(false);
   
   // Form state for new product
   const [newProduct, setNewProduct] = useState({
@@ -325,7 +326,58 @@ export default function AdminCatalogPage() {
 
   const handleCloseModal = () => {
     setShowAddProductModal(false);
+    setModalStep(1); // Reset to first step
+    setCopySuccess(false);
     resetForm();
+  };
+
+  const handleNextStep = () => {
+    // Validate required fields for step 1
+    if (!newProduct.name || !newProduct.sku || !newProduct.price) {
+      alert('Por favor, completa los campos obligatorios: Nombre, SKU y Precio');
+      return;
+    }
+    setModalStep(2);
+  };
+
+  const handlePreviousStep = () => {
+    setModalStep(1);
+  };
+
+  const handleCopyLink = async () => {
+    const productUrl = `${window.location.origin}/kusam/catalogo/${newProduct.sku}`;
+    try {
+      await navigator.clipboard.writeText(productUrl);
+      setCopySuccess(true);
+      setTimeout(() => setCopySuccess(false), 2000);
+    } catch (err) {
+      // Fallback for browsers without clipboard API
+      console.error('Could not copy text: ', err);
+      // Create a temporary textarea to copy the text
+      const textArea = document.createElement('textarea');
+      textArea.value = productUrl;
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      try {
+        document.execCommand('copy');
+        setCopySuccess(true);
+        setTimeout(() => setCopySuccess(false), 2000);
+      } catch (fallbackErr) {
+        console.error('Fallback copy failed: ', fallbackErr);
+      }
+      document.body.removeChild(textArea);
+    }
+  };
+
+  const handleViewProduct = () => {
+    const productUrl = `/kusam/catalogo/${newProduct.sku}`;
+    window.open(productUrl, '_blank');
+  };
+
+  const handleAddAnother = () => {
+    resetForm();
+    setModalStep(1);
   };
 
   const handleSaveProduct = async () => {
@@ -338,8 +390,8 @@ export default function AdminCatalogPage() {
     console.log('Saving product:', newProduct);
     // TODO: Implement save to Supabase
     
-    // For now, just close modal and reset form
-    handleCloseModal();
+    // For now, go to success page (will implement actual save later)
+    setModalStep('success');
   };
 
   // Fetch products from Supabase
@@ -527,14 +579,8 @@ export default function AdminCatalogPage() {
 
   return (
     <>
-      <Head>
-        <title>Admin - Catálogo de Productos | Kusam Outdoor Solutions</title>
-        <meta name="description" content="Panel de administración para gestionar el catálogo de productos de Kusam" />
-        <meta name="robots" content="noindex, nofollow" />
-      </Head>
-      
       {/* Custom styles for placeholder color */}
-            <style jsx>{`
+      <style jsx>{`
         .custom-placeholder::placeholder {
           color: #b0a187;
           opacity: 1;
@@ -808,15 +854,27 @@ export default function AdminCatalogPage() {
         <AnimatePresence>
           {showAddProductModal && (
             <div className="fixed inset-0 z-50 flex items-center justify-center">
-              {/* Backdrop */}
+              {/* Video Backdrop */}
               <motion.div 
-                className="absolute inset-0 bg-black bg-opacity-50"
+                className="absolute inset-0"
                 onClick={handleCloseModal}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.2 }}
-              ></motion.div>
+              >
+                <video
+                  className="absolute inset-0 w-full h-full object-cover"
+                  src="/leaves1.mp4"
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  disablePictureInPicture={true}
+                  preload="auto"
+                  style={{ opacity: 0.1 }}
+                />
+              </motion.div>
             
             {/* Modal */}
             <motion.div 
@@ -829,9 +887,16 @@ export default function AdminCatalogPage() {
             >
               {/* Modal Header */}
               <div className="flex items-center justify-between p-6 border-b border-gray-200">
-                <h2 className="text-2xl font-bold text-gray-900">
-                  ➕ Añadir Nuevo Producto
-                </h2>
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900">
+                    {modalStep === 'success' ? '✅ ¡Producto Agregado Exitosamente!' : '➕ Añadir Nuevo Producto'}
+                  </h2>
+                  {modalStep !== 'success' && (
+                    <p className="text-sm text-gray-500 mt-1">
+                      Paso {modalStep} de 2 - {modalStep === 1 ? 'Información Básica' : 'Especificaciones y Subida'}
+                    </p>
+                  )}
+                </div>
                 <button
                   onClick={handleCloseModal}
                   className="text-gray-400 hover:text-gray-600 transition-colors"
@@ -845,256 +910,367 @@ export default function AdminCatalogPage() {
               {/* Modal Body */}
               <div className="p-6">
                 <form className="space-y-6">
-                  {/* Basic Information Section */}
-                  <div className="border-b border-gray-200 pb-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Información Básica</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {/* Product Name */}
-                      <div className="md:col-span-2">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Nombre del Producto <span className="text-red-500">*</span>
-                        </label>
-                        <input 
-                          type="text" 
-                          value={newProduct.name}
-                          onChange={(e) => setNewProduct({...newProduct, name: e.target.value})}
-                          className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500 custom-text-input custom-placeholder"
-                          placeholder="Ej: Sofá Modular Marieta"
-                          required
-                        />
-                      </div>
+                  {modalStep === 1 ? (
+                    /* STEP 1: Basic Information */
+                    <div className="space-y-6">
+                      {/* Basic Information Section */}
+                      <div className="border-b border-gray-200 pb-6">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-4">Información Básica</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {/* Product Name */}
+                          <div className="md:col-span-2">
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Nombre del Producto <span className="text-red-500">*</span>
+                            </label>
+                            <input 
+                              type="text" 
+                              value={newProduct.name}
+                              onChange={(e) => setNewProduct({...newProduct, name: e.target.value})}
+                              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500 custom-text-input custom-placeholder"
+                              placeholder="Ej: Sofá Modular Marieta"
+                              required
+                            />
+                          </div>
 
-                      {/* SKU */}
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          SKU <span className="text-red-500">*</span>
-                        </label>
-                        <input 
-                          type="text" 
-                          value={newProduct.sku}
-                          onChange={(e) => setNewProduct({...newProduct, sku: e.target.value})}
-                          className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500 custom-text-input custom-placeholder"
-                          placeholder="Ej: KOS001"
-                          required
-                        />
-                      </div>
+                          {/* SKU */}
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              SKU <span className="text-red-500">*</span>
+                            </label>
+                            <input 
+                              type="text" 
+                              value={newProduct.sku}
+                              onChange={(e) => setNewProduct({...newProduct, sku: e.target.value})}
+                              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500 custom-text-input custom-placeholder"
+                              placeholder="Ej: KOS001"
+                              required
+                            />
+                          </div>
 
-                      {/* Legacy SKU */}
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Legacy SKU <span className="text-gray-400">(opcional)</span>
-                        </label>
-                        <input 
-                          type="text" 
-                          value={newProduct.legacy_sku}
-                          onChange={(e) => setNewProduct({...newProduct, legacy_sku: e.target.value})}
-                          className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500 custom-text-input custom-placeholder"
-                          placeholder="Ej: OLD001"
-                        />
-                      </div>
+                          {/* Legacy SKU */}
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Legacy SKU <span className="text-gray-400">(opcional)</span>
+                            </label>
+                            <input 
+                              type="text" 
+                              value={newProduct.legacy_sku}
+                              onChange={(e) => setNewProduct({...newProduct, legacy_sku: e.target.value})}
+                              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500 custom-text-input custom-placeholder"
+                              placeholder="Ej: OLD001"
+                            />
+                          </div>
 
-                      {/* Price */}
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Precio (MXN) <span className="text-red-500">*</span>
-                        </label>
-                        <input 
-                          type="number" 
-                          value={newProduct.price}
-                          onChange={(e) => setNewProduct({...newProduct, price: e.target.value})}
-                          className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500 custom-text-input custom-placeholder"
-                          placeholder="Ej: 25000"
-                          min="0"
-                          step="0.01"
-                          required
-                        />
-                      </div>
+                          {/* Price */}
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Precio (MXN) <span className="text-red-500">*</span>
+                            </label>
+                            <input 
+                              type="number" 
+                              value={newProduct.price}
+                              onChange={(e) => setNewProduct({...newProduct, price: e.target.value})}
+                              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500 custom-text-input custom-placeholder"
+                              placeholder="Ej: 25000"
+                              min="0"
+                              step="0.01"
+                              required
+                            />
+                          </div>
 
-                      {/* Category */}
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Categoría <span className="text-red-500">*</span>
-                        </label>
-                        <select 
-                          value={newProduct.category}
-                          onChange={(e) => setNewProduct({...newProduct, category: e.target.value})}
-                          className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500 custom-text-input"
-                          required
-                        >
-                          <option value="">Seleccionar categoría...</option>
-                          {categories.map(category => (
-                            <option key={category} value={category}>
-                              {category}
-                            </option>
-                          ))}
-                          <option value="__new__">➕ Nueva Categoría</option>
-                        </select>
-                      </div>
+                          {/* Category */}
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Categoría <span className="text-red-500">*</span>
+                            </label>
+                            <select 
+                              value={newProduct.category}
+                              onChange={(e) => setNewProduct({...newProduct, category: e.target.value})}
+                              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500 custom-text-input"
+                              required
+                            >
+                              <option value="">Seleccionar categoría...</option>
+                              {categories.map(category => (
+                                <option key={category} value={category}>
+                                  {category}
+                                </option>
+                              ))}
+                              <option value="__new__">➕ Nueva Categoría</option>
+                            </select>
+                          </div>
 
-                      {/* Collection */}
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Colección
-                        </label>
-                        <select 
-                          value={newProduct.colección}
-                          onChange={(e) => setNewProduct({...newProduct, colección: e.target.value})}
-                          className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500 custom-text-input"
-                        >
-                          <option value="">Seleccionar colección...</option>
-                          {collections.map(collection => (
-                            <option key={collection} value={collection}>
-                              {collection}
-                            </option>
-                          ))}
-                          <option value="__new__">➕ Nueva Colección</option>
-                        </select>
-                      </div>
+                          {/* Collection */}
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Colección
+                            </label>
+                            <select 
+                              value={newProduct.colección}
+                              onChange={(e) => setNewProduct({...newProduct, colección: e.target.value})}
+                              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500 custom-text-input"
+                            >
+                              <option value="">Seleccionar colección...</option>
+                              {collections.map(collection => (
+                                <option key={collection} value={collection}>
+                                  {collection}
+                                </option>
+                              ))}
+                              <option value="__new__">➕ Nueva Colección</option>
+                            </select>
+                          </div>
 
-                      {/* Medidas */}
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Medidas
-                        </label>
-                        <input 
-                          type="text" 
-                          value={newProduct.medidas}
-                          onChange={(e) => setNewProduct({...newProduct, medidas: e.target.value})}
-                          className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500 custom-text-input custom-placeholder"
-                          placeholder="Ej: 1.48 mts. x 86.8 cm. x 92 cm."
-                        />
-                      </div>
-
-                      {/* Description */}
-                      <div className="md:col-span-2">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Descripción
-                        </label>
-                        <textarea 
-                          value={newProduct.description}
-                          onChange={(e) => setNewProduct({...newProduct, description: e.target.value})}
-                          className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500 custom-text-input custom-placeholder"
-                          rows={3}
-                          placeholder="Descripción detallada del producto..."
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Product Specifications Section */}
-                  <div className="border-b border-gray-200 pb-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Especificaciones</h3>
-                    <div className="space-y-4">
-                      {/* Estructuras Disponibles */}
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Estructuras Disponibles
-                        </label>
-                        <textarea 
-                          value={newProduct.estructuras_disponibles}
-                          onChange={(e) => setNewProduct({...newProduct, estructuras_disponibles: e.target.value})}
-                          className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500 custom-text-input custom-placeholder"
-                          rows={2}
-                          placeholder="Ej: Aluminio, Acero, Madera Teca..."
-                        />
-                      </div>
-
-                      {/* Colores de Estructura Disponibles */}
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Colores de Estructura Disponibles
-                        </label>
-                        <textarea 
-                          value={newProduct.colores_estructura_disponibles}
-                          onChange={(e) => setNewProduct({...newProduct, colores_estructura_disponibles: e.target.value})}
-                          className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500 custom-text-input custom-placeholder"
-                          rows={2}
-                          placeholder="Ej: Negro, Blanco, Gris Tormenta, Arena..."
-                        />
-                      </div>
-
-                      {/* Aplica Color de Tela - Checkbox */}
-                      <div className="flex items-center gap-3">
-                        <input 
-                          type="checkbox"
-                          id="aplica_color_tela"
-                          checked={newProduct.aplica_color_tela}
-                          onChange={(e) => setNewProduct({...newProduct, aplica_color_tela: e.target.checked})}
-                          className="w-4 h-4 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500 focus:ring-2"
-                        />
-                        <label htmlFor="aplica_color_tela" className="text-sm font-medium text-gray-700">
-                          Aplica Color de Tela
-                        </label>
-                      </div>
-
-                      {/* Active Status */}
-                      <div className="flex items-center gap-3">
-                        <input 
-                          type="checkbox"
-                          id="is_active"
-                          checked={newProduct.is_active}
-                          onChange={(e) => setNewProduct({...newProduct, is_active: e.target.checked})}
-                          className="w-4 h-4 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500 focus:ring-2"
-                        />
-                        <label htmlFor="is_active" className="text-sm font-medium text-gray-700">
-                          Producto Activo (visible en catálogo)
-                        </label>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Image Upload Section */}
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Imagen del Producto</h3>
-                    <div 
-                      className="border-2 border-dashed border-gray-300 rounded-md p-6 text-center hover:border-green-400 transition-colors cursor-pointer"
-                      onClick={() => document.getElementById('image-upload')?.click()}
-                    >
-                      <div className="space-y-2">
-                        <svg className="w-12 h-12 text-gray-400 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                        </svg>
-                        <div className="text-sm text-gray-600">
-                          <p className="font-medium">Haz clic para subir una imagen</p>
-                          <p>o arrastra y suelta aquí</p>
+                          {/* Medidas */}
+                          <div className="md:col-span-2">
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Medidas
+                            </label>
+                            <input 
+                              type="text" 
+                              value={newProduct.medidas}
+                              onChange={(e) => setNewProduct({...newProduct, medidas: e.target.value})}
+                              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500 custom-text-input custom-placeholder"
+                              placeholder="Ej: 1.48 mts. x 86.8 cm. x 92 cm."
+                            />
+                          </div>
                         </div>
-                        <p className="text-xs text-gray-500">
-                          PNG, JPG, WEBP hasta 10MB
-                        </p>
                       </div>
-                      <input 
-                        id="image-upload"
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) {
-                            console.log('File selected:', file);
-                            // TODO: Handle file upload to Supabase Storage
-                          }
-                        }}
-                      />
                     </div>
-                  </div>
+                  ) : modalStep === 2 ? (
+                    /* STEP 2: Specifications and Upload */
+                    <div className="space-y-6">
+                      {/* Product Specifications Section */}
+                      <div className="border-b border-gray-200 pb-6">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-4">Especificaciones</h3>
+                        <div className="space-y-4">
+                          {/* Description */}
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Descripción
+                            </label>
+                            <textarea 
+                              value={newProduct.description}
+                              onChange={(e) => setNewProduct({...newProduct, description: e.target.value})}
+                              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500 custom-text-input custom-placeholder"
+                              rows={3}
+                              placeholder="Descripción detallada del producto..."
+                            />
+                          </div>
+
+                          {/* Estructuras Disponibles */}
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Estructuras Disponibles
+                            </label>
+                            <textarea 
+                              value={newProduct.estructuras_disponibles}
+                              onChange={(e) => setNewProduct({...newProduct, estructuras_disponibles: e.target.value})}
+                              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500 custom-text-input custom-placeholder"
+                              rows={2}
+                              placeholder="Ej: Aluminio, Acero, Madera Teca..."
+                            />
+                          </div>
+
+                          {/* Colores de Estructura Disponibles */}
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Colores de Estructura Disponibles
+                            </label>
+                            <textarea 
+                              value={newProduct.colores_estructura_disponibles}
+                              onChange={(e) => setNewProduct({...newProduct, colores_estructura_disponibles: e.target.value})}
+                              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500 custom-text-input custom-placeholder"
+                              rows={2}
+                              placeholder="Ej: Negro, Blanco, Gris Tormenta, Arena..."
+                            />
+                          </div>
+
+                          {/* Aplica Color de Tela - Checkbox */}
+                          <div className="flex items-center gap-3">
+                            <input 
+                              type="checkbox"
+                              id="aplica_color_tela"
+                              checked={newProduct.aplica_color_tela}
+                              onChange={(e) => setNewProduct({...newProduct, aplica_color_tela: e.target.checked})}
+                              className="w-4 h-4 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500 focus:ring-2"
+                            />
+                            <label htmlFor="aplica_color_tela" className="text-sm font-medium text-gray-700">
+                              Aplica Color de Tela
+                            </label>
+                          </div>
+
+                          {/* Active Status */}
+                          <div className="flex items-center gap-3">
+                            <input 
+                              type="checkbox"
+                              id="is_active"
+                              checked={newProduct.is_active}
+                              onChange={(e) => setNewProduct({...newProduct, is_active: e.target.checked})}
+                              className="w-4 h-4 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500 focus:ring-2"
+                            />
+                            <label htmlFor="is_active" className="text-sm font-medium text-gray-700">
+                              Producto Activo (visible en catálogo)
+                            </label>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Image Upload Section */}
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-900 mb-4">Imagen del Producto</h3>
+                        <div 
+                          className="border-2 border-dashed border-gray-300 rounded-md p-6 text-center hover:border-green-400 transition-colors cursor-pointer"
+                          onClick={() => document.getElementById('image-upload')?.click()}
+                        >
+                          <div className="space-y-2">
+                            <svg className="w-12 h-12 text-gray-400 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                            </svg>
+                            <div className="text-sm text-gray-600">
+                              <p className="font-medium">Haz clic para subir una imagen</p>
+                              <p>o arrastra y suelta aquí</p>
+                            </div>
+                            <p className="text-xs text-gray-500">
+                              PNG, JPG, WEBP hasta 10MB
+                            </p>
+                          </div>
+                          <input 
+                            id="image-upload"
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                console.log('File selected:', file);
+                                // TODO: Handle file upload to Supabase Storage
+                              }
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    /* SUCCESS PAGE */
+                    <div className="text-center space-y-6">
+                      {/* Product Details */}
+                      <div className="space-y-2">
+                        <h3 className="text-xl font-semibold text-gray-900">{newProduct.name}</h3>
+                        <p className="text-lg text-gray-600">SKU: {newProduct.sku}</p>
+                      </div>
+
+                      {/* Product Link Section */}
+                      <div className="space-y-3">
+                        <h4 className="text-lg font-medium text-gray-900">📋 Tu Página de Producto:</h4>
+                        
+                        {/* Copy Link Button */}
+                        <div className="relative">
+                          <button
+                            onClick={handleCopyLink}
+                            className="w-full max-w-lg mx-auto flex items-center justify-between px-4 py-3 bg-gray-50 border border-gray-300 rounded-md hover:bg-gray-100 transition-colors group"
+                          >
+                            <span className="text-sm text-gray-700 truncate pr-2">
+                              {`${typeof window !== 'undefined' ? window.location.origin : ''}/kusam/catalogo/${newProduct.sku}`}
+                            </span>
+                            <div className="flex items-center gap-2 flex-shrink-0">
+                              {copySuccess ? (
+                                <>
+                                  <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                  </svg>
+                                  <span className="text-sm text-green-600 font-medium">¡Copiado!</span>
+                                </>
+                              ) : (
+                                <>
+                                  <svg className="w-4 h-4 text-gray-500 group-hover:text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                  </svg>
+                                  <span className="text-sm text-gray-500 group-hover:text-gray-700 font-medium">Copiar</span>
+                                </>
+                              )}
+                            </div>
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Disclaimer */}
+                      <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
+                        <div className="flex items-start gap-3">
+                          <svg className="w-5 h-5 text-blue-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          <p className="text-sm text-blue-700">
+                            Tu página estará lista en unos segundos. En casos excepcionales, puede tardar hasta 5 minutos.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </form>
               </div>
 
               {/* Modal Footer */}
-              <div className="flex justify-end gap-3 p-6 border-t border-gray-200">
-                <button
-                  onClick={handleCloseModal}
-                  className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
-                >
-                  Cancelar
-                </button>
-                <button
-                  onClick={handleSaveProduct}
-                  className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
-                  disabled={!newProduct.name || !newProduct.sku || !newProduct.price}
-                >
-                  Guardar Producto
-                </button>
+              <div className="flex justify-between gap-3 p-6 border-t border-gray-200">
+                <div>
+                  {modalStep === 2 && (
+                    <button
+                      onClick={handlePreviousStep}
+                      className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
+                    >
+                      ← Anterior
+                    </button>
+                  )}
+                </div>
+                <div className="flex gap-3">
+                  {modalStep === 'success' ? (
+                    /* SUCCESS PAGE BUTTONS */
+                    <>
+                      <button
+                        onClick={handleViewProduct}
+                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
+                      >
+                        Ver mi Producto
+                      </button>
+                      <button
+                        onClick={handleAddAnother}
+                        className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md transition-colors"
+                      >
+                        Agregar Otro Producto
+                      </button>
+                      <button
+                        onClick={handleCloseModal}
+                        className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
+                      >
+                        Cerrar
+                      </button>
+                    </>
+                  ) : (
+                    /* FORM STEPS BUTTONS */
+                    <>
+                      <button
+                        onClick={handleCloseModal}
+                        className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
+                      >
+                        Cancelar
+                      </button>
+                      {modalStep === 1 ? (
+                        <button
+                          onClick={handleNextStep}
+                          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+                          disabled={!newProduct.name || !newProduct.sku || !newProduct.price}
+                        >
+                          Siguiente →
+                        </button>
+                      ) : (
+                        <button
+                          onClick={handleSaveProduct}
+                          className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md transition-colors"
+                        >
+                          Agrega el Producto
+                        </button>
+                      )}
+                    </>
+                  )}
+                </div>
               </div>
             </motion.div>
           </div>
