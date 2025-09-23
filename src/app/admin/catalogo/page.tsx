@@ -6,7 +6,6 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/utils/supabase';
-import { PostgrestError } from '@supabase/supabase-js';
 import { useAdminAuth } from '../../../hooks/useAdminAuth';
 import BurgerMenu from '../../../components/BurgerMenu';
 
