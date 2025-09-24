@@ -122,6 +122,18 @@ const SucursalesGallery = () => {
         <BurgerMenu isOpen={burgerOpen} onClick={() => setBurgerOpen(!burgerOpen)} />
       </div>
 
+      {/* Hero Image */}
+      <div className="w-full mb-8">
+        <Image
+          src="/admin/sucursalesyexpos.png"
+          alt="Sucursales y Exposiciones"
+          width={400}
+          height={100}
+          priority
+          className="w-[64%] h-auto object-contain mx-auto"
+        />
+      </div>
+
       {/* Title */}
       <div className="text-center mb-8">
         <h1 className="text-4xl font-bold text-gray-800 mb-2"></h1>

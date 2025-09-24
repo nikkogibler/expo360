@@ -617,7 +617,7 @@ export default function AdminCatalogPage() {
         {/* Back Arrow - Top Left */}
         <button
           onClick={handleBackToAdmin}
-          className="absolute top-4 left-4 z-20 transition-all duration-200 hover:opacity-70"
+          className="absolute top-6 left-65 z-20 transition-all duration-200 hover:opacity-70"
           aria-label="Volver al panel principal"
         >
           <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -626,7 +626,7 @@ export default function AdminCatalogPage() {
         </button>
 
         {/* Burger Menu - Top Right */}
-        <div className="absolute top-4 right-4 z-20">
+        <div className="absolute top-6 right-65 z-20">
           <div className="transition-all duration-200 hover:opacity-70">
             <BurgerMenu 
               isOpen={burgerOpen} 
