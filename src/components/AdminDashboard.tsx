@@ -737,7 +737,7 @@ const MagicBento: React.FC<BentoProps> = ({
             />
           </div>
           {/* Burger menu absolutely positioned, nudge with top/right */}
-          <div style={{ position: 'absolute', top: '68tion, hover effect%', right: 'calc(50% - 480px)', transform: 'translateY(-50%)', zIndex: 10 }}>
+          <div style={{ position: 'absolute', top: '65%', right: 'calc(50% - 480px)', transform: 'translateY(-50%)', zIndex: 10 }}>
             <BurgerMenu isOpen={burgerOpen} onClick={() => setBurgerOpen((o) => !o)} />
             <AdminMenu open={burgerOpen} setOpen={setBurgerOpen} />
           </div>

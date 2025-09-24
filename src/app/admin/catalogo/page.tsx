@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation';
 import { supabase } from '@/utils/supabase';
 import { useAdminAuth } from '../../../hooks/useAdminAuth';
 import BurgerMenu from '../../../components/BurgerMenu';
+import AdminMenu from '../../../components/AdminMenu';
 
 // Interface matching the existing product structure
 interface Product {
@@ -613,11 +614,27 @@ export default function AdminCatalogPage() {
           }}
         />
 
-        {/* Burger Menu */}
-        <BurgerMenu 
-          isOpen={burgerOpen} 
-          onClick={() => setBurgerOpen(!burgerOpen)}
-        />
+        {/* Back Arrow - Top Left */}
+        <button
+          onClick={handleBackToAdmin}
+          className="absolute top-4 left-4 z-20 transition-all duration-200 hover:opacity-70"
+          aria-label="Volver al panel principal"
+        >
+          <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+        </button>
+
+        {/* Burger Menu - Top Right */}
+        <div className="absolute top-4 right-4 z-20">
+          <div className="transition-all duration-200 hover:opacity-70">
+            <BurgerMenu 
+              isOpen={burgerOpen} 
+              onClick={() => setBurgerOpen(!burgerOpen)}
+            />
+          </div>
+          <AdminMenu open={burgerOpen} setOpen={setBurgerOpen} />
+        </div>
 
         <motion.div
           className="max-w-7xl mx-auto w-full relative z-10"
