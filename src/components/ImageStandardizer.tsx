@@ -280,7 +280,7 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
       }}
     >
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Editar Fotos con KusamAI</h1>
+        <h1 className="text-3xl font-bold"> Optimizador de Fotos Kusam </h1>
         <button onClick={onBack} className="text-sm text-gray-500 hover:text-gray-900 transition-colors">
           &times; Cerrar
         </button>
@@ -288,13 +288,36 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
 
       <div className="mb-4">
         <label className="block text-gray-700 font-semibold mb-2">Subir Imagen de Producto</label>
-        <input 
-          type="file" 
-          accept="image/*" 
-          onChange={handleFileChange} 
-          className="w-full text-gray-700 border rounded py-2 px-3"
-          style={{ borderColor: '#4B2E09', color: '#4B2E09' }}
-        />
+        <div className="relative">
+          <input 
+            type="file" 
+            accept="image/*" 
+            onChange={handleFileChange} 
+            className="hidden"
+            id="image-upload"
+          />
+          <label 
+            htmlFor="image-upload"
+            className="w-full block border-2 border-dashed border-gray-300 hover:border-amber-400 rounded-lg py-4 px-6 cursor-pointer transition-colors duration-200 text-center"
+            style={{ borderColor: '#4B2E09', color: '#4B2E09' }}
+          >
+            <div className="flex flex-col items-center gap-2">
+              <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+              </svg>
+              <div>
+                <span className="font-medium">
+                  {imageFile ? imageFile.name : 'Seleccionar Archivo'}
+                </span>
+                {!imageFile && (
+                  <p className="text-sm text-gray-500 mt-1">
+                    Ningún archivo seleccionado
+                  </p>
+                )}
+              </div>
+            </div>
+          </label>
+        </div>
       </div>
 
       <div className="mb-4">
