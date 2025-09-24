@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import Image from 'next/image';
 import { supabase } from '@/utils/supabase';
 
 // Interface for Supabase global product options
@@ -14,10 +15,6 @@ interface GlobalProductOption {
   created_at: string;
   updated_at: string;
 }
-
-// This could be a static array or fetched from a Supabase table
-const fabricColors = ['Canvas Beige (#F5F5DC)', 'Neutral Cream', 'Light Gray', 'Off-White', 'Natural Linen'];
-const frameMaterials = ['Oak Wood', 'Brushed Aluminum', 'Black Metal', 'Natural Wood', 'White Metal'];
 
 interface ImageStandardizerProps {
   onBack: () => void;
@@ -242,9 +239,10 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
         setAiDescription(data.description);
       }
 
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error in handleSubmit:', err);
-      setError(err.message || 'Error desconocido al procesar la imagen');
+      const errorMessage = err instanceof Error ? err.message : 'Error desconocido al procesar la imagen';
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
       setProcessingStatus('');
@@ -379,19 +377,25 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
                 </button>
               </div>
               <div className="w-full max-w-xl mx-auto border rounded-lg overflow-hidden">
-                {/* Use regular img tag for base64 data instead of Next.js Image */}
-                <img 
-                  src={editedImageUrl} 
-                  alt="Standardized product image" 
-                  style={{ width: '100%', height: 'auto' }}
-                  className="object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                {/* Use Next.js Image component with proper base64 handling */}
+                <div 
+                  className="relative w-full aspect-[9/16] cursor-pointer hover:opacity-90 transition-opacity"
                   onClick={handleDownload}
-                  onError={(e) => {
-                    console.error('Image failed to load:', e);
-                    console.log('Failed image src:', editedImageUrl?.substring(0, 100));
-                  }}
-                  onLoad={() => console.log('Image loaded successfully')}
-                />
+                >
+                  <Image 
+                    src={editedImageUrl} 
+                    alt="Standardized product image" 
+                    fill
+                    style={{ objectFit: 'contain' }}
+                    className="rounded-lg"
+                    unoptimized={true} // Required for base64 data URLs
+                    onError={(e) => {
+                      console.error('Image failed to load:', e);
+                      console.log('Failed image src:', editedImageUrl?.substring(0, 100));
+                    }}
+                    onLoad={() => console.log('Image loaded successfully')}
+                  />
+                </div>
               </div>
               <p className="text-sm text-gray-600 mt-2">
                 Imagen estandarizada con formato 9:16, fondo blanco, iluminación profesional y especificaciones de Kusam
