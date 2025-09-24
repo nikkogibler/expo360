@@ -24,6 +24,8 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [selectedFabric, setSelectedFabric] = useState<string>('');
   const [selectedFrame, setSelectedFrame] = useState<string>('');
+  const [additionalPrompt, setAdditionalPrompt] = useState<string>('');
+  const [selectedPerspective, setSelectedPerspective] = useState<string>('');
   const [editedImageUrl, setEditedImageUrl] = useState<string | null>(null);
   const [aiDescription, setAiDescription] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -142,7 +144,17 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
       setProcessingStatus('Enviando imagen para estandarización...');
 
       // Create modifications string from selected options
-      const modifications = `Additionally, change the cushion fabric to ${selectedFabric || 'canvas beige'} and the frame material appearance to ${selectedFrame || 'the current material'}`;
+      let modifications = `Additionally, change the cushion fabric to ${selectedFabric || 'canvas beige'} and the frame material appearance to ${selectedFrame || 'the current material'}`;
+      
+      // Add perspective specification if selected
+      if (selectedPerspective) {
+        modifications += `. PERSPECTIVE: Show the furniture from a ${selectedPerspective}`;
+      }
+      
+      // Add additional prompt if provided
+      if (additionalPrompt.trim()) {
+        modifications += `. USER ADDITIONAL INSTRUCTIONS: ${additionalPrompt.trim()}`;
+      }
 
       const res = await fetch('/api/process-furniture', {
         method: 'POST',
@@ -325,6 +337,60 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
             ))}
           </select>
         )}
+      </div>
+
+      <div className="mb-6">
+        <label className="block text-gray-700 font-semibold mb-2">
+          Instrucciones Adicionales 
+          <span className="text-gray-500 font-normal text-sm">(Opcional)</span>
+        </label>
+        <textarea
+          value={additionalPrompt}
+          onChange={(e) => setAdditionalPrompt(e.target.value)}
+          placeholder="Describe cualquier modificación específica adicional que desees para la imagen..."
+          className="w-full border rounded py-2 px-3 resize-y min-h-[80px]"
+          style={{ borderColor: '#4B2E09', color: '#4B2E09' }}
+          rows={3}
+        />
+        <p className="text-xs text-gray-500 mt-1">
+          Ejemplo: &ldquo;Cambiar el ambiente de fondo a una terraza con vista al mar&rdquo; o &ldquo;Añadir plantas decorativas alrededor del mueble&rdquo;
+        </p>
+      </div>
+
+      <div className="mb-6">
+        <label className="block text-gray-700 font-semibold mb-3">
+          Perspectiva de la Imagen 
+          <span className="text-gray-500 font-normal text-sm">(Opcional)</span>
+        </label>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+          {[
+            { id: 'frontal', label: 'Vista Frontal', value: 'full frontal view' },
+            { id: 'behind', label: 'Vista Posterior', value: 'view from behind' },
+            { id: 'above', label: 'Vista Superior', value: 'view from above' },
+            { id: 'angle-below', label: 'Ángulo Inferior', value: 'angled view from below' },
+            { id: 'side', label: 'Vista Lateral', value: 'view from the side' },
+            { id: 'rotate-180', label: 'Rotación 180°', value: 'rotated 180 degrees' }
+          ].map((perspective) => (
+            <button
+              key={perspective.id}
+              type="button"
+              onClick={() => setSelectedPerspective(selectedPerspective === perspective.value ? '' : perspective.value)}
+              className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 border-2 ${
+                selectedPerspective === perspective.value
+                  ? 'bg-amber-100 border-amber-500 text-amber-800 shadow-md transform scale-105'
+                  : 'bg-white border-gray-300 text-gray-700 hover:border-amber-300 hover:bg-amber-50 hover:text-amber-700'
+              }`}
+              style={{
+                borderColor: selectedPerspective === perspective.value ? '#F59E0B' : '#4B2E09',
+              }}
+            >
+              {perspective.label}
+            </button>
+          ))}
+        </div>
+        <p className="text-xs text-gray-500 mt-2">
+          Selecciona una perspectiva específica para la imagen generada. Puedes hacer clic nuevamente para deseleccionar.
+        </p>
       </div>
 
       <button 
