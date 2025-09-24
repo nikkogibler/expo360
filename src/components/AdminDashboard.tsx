@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import BurgerMenu from './BurgerMenu';
 import AdminMenu from './AdminMenu';
+import ImageStandardizer from './ImageStandardizer';
 import { gsap } from 'gsap';
 
 export interface BentoCardProps {
@@ -66,10 +67,9 @@ const cardData: BentoCardProps[] = [
   },
   {
     color: '#F8F5F0',
-    backgroundImage: 'url(/admin/equipo.png)', // path is correct, matches public/admin/equipo.png
-    // title: 'Colaboración del Equipo',
-    description: 'Asignar tareas y compartir actualizaciones con el equipo Kusam. Calendario, Tareas, Chat.',
-    label: 'Equipo Kusam'
+    backgroundImage: 'url(/admin/ai_logo.png)', // Make sure this path exists
+    description: 'Estandarizar fotos de productos con opciones reales de telas y estructuras.',
+    label: 'Editar Fotos con KusamAI' // <-- New card label
   },
 
   {
@@ -551,7 +551,7 @@ const MagicBento: React.FC<BentoProps> = ({
   const isMobile = useMobileDetection();
   const shouldDisableAnimations = disableAnimations || isMobile;
 
-  // Burger menu open state
+  const [showImageEditor, setShowImageEditor] = useState(false);
   const [burgerOpen, setBurgerOpen] = useState(false);
 
   // Handle card navigation
@@ -565,6 +565,9 @@ const MagicBento: React.FC<BentoProps> = ({
         break;
       case 'Catálogo de Productos':
         router.push('/admin/catalogo');
+        break;
+      case 'Editar Fotos con KusamAI':
+        setShowImageEditor(true);
         break;
       case 'Base de Datos Airtable':
         window.open('https://airtable.com/appRBsiKS1NXvQycF/tblD5ZvT8tj9Jw9LD/viwwYkpy2F9d1pgGJ?blocks=hide', '_blank');
@@ -740,8 +743,11 @@ const MagicBento: React.FC<BentoProps> = ({
           </div>
         </div>
         <div style={{ flex: 1, width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-          <BentoCardGrid gridRef={gridRef}>
-            <div className="card-responsive grid gap-2" style={{ transform: 'scale(1.2)', transformOrigin: 'center', width: '100%', marginTop: '4rem', marginBottom: '2rem', border: 'none' }}>
+          {showImageEditor ? (
+            <ImageStandardizer onBack={() => setShowImageEditor(false)} />
+          ) : (
+            <BentoCardGrid gridRef={gridRef}>
+              <div className="card-responsive grid gap-2" style={{ transform: 'scale(1.2)', transformOrigin: 'center', width: '100%', marginTop: '4rem', marginBottom: '2rem', border: 'none' }}>
             {cardData.map((card, index) => {
               const baseClassName = `card flex flex-col justify-between relative aspect-[4/3] min-h-[200px] w-full max-w-full p-5 rounded-[20px] border border-solid font-light overflow-hidden transition-all duration-300 ease-in-out hover:-translate-y-0.5 hover:shadow-[0_8px_25px_rgba(0,0,0,0.15)] ${
                 enableBorderGlow ? 'card--border-glow' : ''
@@ -963,8 +969,9 @@ const MagicBento: React.FC<BentoProps> = ({
               );
             })}
           </div>
-    </BentoCardGrid>
-    </div>
+            </BentoCardGrid>
+          )}
+        </div>
   </div>
   <footer
     className="px-8 py-4 text-xs text-center font-bold"

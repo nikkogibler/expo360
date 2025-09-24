@@ -1,0 +1,405 @@
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
+import { supabase } from '@/utils/supabase';
+
+// Interface for Supabase global product options
+interface GlobalProductOption {
+  id: string;
+  name: string;
+  type: string;
+  value_data: { image_url?: string };
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+// This could be a static array or fetched from a Supabase table
+const fabricColors = ['Canvas Beige (#F5F5DC)', 'Neutral Cream', 'Light Gray', 'Off-White', 'Natural Linen'];
+const frameMaterials = ['Oak Wood', 'Brushed Aluminum', 'Black Metal', 'Natural Wood', 'White Metal'];
+
+interface ImageStandardizerProps {
+  onBack: () => void;
+}
+
+export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [selectedFabric, setSelectedFabric] = useState<string>('');
+  const [selectedFrame, setSelectedFrame] = useState<string>('');
+  const [editedImageUrl, setEditedImageUrl] = useState<string | null>(null);
+  const [aiDescription, setAiDescription] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+  const [processingStatus, setProcessingStatus] = useState<string>('');
+  
+  // Supabase options
+  const [fabricOptions, setFabricOptions] = useState<GlobalProductOption[]>([]);
+  const [frameOptions, setFrameOptions] = useState<GlobalProductOption[]>([]);
+  const [optionsLoading, setOptionsLoading] = useState<boolean>(true);
+
+  // Fetch fabric and frame options from Supabase
+  useEffect(() => {
+    async function fetchOptions() {
+      try {
+        const { data: globalOptionsData, error } = await supabase
+          .from('global_product_options')
+          .select('*')
+          .in('type', ['finish', 'fabric_color'])
+          .eq('is_active', true)
+          .order('name');
+
+        if (error) {
+          console.error('Error fetching product options:', error);
+          return;
+        }
+
+        if (globalOptionsData) {
+          const processedOptions = globalOptionsData.map(option => ({
+            ...option,
+            value_data: typeof option.value_data === 'string' ?
+              JSON.parse(option.value_data) : option.value_data
+          })) as GlobalProductOption[];
+
+          const fabrics = processedOptions.filter(opt => opt.type.toLowerCase() === 'fabric_color');
+          const frames = processedOptions.filter(opt => opt.type.toLowerCase() === 'finish');
+
+          setFabricOptions(fabrics);
+          setFrameOptions(frames);
+
+          // Set default selections
+          if (fabrics.length > 0) setSelectedFabric(fabrics[0].name);
+          if (frames.length > 0) setSelectedFrame(frames[0].name);
+        }
+      } catch (err) {
+        console.error('Error in fetchOptions:', err);
+      } finally {
+        setOptionsLoading(false);
+      }
+    }
+
+    fetchOptions();
+  }, []);
+
+  // Helper function to validate base64 image data
+  const validateBase64Image = (dataUrl: string): boolean => {
+    if (!dataUrl.startsWith('data:image/')) {
+      console.log('Invalid data URL format');
+      return false;
+    }
+    
+    try {
+      const base64Data = dataUrl.split(',')[1];
+      if (!base64Data || base64Data.length < 100) {
+        console.log('Base64 data too short or missing');
+        return false;
+      }
+      
+      // Test if it's valid base64
+      atob(base64Data.substring(0, 100));
+      console.log('Base64 validation passed');
+      return true;
+    } catch (e) {
+      console.log('Base64 validation failed:', e);
+      return false;
+    }
+  };
+
+  const handleDownload = () => {
+    if (!editedImageUrl) return;
+    
+    const link = document.createElement('a');
+    link.href = editedImageUrl;
+    link.download = `kusam-furniture-${selectedFabric.toLowerCase().replace(' ', '-')}-${selectedFrame.toLowerCase().replace(' ', '-')}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setImageFile(e.target.files[0]);
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (!imageFile) {
+      setError('Por favor, sube una imagen primero.');
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+    setEditedImageUrl(null);
+    setAiDescription(null);
+    setProcessingStatus('Convirtiendo imagen a base64...');
+
+    try {
+      const base64Image = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(imageFile);
+      });
+
+      setProcessingStatus('Enviando imagen para estandarización...');
+
+      // Create modifications string from selected options
+      const modifications = `Additionally, change the cushion fabric to ${selectedFabric || 'canvas beige'} and the frame material appearance to ${selectedFrame || 'the current material'}`;
+
+      const res = await fetch('/api/process-furniture', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          image: base64Image,
+          modifications: modifications,
+        }),
+      });
+
+      setProcessingStatus('Procesando respuesta del servidor...');
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || 'Algo salió mal.');
+      }
+
+      const data = await res.json();
+      console.log('API Response:', data); // Debug log
+      console.log('Generated Image URL:', data.editedImageUrl?.substring(0, 50) + '...'); // Debug log
+      console.log('Has Generated Image:', data.hasGeneratedImage); // Debug log
+      console.log('Raw Response Available:', !!data.rawResponse); // Debug log
+      
+      // Handle the base64 image from the response
+      if (data.editedImageUrl && data.hasGeneratedImage) {
+        console.log('Setting edited image URL, length:', data.editedImageUrl.length);
+        // Validate the data URL
+        if (validateBase64Image(data.editedImageUrl)) {
+          setEditedImageUrl(data.editedImageUrl);
+          console.log('Successfully set valid image data URL');
+        } else {
+          console.log('Invalid image data URL format');
+          setError('Imagen generada pero con formato inválido.');
+        }
+      } else if (data.rawResponse) {
+        // Try to extract base64 from raw response as fallback
+        console.log('Attempting to extract base64 from rawResponse...');
+        try {
+          const rawData = typeof data.rawResponse === 'string' ? 
+            JSON.parse(data.rawResponse) : data.rawResponse;
+          
+          // First, check if there's an 'id' field containing base64 data
+          if (rawData.id && typeof rawData.id === 'string' && rawData.id.length > 100) {
+            console.log('Found id field in rawResponse, length:', rawData.id.length);
+            let base64Data = rawData.id;
+            
+            // Remove 'gen-1' prefix if present
+            if (base64Data.startsWith('gen-1')) {
+              base64Data = base64Data.slice(5);
+            }
+            
+            const imageDataUrl = `data:image/png;base64,${base64Data}`;
+            
+            if (validateBase64Image(imageDataUrl)) {
+              setEditedImageUrl(imageDataUrl);
+              console.log('Successfully extracted and validated base64 from rawResponse id field');
+            } else {
+              console.log('Extracted base64 from id field failed validation');
+              setError('Imagen extraída pero con formato inválido.');
+            }
+          } else {
+            // Fallback: Look for any base64 patterns in the raw response
+            const rawString = JSON.stringify(rawData);
+            const base64Match = rawString.match(/([A-Za-z0-9+/=]{500,})/);
+            
+            if (base64Match) {
+              const base64Data = base64Match[1];
+              const imageDataUrl = `data:image/png;base64,${base64Data}`;
+              
+              if (validateBase64Image(imageDataUrl)) {
+                setEditedImageUrl(imageDataUrl);
+                console.log('Successfully extracted and validated base64 from rawResponse (fallback)');
+              } else {
+                console.log('Extracted base64 failed validation (fallback)');
+                setError('Imagen extraída pero con formato inválido.');
+              }
+            } else {
+              console.log('No base64 data found in rawResponse');
+              setError('No se pudo generar la imagen. Intenta con otra imagen.');
+            }
+          }
+        } catch (parseError) {
+          console.error('Error parsing rawResponse:', parseError);
+          setError('Error procesando la respuesta del servidor.');
+        }
+      } else {
+        console.log('No generated image found in response');
+        setError('No se pudo generar la imagen. El modelo AI no devolvió una imagen editada.');
+      }
+      
+      if (data.description) {
+        setAiDescription(data.description);
+      }
+
+    } catch (err: any) {
+      console.error('Error in handleSubmit:', err);
+      setError(err.message || 'Error desconocido al procesar la imagen');
+    } finally {
+      setIsLoading(false);
+      setProcessingStatus('');
+    }
+  };
+
+  return (
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+      className="p-6 rounded-lg shadow-lg"
+      style={{
+        backgroundColor: '#F8F5F0',
+        borderColor: '#4B2E09',
+        color: '#4B2E09',
+        fontSize: '1.65rem',
+        padding: '2.25rem',
+        minHeight: '300px',
+        width: '100%',
+        maxWidth: '800px',
+        margin: '0 auto',
+      }}
+    >
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold">Editar Fotos con KusamAI</h1>
+        <button onClick={onBack} className="text-sm text-gray-500 hover:text-gray-900 transition-colors">
+          &times; Cerrar
+        </button>
+      </div>
+
+      <div className="mb-4">
+        <label className="block text-gray-700 font-semibold mb-2">Subir Imagen de Producto</label>
+        <input 
+          type="file" 
+          accept="image/*" 
+          onChange={handleFileChange} 
+          className="w-full text-gray-700 border rounded py-2 px-3"
+          style={{ borderColor: '#4B2E09', color: '#4B2E09' }}
+        />
+      </div>
+
+      <div className="mb-4">
+        <label className="block text-gray-700 font-semibold mb-2">Color de Tela</label>
+        {optionsLoading ? (
+          <div className="w-full border rounded py-2 px-3 bg-gray-100 text-gray-500">
+            Cargando opciones de tela...
+          </div>
+        ) : (
+          <select 
+            value={selectedFabric} 
+            onChange={(e) => setSelectedFabric(e.target.value)} 
+            className="w-full border rounded py-2 px-3"
+            style={{ borderColor: '#4B2E09', color: '#4B2E09' }}
+          >
+            <option value="">Seleccionar color de tela...</option>
+            {fabricOptions.map(fabric => (
+              <option key={fabric.id} value={fabric.name}>{fabric.name}</option>
+            ))}
+          </select>
+        )}
+      </div>
+
+      <div className="mb-6">
+        <label className="block text-gray-700 font-semibold mb-2">Material del Marco</label>
+        {optionsLoading ? (
+          <div className="w-full border rounded py-2 px-3 bg-gray-100 text-gray-500">
+            Cargando opciones de estructura...
+          </div>
+        ) : (
+          <select 
+            value={selectedFrame} 
+            onChange={(e) => setSelectedFrame(e.target.value)} 
+            className="w-full border rounded py-2 px-3"
+            style={{ borderColor: '#4B2E09', color: '#4B2E09' }}
+          >
+            <option value="">Seleccionar acabado de estructura...</option>
+            {frameOptions.map(frame => (
+              <option key={frame.id} value={frame.name}>{frame.name}</option>
+            ))}
+          </select>
+        )}
+      </div>
+
+      <button 
+        onClick={handleSubmit} 
+        disabled={!imageFile || isLoading || optionsLoading}
+        className={`w-full py-3 rounded text-white font-bold transition-colors ${
+          !imageFile || isLoading || optionsLoading ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
+        }`}
+      >
+        {optionsLoading ? 'Cargando opciones...' : isLoading ? (processingStatus || 'Estandarizando...') : 'Estandarizar Imagen de Producto'}
+      </button>
+
+      {error && (
+        <div className="text-red-500 mt-4 p-3 bg-red-50 rounded-lg border border-red-200">
+          <p className="font-medium">Error:</p>
+          <p>{error}</p>
+        </div>
+      )}
+      
+      {(editedImageUrl || aiDescription) && (
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="mt-8 bg-white p-6 rounded-lg shadow-lg"
+        >
+          <h2 className="text-2xl font-bold mb-4">Resultado de la Estandarización</h2>
+          
+          {aiDescription && (
+            <div className="mb-6">
+              <h3 className="text-lg font-semibold mb-3">Descripción de los Cambios Aplicados:</h3>
+              <p className="text-gray-700 leading-relaxed bg-gray-50 p-4 rounded-lg">
+                {aiDescription}
+              </p>
+            </div>
+          )}
+          
+          {editedImageUrl && (
+            <div>
+              <div className="flex justify-between items-center mb-3">
+                <h3 className="text-lg font-semibold">Imagen Estandarizada:</h3>
+                <button
+                  onClick={handleDownload}
+                  className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center gap-2"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  </svg>
+                  Descargar Imagen
+                </button>
+              </div>
+              <div className="w-full max-w-xl mx-auto border rounded-lg overflow-hidden">
+                {/* Use regular img tag for base64 data instead of Next.js Image */}
+                <img 
+                  src={editedImageUrl} 
+                  alt="Standardized product image" 
+                  style={{ width: '100%', height: 'auto' }}
+                  className="object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                  onClick={handleDownload}
+                  onError={(e) => {
+                    console.error('Image failed to load:', e);
+                    console.log('Failed image src:', editedImageUrl?.substring(0, 100));
+                  }}
+                  onLoad={() => console.log('Image loaded successfully')}
+                />
+              </div>
+              <p className="text-sm text-gray-600 mt-2">
+                Imagen estandarizada con formato 9:16, fondo blanco, iluminación profesional y especificaciones de Kusam
+              </p>
+            </div>
+          )}
+        </motion.div>
+      )}
+    </motion.div>
+  );
+}
