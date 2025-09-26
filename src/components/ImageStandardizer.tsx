@@ -4,6 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import { supabase } from '@/utils/supabase';
+import { CreditDisplay, CreditUpgradeMessage } from './admin/CreditDisplay';
+import { useCreditAwareProcessing } from '../hooks/useCredits';
 
 // Interface for Supabase global product options
 interface GlobalProductOption {
@@ -31,11 +33,32 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [processingStatus, setProcessingStatus] = useState<string>('');
+  const [userId, setUserId] = useState<string | null>(null);
   
   // Supabase options
   const [fabricOptions, setFabricOptions] = useState<GlobalProductOption[]>([]);
   const [frameOptions, setFrameOptions] = useState<GlobalProductOption[]>([]);
   const [optionsLoading, setOptionsLoading] = useState<boolean>(true);
+
+  // Credit management
+  const { 
+    credits, 
+    hasCredits, 
+    isProcessing: creditProcessing, 
+    processWithCredits, 
+    canProcess 
+  } = useCreditAwareProcessing(userId || '');
+
+  // Get current user
+  useEffect(() => {
+    async function getCurrentUser() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setUserId(user.id);
+      }
+    }
+    getCurrentUser();
+  }, []);
 
   // Fetch fabric and frame options from Supabase
   useEffect(() => {
@@ -127,13 +150,32 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
       return;
     }
 
+    if (!canProcess) {
+      setError('No hay créditos disponibles para procesar la imagen.');
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
     setEditedImageUrl(null);
     setAiDescription(null);
-    setProcessingStatus('Convirtiendo imagen a base64...');
 
-    try {
+    // Create image details for credit tracking
+    const imageDetails = {
+      filename: imageFile.name,
+      size: imageFile.size,
+      type: imageFile.type,
+      fabric: selectedFabric,
+      frame: selectedFrame,
+      perspective: selectedPerspective,
+      additionalPrompt: additionalPrompt.trim()
+    };
+
+    // Process with credit awareness
+    const result = await processWithCredits(async () => {
+      setProcessingStatus('Convirtiendo imagen a base64...');
+
+      try {
       const base64Image = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
         reader.onloadend = () => resolve(reader.result as string);
@@ -251,13 +293,98 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
         setAiDescription(data.description);
       }
 
+      return await res.json();
+
     } catch (err: unknown) {
-      console.error('Error in handleSubmit:', err);
+      console.error('Error in processing:', err);
       const errorMessage = err instanceof Error ? err.message : 'Error desconocido al procesar la imagen';
-      setError(errorMessage);
-    } finally {
-      setIsLoading(false);
-      setProcessingStatus('');
+      throw new Error(errorMessage);
+    }
+    }, imageDetails);
+
+    setIsLoading(false);
+    setProcessingStatus('');
+
+    if (result.success && result.result) {
+      const data = result.result;
+      console.log('API Response:', data); // Debug log
+      console.log('Generated Image URL:', data.editedImageUrl?.substring(0, 50) + '...'); // Debug log
+      console.log('Has Generated Image:', data.hasGeneratedImage); // Debug log
+      console.log('Raw Response Available:', !!data.rawResponse); // Debug log
+      
+      // Handle the base64 image from the response
+      if (data.editedImageUrl && data.hasGeneratedImage) {
+        console.log('Setting edited image URL, length:', data.editedImageUrl.length);
+        // Validate the data URL
+        if (validateBase64Image(data.editedImageUrl)) {
+          setEditedImageUrl(data.editedImageUrl);
+          console.log('Successfully set valid image data URL');
+        } else {
+          console.log('Invalid image data URL format');
+          setError('Imagen generada pero con formato inválido.');
+        }
+      } else if (data.rawResponse) {
+        // Try to extract base64 from raw response as fallback
+        console.log('Attempting to extract base64 from rawResponse...');
+        try {
+          const rawData = typeof data.rawResponse === 'string' ? 
+            JSON.parse(data.rawResponse) : data.rawResponse;
+          
+          // First, check if there's an 'id' field containing base64 data
+          if (rawData.id && typeof rawData.id === 'string' && rawData.id.length > 100) {
+            console.log('Found id field in rawResponse, length:', rawData.id.length);
+            let base64Data = rawData.id;
+            
+            // Remove 'gen-1' prefix if present
+            if (base64Data.startsWith('gen-1')) {
+              base64Data = base64Data.slice(5);
+            }
+            
+            const imageDataUrl = `data:image/png;base64,${base64Data}`;
+            
+            if (validateBase64Image(imageDataUrl)) {
+              setEditedImageUrl(imageDataUrl);
+              console.log('Successfully extracted and validated base64 from rawResponse id field');
+            } else {
+              console.log('Extracted base64 from id field failed validation');
+              setError('Imagen extraída pero con formato inválido.');
+            }
+          } else {
+            // Fallback: Look for any base64 patterns in the raw response
+            const rawString = JSON.stringify(rawData);
+            const base64Match = rawString.match(/([A-Za-z0-9+/=]{500,})/);
+            
+            if (base64Match) {
+              const base64Data = base64Match[1];
+              const imageDataUrl = `data:image/png;base64,${base64Data}`;
+              
+              if (validateBase64Image(imageDataUrl)) {
+                setEditedImageUrl(imageDataUrl);
+                console.log('Successfully extracted and validated base64 from rawResponse (fallback)');
+              } else {
+                console.log('Extracted base64 failed validation (fallback)');
+                setError('Imagen extraída pero con formato inválido.');
+              }
+            } else {
+              console.log('No base64 data found in rawResponse');
+              setError('No se pudo generar la imagen. Intenta con otra imagen.');
+            }
+          }
+        } catch (parseError) {
+          console.error('Error parsing rawResponse:', parseError);
+          setError('Error procesando la respuesta del servidor.');
+        }
+      } else {
+        console.log('No generated image found in response');
+        setError('No se pudo generar la imagen. El modelo AI no devolvió una imagen editada.');
+      }
+      
+      if (data.description) {
+        setAiDescription(data.description);
+      }
+    } else {
+      // Processing failed
+      setError(result.error || 'Error procesando la imagen.');
     }
   };
 
@@ -280,10 +407,17 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
       }}
     >
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold"> Optimizador de Fotos Kusam </h1>
-        <button onClick={onBack} className="text-sm text-gray-500 hover:text-gray-900 transition-colors">
-          &times; Cerrar
-        </button>
+        <div className="flex-1">
+          <h1 className="text-3xl font-bold"> Optimizador de Fotos Kusam </h1>
+          <p className="text-sm text-gray-600 mt-1">AI-powered image optimization</p>
+        </div>
+        
+        <div className="flex items-center space-x-4">
+          <CreditDisplay size="compact" showIcon={true} />
+          <button onClick={onBack} className="text-sm text-gray-500 hover:text-gray-900 transition-colors">
+            &times; Cerrar
+          </button>
+        </div>
       </div>
 
       <div className="mb-4">
@@ -418,12 +552,21 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
 
       <button 
         onClick={handleSubmit} 
-        disabled={!imageFile || isLoading || optionsLoading}
+        disabled={!imageFile || !canProcess || isLoading || optionsLoading || creditProcessing}
         className={`w-full py-3 rounded text-white font-bold transition-colors ${
-          !imageFile || isLoading || optionsLoading ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
+          !imageFile || !canProcess || isLoading || optionsLoading || creditProcessing
+            ? 'bg-gray-400 cursor-not-allowed' 
+            : 'bg-blue-600 hover:bg-blue-700'
         }`}
       >
-        {optionsLoading ? 'Cargando opciones...' : isLoading ? (processingStatus || 'Estandarizando...') : 'Estandarizar Imagen de Producto'}
+        {optionsLoading 
+          ? 'Cargando opciones...' 
+          : !hasCredits
+            ? 'Sin créditos disponibles'
+            : isLoading || creditProcessing 
+              ? (processingStatus || 'Estandarizando...') 
+              : 'Estandarizar Imagen de Producto (1 crédito)'
+        }
       </button>
 
       {error && (
@@ -432,6 +575,15 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
           <p>{error}</p>
         </div>
       )}
+
+      {/* Credit upgrade message */}
+      <CreditUpgradeMessage 
+        credits={credits} 
+        onUpgradeClick={() => {
+          // TODO: Implement Stripe integration for credit purchases
+          console.log('Open credit upgrade modal');
+        }}
+      />
       
       {(editedImageUrl || aiDescription) && (
         <motion.div 

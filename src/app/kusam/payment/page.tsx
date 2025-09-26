@@ -8,7 +8,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { supabase } from '@/utils/supabase';
 import { PostgrestError } from '@supabase/supabase-js';
-import { getDiscountForLandingSource, hasDiscount } from '../../../config/discountConfig';
+import { getDiscountForLandingSource } from '../../../config/discountConfig';
 
 // --- NEW: Import initMercadoPago and Wallet components from Mercado Pago SDK for React ---
 import { initMercadoPago, Wallet } from '@mercadopago/sdk-react';
