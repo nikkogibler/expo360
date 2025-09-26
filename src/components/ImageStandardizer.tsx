@@ -166,6 +166,20 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
       return;
     }
 
+    // Pre-validation: Check file type and size BEFORE deducting credits
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+    const maxSize = 2 * 1024 * 1024; // 2MB in bytes
+
+    if (!allowedTypes.includes(imageFile.type.toLowerCase())) {
+      setError('Solo se permiten archivos JPG y PNG. Por favor, convierte tu archivo HEIC a JPG o PNG.');
+      return;
+    }
+
+    if (imageFile.size > maxSize) {
+      setError('El archivo es demasiado grande. El tamaño máximo permitido es 2MB.');
+      return;
+    }
+
     if (!canProcess) {
       setError('No hay créditos disponibles para procesar la imagen.');
       return;
@@ -187,7 +201,7 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
       additionalPrompt: additionalPrompt.trim()
     };
 
-    // Process with credit awareness
+    // Process with credit awareness (credits only deducted after validation passes)
     const result = await processWithCredits(async () => {
       setProcessingStatus('Convirtiendo imagen a base64...');
 
@@ -460,9 +474,14 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
                   {imageFile ? imageFile.name : 'Seleccionar Archivo'}
                 </span>
                 {!imageFile && (
-                  <p className="text-sm text-gray-500 mt-1">
-                    Ningún archivo seleccionado
-                  </p>
+                  <>
+                    <p className="text-sm text-gray-500 mt-1">
+                      Ningún archivo seleccionado
+                    </p>
+                    <p className="text-xs text-gray-400 mt-2">
+                      Solo JPG y PNG, máximo 2MB
+                    </p>
+                  </>
                 )}
               </div>
             </div>
