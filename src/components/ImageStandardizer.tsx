@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { supabase } from '@/utils/supabase';
 import { CreditDisplay, CreditUpgradeMessage } from './admin/CreditDisplay';
 import { useCreditAwareProcessing } from '../hooks/useCredits';
+import CreditPurchaseModal from './CreditPurchaseModal';
 
 // Interface for Supabase global product options
 interface GlobalProductOption {
@@ -34,6 +35,7 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
   const [error, setError] = useState<string | null>(null);
   const [processingStatus, setProcessingStatus] = useState<string>('');
   const [userId, setUserId] = useState<string | null>(null);
+  const [showPurchaseModal, setShowPurchaseModal] = useState<boolean>(false);
   
   // Supabase options
   const [fabricOptions, setFabricOptions] = useState<GlobalProductOption[]>([]);
@@ -443,7 +445,12 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
         </div>
         
         <div className="flex items-center space-x-4">
-          <CreditDisplay size="compact" showIcon={true} />
+          <button 
+            onClick={() => setShowPurchaseModal(true)}
+            className="transition-all duration-200 hover:scale-105"
+          >
+            <CreditDisplay size="compact" showIcon={true} />
+          </button>
           <button onClick={onBack} className="text-sm text-gray-500 hover:text-gray-900 transition-colors">
             &times; Cerrar
           </button>
@@ -680,6 +687,13 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
           )}
         </motion.div>
       )}
+
+      {/* Credit Purchase Modal */}
+      <CreditPurchaseModal
+        isOpen={showPurchaseModal}
+        onClose={() => setShowPurchaseModal(false)}
+        remainingCredits={credits}
+      />
     </motion.div>
   );
 }

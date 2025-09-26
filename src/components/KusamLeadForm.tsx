@@ -176,7 +176,7 @@ const KusamLeadForm = ({ variant = 'kusam' }: KusamLeadFormProps) => {
 			setIsLoadingCustomerStatus(false);
 		};
 		initializeCustomer();
-	}, [pathname, router, searchParams, redirectFrom]);
+	}, [pathname, router, searchParams, redirectFrom, variant]);
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();

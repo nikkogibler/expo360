@@ -41,7 +41,7 @@ const AdminMenu: React.FC<AdminMenuProps> = ({ open, setOpen }) => {
     } else if (action === 'avatar') {
       alert('Change avatar clicked');
     } else if (action === 'settings') {
-      alert('Settings clicked');
+      router.push('/admin/settings');
     }
     setOpen(false);
   }
