@@ -38,8 +38,13 @@ export default function CreditPurchaseModal({
         throw new Error(data.error || 'Failed to create checkout session');
       }
 
-      // Redirect to Stripe Checkout
-      window.location.href = data.url;
+      // Open Stripe Checkout in new tab/window
+      window.open(data.url, '_blank', 'noopener,noreferrer');
+      
+      // Close modal after a brief delay to show processing feedback
+      setTimeout(() => {
+        onClose();
+      }, 500);
     } catch (error) {
       console.error('Error creating checkout session:', error);
       // You could add a toast notification here for errors
@@ -79,23 +84,25 @@ export default function CreditPurchaseModal({
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto"
+              className="bg-white rounded-2xl shadow-2xl max-w-5xl w-full max-h-[95vh] overflow-y-auto"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Header */}
-              <div className="p-6 border-b border-gray-200">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <h2 className="text-2xl font-bold text-gray-900">
-                      Recarga tus Créditos
-                    </h2>
-                    <p className="text-gray-600 mt-1">
-                      Te quedan {remainingCredits} créditos • Agrega más para seguir creando
-                    </p>
+              <div className="p-3 border-b border-gray-200 overflow-hidden max-h-55">
+                <div className="relative flex items-center justify-center">
+                  {/* Centered Content */}
+                  <div className="text-center relative">
+                    <img 
+                      src="/admin/desbloquea.png" 
+                      alt="Desbloquea Más Posibilidades" 
+                      className="h-68 w-auto object-contain mx-auto transform translate-x-4 -translate-y-9"
+                    />
                   </div>
+                  
+                  {/* Close Button - Absolute positioned */}
                   <button
                     onClick={onClose}
-                    className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                    className="absolute top-0 right-0 p-2 hover:bg-gray-100 rounded-full transition-colors z-20"
                     disabled={isLoading}
                   >
                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -106,8 +113,8 @@ export default function CreditPurchaseModal({
               </div>
 
               {/* Packages Grid */}
-              <div className="p-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="p-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                   {CREDIT_PACKAGES.map((pkg) => {
                     const estimatedPrice = getEstimatedPrice(pkg.credits);
                     
@@ -116,18 +123,18 @@ export default function CreditPurchaseModal({
                         key={pkg.id}
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
-                        className={`relative p-6 border rounded-2xl cursor-pointer transition-all duration-200 ${
+                        className={`relative p-4 border rounded-2xl cursor-pointer transition-all duration-200 ${
                           pkg.popular 
-                            ? 'border-amber-500 bg-amber-50 ring-2 ring-amber-200' 
-                            : 'border-gray-200 hover:border-gray-300 hover:shadow-lg'
+                            ? 'border-cyan-400 bg-gradient-to-br from-cyan-50 via-purple-50 to-blue-50 ring-2 ring-gradient-to-r ring-from-cyan-200 ring-to-blue-200' 
+                            : 'border-gray-200 hover:border-gray-300 hover:shadow-lg bg-white'
                         } ${isLoading ? 'opacity-75 cursor-not-allowed' : ''}`}
                         onClick={() => !isLoading && handlePurchase(pkg)}
                       >
                         {/* Badge */}
                         {pkg.badge && (
-                          <div className={`absolute -top-3 left-6 px-3 py-1 rounded-full text-xs font-semibold ${
+                          <div className={`absolute -top-3 left-4 px-3 py-1 rounded-full text-xs font-semibold ${
                             pkg.badge === 'Más Elegido' 
-                              ? 'bg-amber-500 text-white' 
+                              ? 'bg-gradient-to-r from-cyan-500 via-purple-500 to-blue-500 text-white shadow-lg' 
                               : 'bg-green-500 text-white'
                           }`}>
                             {pkg.badge}
@@ -137,41 +144,46 @@ export default function CreditPurchaseModal({
                         {/* Loading spinner for processing */}
                         {isLoading && (
                           <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-75 rounded-2xl">
-                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-600"></div>
+                            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900"></div>
                           </div>
                         )}
 
                         <div className="text-center">
-                          <h3 className="text-xl font-bold text-gray-900 mb-2">
+                          <h3 className="text-lg font-bold text-gray-900 mb-2">
                             {pkg.name}
                           </h3>
                           
-                          <div className="mb-4">
-                            <div className="text-3xl font-bold text-amber-600">
+                          <div className="mb-3">
+                            <div className={`text-2xl font-bold ${pkg.popular ? 'text-transparent bg-clip-text bg-gradient-to-r from-cyan-600 via-purple-600 to-blue-600' : 'text-gray-900'}`}>
                               {pkg.credits}
                             </div>
-                            <div className="text-sm text-gray-600">créditos</div>
+                            <div className="text-xs text-gray-600">créditos</div>
                           </div>
 
-                          <p className="text-gray-600 text-sm mb-4">
+                          <p className="text-gray-600 text-xs mb-3 overflow-hidden" style={{
+                            display: '-webkit-box',
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: 'vertical',
+                            height: '32px'
+                          }}>
                             {pkg.description}
                           </p>
 
-                          <div className="mb-4">
+                          <div className="mb-3">
                             <div className="text-lg font-semibold text-gray-900">
-                              ${estimatedPrice}
+                              ${estimatedPrice} USD
                             </div>
                             <div className="text-xs text-gray-500">
-                              ~${getCostPerCredit(pkg.credits, estimatedPrice)} por crédito
+                              ${getCostPerCredit(pkg.credits, estimatedPrice)} USD por crédito
                             </div>
                           </div>
 
-                          <div className={`w-full py-3 px-4 rounded-lg font-medium transition-colors ${
+                          <div className={`w-full py-2 px-3 rounded-lg font-medium transition-all duration-200 text-sm ${
                             pkg.popular
-                              ? 'bg-amber-600 hover:bg-amber-700 text-white'
-                              : 'bg-gray-900 hover:bg-gray-800 text-white'
-                          } ${isLoading ? 'cursor-not-allowed opacity-50' : ''}`}>
-                            {isLoading ? 'Procesando...' : 'Recargar Ahora'}
+                              ? 'bg-gradient-to-r from-cyan-600 via-purple-600 to-blue-600 hover:from-cyan-700 hover:via-purple-700 hover:to-blue-700 text-white shadow-lg'
+                              : 'bg-gray-900 hover:bg-black text-white'
+                          } ${isLoading ? 'cursor-not-allowed opacity-50' : 'hover:shadow-lg transform hover:scale-105'}`}>
+                            {isLoading ? 'Abriendo pago seguro...' : 'Recargar Ahora →'}
                           </div>
                         </div>
                       </motion.div>
@@ -179,26 +191,41 @@ export default function CreditPurchaseModal({
                   })}
                 </div>
 
-                {/* Payment Security Info */}
-                <div className="mt-8 p-4 bg-gray-50 rounded-lg">
-                  <div className="flex items-center justify-center space-x-6 text-sm text-gray-600">
+                {/* Interzekt Logo */}
+                <div className="flex justify-center">
+                  <img 
+                    src="/interzekt_logo1.png" 
+                    alt="Interzekt" 
+                    className="h-24 w-auto"
+                  />
+                </div>
+
+                {/* Security Features */}
+                <div className="mt-3 p-3 bg-gray-50 rounded-lg">
+                  <div className="flex flex-wrap items-center justify-center gap-3 text-xs text-gray-600">
                     <div className="flex items-center">
-                      <svg className="w-5 h-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-4 h-4 text-green-500 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                       </svg>
-                      Pago 100% seguro con Stripe
+                      Pago 100% seguro
                     </div>
                     <div className="flex items-center">
-                      <svg className="w-5 h-5 text-blue-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-4 h-4 text-blue-500 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                       </svg>
-                      Créditos disponibles al instante
+                      Créditos al instante
                     </div>
                     <div className="flex items-center">
-                      <svg className="w-5 h-5 text-purple-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-4 h-4 text-purple-500 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
                       </svg>
-                      Todas las tarjetas aceptadas
+                      Todas las tarjetas
+                    </div>
+                    <div className="flex items-center">
+                      <svg className="w-4 h-4 text-orange-500 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                      </svg>
+                      Nueva ventana
                     </div>
                   </div>
                 </div>
