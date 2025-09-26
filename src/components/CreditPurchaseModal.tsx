@@ -19,6 +19,8 @@ export default function CreditPurchaseModal({
     const handlePurchase = async (packageData: CreditPackage) => {
     setIsLoading(true);
     try {
+      console.log('Attempting to create checkout session for package:', packageData);
+      
       const response = await fetch('/api/create-stripe-session', {
         method: 'POST',
         headers: {
@@ -31,7 +33,9 @@ export default function CreditPurchaseModal({
         }),
       });
 
+      console.log('Response status:', response.status);
       const data = await response.json();
+      console.log('Response data:', data);
 
       if (!response.ok) {
         throw new Error(data.error || 'Failed to create checkout session');
@@ -46,8 +50,9 @@ export default function CreditPurchaseModal({
       }, 500);
     } catch (error) {
       console.error('Error creating checkout session:', error);
-      // You could add a toast notification here for errors
-      alert('No se pudo procesar la compra. Por favor intenta de nuevo.');
+      // More detailed error message for debugging
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      alert(`Error: ${errorMessage}. Por favor intenta de nuevo o contacta soporte.`);
     } finally {
       setIsLoading(false);
     }

@@ -2,7 +2,7 @@
 export const CREDIT_PACKAGES = [
   {
     id: 'starter',
-    priceId: 'price_1SBeMEH0qG3oBxFONkrGGuOm',
+    priceId: 'price_1SBeMEH0qG3oBxFOGsys2N8B',
     credits: 100,
     name: 'Recarga Básica',
     description: 'Ideal para añadir algunas variantes a tus productos favoritos',
@@ -11,7 +11,7 @@ export const CREDIT_PACKAGES = [
   },
   {
     id: 'popular',
-    priceId: 'price_1SBeMEH0qG3oBxFOGsys2N8B',
+    priceId: 'price_1SBeMEH0qG3oBxFONkrGGuOm',
     credits: 200,
     name: 'Recarga Popular',
     description: 'Perfecto para crear múltiples variantes de acabados y telas',
