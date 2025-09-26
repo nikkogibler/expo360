@@ -193,7 +193,7 @@ export default function CreditPurchaseModal({
                 </div>
 
                 {/* Interzekt Logo */}
-                <div className="flex justify-center">
+                <div className="flex justify-center mt-4">
                   <Image
                     src="/interzekt_logo1.png" 
                     alt="Interzekt" 
