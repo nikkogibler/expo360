@@ -33,21 +33,32 @@ export class CreditService {
    */
   static async getCurrentCredits(): Promise<number> {
     try {
+      console.log('Fetching credits from admin_credits table...');
+      
       const { data, error } = await supabase
         .from('admin_credits')
         .select('remaining_credits')
-        .order('created_at', { ascending: false })
+        .order('id', { ascending: false })
         .limit(1)
         .single();
 
+      console.log('Supabase query result:', { data, error });
+
       if (error) {
-        console.error('Error fetching credits:', error);
-        throw new Error(`Failed to fetch credits: ${error.message}`);
+        console.error('Supabase error details:', error);
+        throw new Error(`Failed to fetch credits: ${error.message || JSON.stringify(error)}`);
       }
 
+      if (!data) {
+        console.warn('No credit data found, returning 0');
+        return 0;
+      }
+
+      console.log('Successfully fetched credits:', data.remaining_credits);
       return data?.remaining_credits || 0;
     } catch (error) {
       console.error('Credit fetch error:', error);
+      // Return 0 instead of throwing to prevent UI crashes
       return 0;
     }
   }
@@ -90,7 +101,7 @@ export class CreditService {
     try {
       // Call the atomic credit deduction function
       const { data, error } = await supabase.rpc('deduct_admin_credit', {
-        user_uuid: userId,
+        user_uuid: userId, // Now accepts both UUID and email strings
         operation_details: imageDetails || {}
       });
 

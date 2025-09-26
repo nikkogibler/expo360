@@ -52,9 +52,25 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
   // Get current user
   useEffect(() => {
     async function getCurrentUser() {
+      // Try Supabase auth first
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         setUserId(user.id);
+        return;
+      }
+      
+      // Fallback to cookie-based admin system
+      const userEmail = document.cookie
+        .split('; ')
+        .find(row => row.startsWith('user_email='))
+        ?.split('=')[1];
+      
+      if (userEmail) {
+        // Use email as user ID for admin users
+        setUserId(userEmail);
+      } else {
+        // Generate a temporary session ID for demo purposes
+        setUserId('admin-session-' + Date.now());
       }
     }
     getCurrentUser();
