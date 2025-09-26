@@ -41,11 +41,31 @@ countryCodes.forEach(country => {
 	country.emoji = getFlagEmoji(country.code);
 });
 
-export type KusamLeadFormVariant = 'kusam' | 'saltillo' | 'vasconcelos';
+export type KusamLeadFormVariant = 
+	| 'kusam' 
+	| 'saltillo' 
+	| 'vasconcelos'
+	| 'salone-del-mobile-milan'
+	| 'casual-market-atlanta'
+	| 'ciff-copenhagen'
+	| 'movelsul-brazil'
+	| 'spoga-gafa-cologne';
 
 interface KusamLeadFormProps {
 	variant?: KusamLeadFormVariant;
 }
+
+// Map variants to customer-friendly landing source names
+const VARIANT_TO_LANDING_SOURCE: Record<KusamLeadFormVariant, string> = {
+	'kusam': 'Expo Mueble Internacional',
+	'saltillo': 'Tienda Saltillo',
+	'vasconcelos': 'Tienda Vasconcelos',
+	'salone-del-mobile-milan': 'Salone del Mobile Milan',
+	'casual-market-atlanta': 'Casual Market Atlanta',
+	'ciff-copenhagen': 'CIFF Copenhagen',
+	'movelsul-brazil': 'Movelsul Brazil',
+	'spoga-gafa-cologne': 'Spoga+Gafa Cologne'
+};
 
 const getInstructionsPath = (customerId?: string) => {
 	return `/kusam/instructions${customerId ? `?customer_id=${customerId}` : ''}`;
@@ -104,8 +124,22 @@ const KusamLeadForm = ({ variant = 'kusam' }: KusamLeadFormProps) => {
 						existingCustomer.customer_type;
 					console.log('[KusamLeadForm] isFullyRegistered:', isFullyRegistered);
 					if (isFullyRegistered) {
-						console.log('[KusamLeadForm] Customer is fully registered, redirecting to instructions.');
-						router.push(getInstructionsPath(currentCustomerId));
+						console.log('[KusamLeadForm] Customer is fully registered, redirecting based on variant.');
+						// Check variant to determine redirect path for existing customers
+						if (variant === 'saltillo' || variant === 'vasconcelos') {
+							// Check if user came from admin path
+							const cameFromAdmin = redirectFrom && redirectFrom.startsWith('/admin');
+							if (cameFromAdmin) {
+								// For admin users, redirect to admin catalog
+								router.push(`/admin/catalogo?customer_id=${currentCustomerId}`);
+							} else {
+								// For non-admin users, redirect to regular catalog
+								router.push(`/kusam/catalogo?customer_id=${currentCustomerId}`);
+							}
+						} else {
+							// For original kusam variant, maintain existing flow (go to instructions)
+							router.push(getInstructionsPath(currentCustomerId));
+						}
 						return;
 					} else {
 						if (existingCustomer.name === 'Visitante Anónimo') {
@@ -175,7 +209,8 @@ const KusamLeadForm = ({ variant = 'kusam' }: KusamLeadFormProps) => {
 					name,
 					whatsapp: fullWhatsappNumber,
 					email,
-					customer_type: customerType
+					customer_type: customerType,
+					landing_source: VARIANT_TO_LANDING_SOURCE[variant]
 				})
 				.eq('customer_id', customerIdToUse)
 				.select();
@@ -193,7 +228,8 @@ const KusamLeadForm = ({ variant = 'kusam' }: KusamLeadFormProps) => {
 					name,
 					whatsapp: fullWhatsappNumber,
 					email,
-					customer_type: customerType
+					customer_type: customerType,
+					landing_source: VARIANT_TO_LANDING_SOURCE[variant]
 				})
 				.select();
 			if (error) {
@@ -209,7 +245,25 @@ const KusamLeadForm = ({ variant = 'kusam' }: KusamLeadFormProps) => {
 		}
 		const redirectParams = new URLSearchParams(searchParams.toString());
 		redirectParams.delete('redirect_from');
-		const newRedirectPath = redirectFrom ? `${redirectFrom}?${redirectParams.toString()}` : `/kusam/instructions?customer_id=${customerIdToUse}`;
+		
+		// Check variant to determine redirect path
+		let defaultRedirectPath;
+		if (variant === 'saltillo' || variant === 'vasconcelos') {
+			// Check if user came from admin path
+			const cameFromAdmin = redirectFrom && redirectFrom.startsWith('/admin');
+			if (cameFromAdmin) {
+				// For admin users, redirect to admin catalog
+				defaultRedirectPath = `/admin/catalogo?customer_id=${customerIdToUse}`;
+			} else {
+				// For non-admin users, redirect to regular catalog
+				defaultRedirectPath = `/kusam/catalogo?customer_id=${customerIdToUse}`;
+			}
+		} else {
+			// For original kusam variant, maintain existing flow (go to instructions)
+			defaultRedirectPath = `/kusam/instructions?customer_id=${customerIdToUse}`;
+		}
+		
+		const newRedirectPath = redirectFrom ? `${redirectFrom}?${redirectParams.toString()}` : defaultRedirectPath;
 		router.push(newRedirectPath);
 	};
 

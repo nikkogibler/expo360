@@ -8,6 +8,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { supabase } from '@/utils/supabase';
 import { PostgrestError } from '@supabase/supabase-js';
+import { getDiscountForLandingSource, hasDiscount } from '../../../config/discountConfig';
 
 // --- NEW: Import initMercadoPago and Wallet components from Mercado Pago SDK for React ---
 import { initMercadoPago, Wallet } from '@mercadopago/sdk-react';
@@ -35,6 +36,7 @@ export default function KusamPaymentPage() {
   const [originalTotal, setOriginalTotal] = useState<number>(0);
   const [discountAmount, setDiscountAmount] = useState<number>(0);
   const [paymentError, setPaymentError] = useState<string | null>(null);
+  const [customerLandingSource, setCustomerLandingSource] = useState<string | null>(null);
   
   // --- ADD MISSING STATE VARIABLES ---
   const [preferenceId, setPreferenceId] = useState<string | null>(null);
@@ -49,9 +51,6 @@ export default function KusamPaymentPage() {
       maximumFractionDigits: 2,
     }).format(amount);
   }, []);
-
-  // --- DISCOUNT CONSTANTS ---
-  const EXPO_DISCOUNT_PERCENTAGE = 0.15; // 15% discount
 
   // --- NEW: Initialize Mercado Pago SDK with your Public Key ---
   useEffect(() => {
@@ -103,6 +102,20 @@ export default function KusamPaymentPage() {
           return;
         }
 
+        // Fetch customer landing source for discount calculation
+        const { data: customerData, error: customerError } = await supabase
+          .from('customers')
+          .select('landing_source')
+          .eq('customer_id', customerId)
+          .maybeSingle();
+
+        if (customerError) {
+          console.warn('Could not fetch customer data for discount calculation:', customerError);
+        }
+
+        const landingSource = customerData?.landing_source || null;
+        setCustomerLandingSource(landingSource);
+
         // --- REMOVED: const uniqueProductIds = [...new Set(likedFavorites.map(fav => fav.product_id))]; ---
 
         // Make sure to select 'name' here for the Mercado Pago item title
@@ -131,9 +144,10 @@ export default function KusamPaymentPage() {
           }
         });
 
-        // --- NEW: Calculate discount ---
+        // --- Calculate discount based on customer landing source ---
         const originalAmount = total;
-        const discount = originalAmount * EXPO_DISCOUNT_PERCENTAGE;
+        const discountRate = getDiscountForLandingSource(landingSource);
+        const discount = originalAmount * discountRate;
         const finalTotal = originalAmount - discount;
 
         setOriginalTotal(originalAmount);
@@ -257,7 +271,8 @@ export default function KusamPaymentPage() {
           };
         }
         
-        const discountedPrice = details.price * (1 - EXPO_DISCOUNT_PERCENTAGE);
+        const discountRate = getDiscountForLandingSource(customerLandingSource);
+        const discountedPrice = details.price * (1 - discountRate);
         
         return {
           id: fav.product_id,

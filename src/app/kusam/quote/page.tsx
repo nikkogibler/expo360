@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { supabase } from '../../../utils/supabase';
+import { getDiscountForLandingSource, hasDiscount, getDiscountDisplayName } from '../../../config/discountConfig';
 
 // Log quote event to Supabase
 async function logQuoteEvent({
@@ -63,7 +64,6 @@ interface Product {
 }
 const RFC = 'KUS2103258E2'; // Kusam Decor RFC
 const IVA_RATE = 0.16;
-const EXPO_DISCOUNT = 0.15;
 
 export default function QuotePage() {
   const router = useRouter();
@@ -73,6 +73,7 @@ export default function QuotePage() {
   const [error, setError] = useState('');
   const [customerName, setCustomerName] = useState<string>('');
   const [quoteDate, setQuoteDate] = useState<string>('');
+  const [customerLandingSource, setCustomerLandingSource] = useState<string | null>(null);
 
   // Fetch favorites and products
   useEffect(() => {
@@ -124,16 +125,19 @@ export default function QuotePage() {
         });
         setProducts(prodMap);
 
-        // Fetch customer name using customer_id from localStorage (matches both tables)
+        // Fetch customer name and landing source using customer_id from localStorage
         let customerNameValue = '';
         if (customerId) {
           const { data: customerData, error: customerErr } = await supabase
             .from('customers')
-            .select('name')
+            .select('name, landing_source')
             .eq('customer_id', customerId)
             .maybeSingle();
-          if (!customerErr && customerData && customerData.name) {
-            customerNameValue = customerData.name;
+          if (!customerErr && customerData) {
+            if (customerData.name) {
+              customerNameValue = customerData.name;
+            }
+            setCustomerLandingSource(customerData.landing_source || null);
           }
         }
         setCustomerName(customerNameValue);
@@ -166,17 +170,22 @@ export default function QuotePage() {
     fetchData();
   }, []);
 
-  // Calculate totals
+  // Calculate totals with dynamic discount
   const subtotal = favorites.reduce((sum, fav) => {
     const prod = products[fav.product_id];
     return prod ? sum + prod.price * fav.quantity : sum;
   }, 0);
-  const discount = subtotal * EXPO_DISCOUNT;
+  
+  const discountRate = getDiscountForLandingSource(customerLandingSource);
+  const discount = subtotal * discountRate;
   const subtotalAfterDiscount = subtotal - discount;
   const iva = subtotalAfterDiscount * IVA_RATE;
   const totalConDescuento = subtotalAfterDiscount + iva;
   const ivaSinDescuento = subtotal * IVA_RATE;
   const totalSinDescuento = subtotal + ivaSinDescuento;
+  
+  // Check if customer has any discount
+  const customerHasDiscount = hasDiscount(customerLandingSource);
 
   // Format currency
   const formatCurrency = useCallback(
@@ -329,17 +338,21 @@ export default function QuotePage() {
                       <div>
                         <span className="font-semibold">Subtotal:</span> {formatCurrency(subtotal)}
                       </div>
+                      {customerHasDiscount && (
+                        <>
+                          <div>
+                            <span className="font-semibold">{getDiscountDisplayName(customerLandingSource)}:</span> <span className="text-green-700">-{formatCurrency(discount)}</span>
+                          </div>
+                          <div>
+                            <span className="font-semibold">Subtotal con Descuento:</span> {formatCurrency(subtotalAfterDiscount)}
+                          </div>
+                        </>
+                      )}
                       <div>
-                        <span className="font-semibold">Descuento Expo 15%:</span> <span className="text-green-700">-{formatCurrency(discount)}</span>
-                      </div>
-                      <div>
-                        <span className="font-semibold">Subtotal con Descuento:</span> {formatCurrency(subtotalAfterDiscount)}
-                      </div>
-                      <div>
-                        <span className="font-semibold">IVA 16%:</span> {formatCurrency(iva)}
+                        <span className="font-semibold">IVA 16%:</span> {formatCurrency(customerHasDiscount ? iva : ivaSinDescuento)}
                       </div>
                       <div className="text-[18px] font-extrabold mt-[8px] text-green-700 drop-shadow">
-                        <span className="font-semibold">TOTAL CON DESCUENTO:</span> {formatCurrency(totalConDescuento)}
+                        <span className="font-semibold">TOTAL{customerHasDiscount ? ' CON DESCUENTO' : ''}:</span> {formatCurrency(customerHasDiscount ? totalConDescuento : totalSinDescuento)}
                       </div>
                     </div>
                     <button
@@ -352,26 +365,27 @@ export default function QuotePage() {
                         backgroundColor: '#6b7280',
                       }}
                     >
-                      ¡QUIERO MI DESCUENTO!
+                      {customerHasDiscount ? '¡QUIERO MI DESCUENTO!' : '¡PROCEDER AL PAGO!'}
                     </button>
                   </div>
                 </div>
-                {/* Non-discounted Quote + Button */}
-                <div className="flex flex-col md:flex-row gap-[13px] md:gap-[21px] mb-[21px] w-full">
-                  <div className="flex-1 bg-gray-50 border border-gray-300 rounded-[18px] p-[21px] shadow-sm flex flex-col justify-between min-w-[233px]">
-                    <div className="text-gray-800 text-[21px] font-bold mb-[13px]">No estas seguro? 🧐 </div>
-                    <div className="text-gray-700 text-sm mb-[8px]">Solo las compras completadas hoy reciben descuento.</div>
-                    <div className="flex flex-col items-end gap-[5px] text-[13px] text-gray-800">
-                      <div>
-                        <span className="font-semibold">Subtotal:</span> {formatCurrency(subtotal)}
+                {/* Non-discounted Quote + Button - Only show when customer has discount for comparison */}
+                {customerHasDiscount && (
+                  <div className="flex flex-col md:flex-row gap-[13px] md:gap-[21px] mb-[21px] w-full">
+                    <div className="flex-1 bg-gray-50 border border-gray-300 rounded-[18px] p-[21px] shadow-sm flex flex-col justify-between min-w-[233px]">
+                      <div className="text-gray-800 text-[21px] font-bold mb-[13px]">No estas seguro? 🧐 </div>
+                      <div className="text-gray-700 text-sm mb-[8px]">Solo las compras completadas hoy reciben descuento.</div>
+                      <div className="flex flex-col items-end gap-[5px] text-[13px] text-gray-800">
+                        <div>
+                          <span className="font-semibold">Subtotal:</span> {formatCurrency(subtotal)}
+                        </div>
+                        <div>
+                          <span className="font-semibold">IVA 16%:</span> {formatCurrency(ivaSinDescuento)}
+                        </div>
+                        <div className="text-[18px] font-extrabold mt-[8px] text-red-700 drop-shadow">
+                          <span className="font-semibold">TOTAL SIN DESCUENTO:</span> {formatCurrency(totalSinDescuento)}
+                        </div>
                       </div>
-                      <div>
-                        <span className="font-semibold">IVA 16%:</span> {formatCurrency(ivaSinDescuento)}
-                      </div>
-                      <div className="text-[18px] font-extrabold mt-[8px] text-red-700 drop-shadow">
-                        <span className="font-semibold">TOTAL SIN DESCUENTO:</span> {formatCurrency(totalSinDescuento)}
-                      </div>
-                    </div>
                     {/* Print dialog share/save instruction for mobile */}
                     <div className="flex flex-col items-center mb-2 mt-2">
                       <span className="flex items-center gap-2 text-black/80 text-sm">
@@ -404,6 +418,7 @@ export default function QuotePage() {
                     </button>
                   </div>
                 </div>
+                )}
               </>
             )}
           </div>
