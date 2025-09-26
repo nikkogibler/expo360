@@ -1,19 +1,18 @@
 'use client';
 
 import React, { useState } from 'react';
+import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CREDIT_PACKAGES, CreditPackage } from '@/config/creditPackages';
 
 interface CreditPurchaseModalProps {
   isOpen: boolean;
   onClose: () => void;
-  remainingCredits: number;
 }
 
 export default function CreditPurchaseModal({ 
   isOpen, 
-  onClose, 
-  remainingCredits 
+  onClose
 }: CreditPurchaseModalProps) {
   const [isLoading, setIsLoading] = useState(false);
 
@@ -92,9 +91,11 @@ export default function CreditPurchaseModal({
                 <div className="relative flex items-center justify-center">
                   {/* Centered Content */}
                   <div className="text-center relative">
-                    <img 
+                    <Image
                       src="/admin/desbloquea.png" 
                       alt="Desbloquea Más Posibilidades" 
+                      width={300}
+                      height={272}
                       className="h-68 w-auto object-contain mx-auto transform translate-x-4 -translate-y-9"
                     />
                   </div>
@@ -193,9 +194,11 @@ export default function CreditPurchaseModal({
 
                 {/* Interzekt Logo */}
                 <div className="flex justify-center">
-                  <img 
+                  <Image
                     src="/interzekt_logo1.png" 
                     alt="Interzekt" 
+                    width={96}
+                    height={96}
                     className="h-24 w-auto"
                   />
                 </div>

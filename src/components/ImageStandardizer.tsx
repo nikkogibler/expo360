@@ -692,7 +692,6 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
       <CreditPurchaseModal
         isOpen={showPurchaseModal}
         onClose={() => setShowPurchaseModal(false)}
-        remainingCredits={credits}
       />
     </motion.div>
   );
