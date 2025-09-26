@@ -88,7 +88,7 @@ export const useCreditDeduction = () => {
 
   const deductCredit = useCallback(async (
     userId: string,
-    imageDetails?: any
+    imageDetails?: Record<string, unknown>
   ): Promise<CreditDeductionResult> => {
     setIsDeducting(true);
     try {
@@ -133,7 +133,20 @@ export const useCreditDeduction = () => {
  * Hook for fetching credit usage analytics
  */
 export const useCreditAnalytics = (timeframe: 'day' | 'week' | 'month' = 'week') => {
-  const [analytics, setAnalytics] = useState<any>(null);
+  const [analytics, setAnalytics] = useState<{
+    totalOperations: number;
+    successfulOperations: number;
+    failedOperations: number;
+    totalCreditsUsed: number;
+    successRate: number;
+    userUsage: Array<{
+      userId: string;
+      operations: number;
+      creditsUsed: number;
+      successfulOps: number;
+    }>;
+    avgProcessingTime: number;
+  } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -173,7 +186,7 @@ export const useCreditAwareProcessing = (userId: string) => {
 
   const processWithCredits = useCallback(async <T>(
     processingFunction: () => Promise<T>,
-    imageDetails?: any
+    imageDetails?: Record<string, unknown>
   ): Promise<{ success: boolean; result?: T; error?: string }> => {
     // Check if credits are available
     if (!hasCredits) {

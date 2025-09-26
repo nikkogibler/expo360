@@ -226,7 +226,7 @@ export class CreditService {
       const successRate = totalOperations > 0 ? (successfulOperations / totalOperations) * 100 : 0;
       
       // Group by user
-      const userUsage = usage.reduce((acc, record) => {
+        const userUsage = usage.reduce((acc, record) => {
         if (!acc[record.user_id]) {
           acc[record.user_id] = {
             userId: record.user_id,
@@ -241,9 +241,12 @@ export class CreditService {
           acc[record.user_id].successfulOps += 1;
         }
         return acc;
-      }, {} as Record<string, any>);
-
-      return {
+      }, {} as Record<string, {
+        userId: string;
+        operations: number;
+        creditsUsed: number;
+        successfulOps: number;
+      }>);      return {
         totalOperations,
         successfulOperations,
         failedOperations,
@@ -275,7 +278,7 @@ export class CreditService {
           schema: 'public',
           table: 'admin_credits'
         },
-        (payload: any) => {
+        (payload: { new?: { remaining_credits?: number } }) => {
           const newCredits = payload.new?.remaining_credits;
           if (typeof newCredits === 'number') {
             callback(newCredits);
