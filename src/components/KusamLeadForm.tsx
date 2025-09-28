@@ -42,50 +42,53 @@ countryCodes.forEach(country => {
 });
 
 export type KusamLeadFormVariant = 
-	| 'kusam' 
-	| 'saltillo' 
-	| 'vasconcelos'
-	| 'salone-del-mobile-milan'
-	| 'casual-market-atlanta'
-	| 'ciff-copenhagen'
-	| 'movelsul-brazil'
-	| 'spoga-gafa-cologne';
+		| 'kusam' 
+		| 'saltillo' 
+		| 'vasconcelos'
+		| 'evento-especial'
+		| 'salone-del-mobile-milan'
+		| 'casual-market-atlanta'
+		| 'ciff-copenhagen'
+		| 'movelsul-brazil'
+		| 'spoga-gafa-cologne';
 
 interface KusamLeadFormProps {
-	variant?: KusamLeadFormVariant;
+		variant?: KusamLeadFormVariant;
+		hideEmail?: boolean;
 }
 
 // Map variants to customer-friendly landing source names
 const VARIANT_TO_LANDING_SOURCE: Record<KusamLeadFormVariant, string> = {
-	'kusam': 'Expo Mueble Internacional',
-	'saltillo': 'Tienda Saltillo',
-	'vasconcelos': 'Tienda Vasconcelos',
-	'salone-del-mobile-milan': 'Salone del Mobile Milan',
-	'casual-market-atlanta': 'Casual Market Atlanta',
-	'ciff-copenhagen': 'CIFF Copenhagen',
-	'movelsul-brazil': 'Movelsul Brazil',
-	'spoga-gafa-cologne': 'Spoga+Gafa Cologne'
+		'kusam': 'Expo Mueble Internacional',
+		'saltillo': 'Tienda Saltillo',
+		'vasconcelos': 'Tienda Vasconcelos',
+		'evento-especial': 'Evento Especial',
+		'salone-del-mobile-milan': 'Salone del Mobile Milan',
+		'casual-market-atlanta': 'Casual Market Atlanta',
+		'ciff-copenhagen': 'CIFF Copenhagen',
+		'movelsul-brazil': 'Movelsul Brazil',
+		'spoga-gafa-cologne': 'Spoga+Gafa Cologne'
 };
 
 const getInstructionsPath = (customerId?: string) => {
 	return `/kusam/instructions${customerId ? `?customer_id=${customerId}` : ''}`;
 };
 
-const KusamLeadForm = ({ variant = 'kusam' }: KusamLeadFormProps) => {
-	const [name, setName] = useState('');
-	const [localWhatsapp, setLocalWhatsapp] = useState('');
-	const [selectedCountry, setSelectedCountry] = useState<CountryCode>(countryCodes[0]);
-	const [email, setEmail] = useState('');
-	const [customerType, setCustomerType] = useState('');
-	const [currentCustomerId, setCurrentCustomerId] = useState<string | null>(null);
-	const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-	const [isLoadingCustomerStatus, setIsLoadingCustomerStatus] = useState(true);
+const KusamLeadForm = ({ variant = 'kusam', hideEmail = false }: KusamLeadFormProps) => {
+			const [name, setName] = useState('');
+			const [localWhatsapp, setLocalWhatsapp] = useState('');
+			const [selectedCountry, setSelectedCountry] = useState<CountryCode>(countryCodes[0]);
+			const [email, setEmail] = useState('');
+			const [customerType, setCustomerType] = useState('');
+			const [currentCustomerId, setCurrentCustomerId] = useState<string | null>(null);
+			const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+			const [isLoadingCustomerStatus, setIsLoadingCustomerStatus] = useState(true);
 
-	const router = useRouter();
-	const pathname = usePathname();
-	const searchParams = useSearchParams();
-	const dropdownRef = useRef<HTMLDivElement>(null);
-	const redirectFrom = searchParams.get('redirect_from');
+			const router = useRouter();
+			const pathname = usePathname();
+			const searchParams = useSearchParams();
+			const dropdownRef = useRef<HTMLDivElement>(null);
+			const redirectFrom = searchParams.get('redirect_from');
 
 	useEffect(() => {
 		const handleClickOutside = (event: MouseEvent) => {
@@ -124,23 +127,23 @@ const KusamLeadForm = ({ variant = 'kusam' }: KusamLeadFormProps) => {
 						existingCustomer.customer_type;
 					console.log('[KusamLeadForm] isFullyRegistered:', isFullyRegistered);
 					if (isFullyRegistered) {
-						console.log('[KusamLeadForm] Customer is fully registered, redirecting based on variant.');
-						// Check variant to determine redirect path for existing customers
-						if (variant === 'saltillo' || variant === 'vasconcelos') {
-							// Check if user came from admin path
-							const cameFromAdmin = redirectFrom && redirectFrom.startsWith('/admin');
-							if (cameFromAdmin) {
-								// For admin users, redirect to admin catalog
-								router.push(`/admin/catalogo?customer_id=${currentCustomerId}`);
-							} else {
-								// For non-admin users, redirect to regular catalog
-								router.push(`/kusam/catalogo?customer_id=${currentCustomerId}`);
-							}
-						} else {
-							// For original kusam variant, maintain existing flow (go to instructions)
-							router.push(getInstructionsPath(currentCustomerId));
-						}
-						return;
+						   console.log('[KusamLeadForm] DEBUG: variant:', variant, 'isFullyRegistered:', isFullyRegistered);
+						   // For 'evento-especial', do NOT redirect, always show the form
+						   if (variant === 'evento-especial') {
+							   // Do nothing, just show the form
+							   return;
+						   } else if (variant === 'saltillo' || variant === 'vasconcelos') {
+							   const cameFromAdmin = redirectFrom && redirectFrom.startsWith('/admin');
+							   if (cameFromAdmin) {
+								   router.push(`/admin/catalogo?customer_id=${currentCustomerId}`);
+							   } else {
+								   router.push(`/kusam/catalogo?customer_id=${currentCustomerId}`);
+							   }
+							   return;
+						   } else if (variant === 'kusam') {
+							   router.push(getInstructionsPath(currentCustomerId));
+							   return;
+						   }
 					} else {
 						if (existingCustomer.name === 'Visitante Anónimo') {
 							console.log('[KusamLeadForm] Customer is anonymous, showing form.');
@@ -263,8 +266,10 @@ const KusamLeadForm = ({ variant = 'kusam' }: KusamLeadFormProps) => {
 			defaultRedirectPath = `/kusam/instructions?customer_id=${customerIdToUse}`;
 		}
 		
-		const newRedirectPath = redirectFrom ? `${redirectFrom}?${redirectParams.toString()}` : defaultRedirectPath;
-		router.push(newRedirectPath);
+		   const newRedirectPath = redirectFrom ? `${redirectFrom}?${redirectParams.toString()}` : defaultRedirectPath;
+		   if (variant !== 'evento-especial') {
+			   router.push(newRedirectPath);
+		   }
 	};
 
 	if (isLoadingCustomerStatus) {
@@ -336,31 +341,46 @@ const KusamLeadForm = ({ variant = 'kusam' }: KusamLeadFormProps) => {
 				</div>
 
 				<div className="mb-6 text-center">
-						<h1 className="text-3xl font-bold text-gray-800"></h1>
-						{variant === 'kusam' && (
-							<p className="text-gray-600 mt-2 text-lg">
-								Su Experiencia en{' '}
-								<span className="inline-flex items-center align-middle mx-1">
-									<Image
-										src="/expo_mueble.png"
-										alt="Expo Mueble Internacional Logo"
-										width={90}
-										height={18}
-										className="inline-block"
-									/>
-								</span>{' '}
-								Comienza Aquí
-							</p>
-						)}
-						{variant !== 'kusam' && (
-							<p className="text-gray-600 mt-2 text-lg">
-								Comienza tu experiencia Kusam aquí
-							</p>
-						)}
+					<h1 className="text-3xl font-bold text-gray-800"></h1>
+					{variant === 'evento-especial' && (
+						<div className="flex flex-col items-center justify-center mb-4">
+							<Image
+								src="/other-images/jpgtest.jpg"
+								alt="Kusam Evento Especial"
+								width={400}
+								height={220}
+								style={{ objectFit: 'cover', borderRadius: '1rem' }}
+								className="mx-auto"
+								priority
+							/>
+						</div>
+					)}
+					{variant === 'kusam' && (
+						<p className="text-gray-600 mt-2 text-lg">
+							Su Experiencia en{' '}
+							<span className="inline-flex items-center align-middle mx-1">
+								<Image
+									src="/expo_mueble.png"
+									alt="Expo Mueble Internacional Logo"
+									width={90}
+									height={18}
+									className="inline-block"
+								/>
+							</span>{' '}
+							Comienza Aquí
+						</p>
+					)}
+					{variant !== 'kusam' && variant !== 'evento-especial' && (
+						<p className="text-gray-600 mt-2 text-lg">
+							Comienza tu experiencia Kusam aquí
+						</p>
+					)}
 				</div>
 
 				<p className="text-gray-700 mb-6 text-center text-md">
-					¡Bienvenido! Para iniciar su recorrido interactivo y obtener una cotización personalizada, por favor complete sus datos.
+																									 {variant === 'evento-especial'
+																										 ? 'Regístrate para descubrir lo mejor de México en muebles.'
+																										 : '¡Bienvenido! Para iniciar su recorrido interactivo y obtener una cotización personalizada, por favor complete sus datos.'}
 				</p>
 
 				<form onSubmit={handleSubmit} className="space-y-4">
@@ -429,19 +449,21 @@ const KusamLeadForm = ({ variant = 'kusam' }: KusamLeadFormProps) => {
 							/>
 						</div>
 					</div>
-					<div>
-						<label htmlFor="email" className="block text-sm font-medium text-gray-700">Email</label>
-						<input
-							type="email"
-							id="email"
-							name="email"
-							value={email}
-							onChange={(e) => setEmail(e.target.value)}
-							className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-gray-900 placeholder-gray-500"
-							placeholder="Ej. su.correo@ejemplo.com"
-							required
-						/>
-					</div>
+					   {!hideEmail && (
+						   <div>
+							   <label htmlFor="email" className="block text-sm font-medium text-gray-700">Email</label>
+							   <input
+								   type="email"
+								   id="email"
+								   name="email"
+								   value={email}
+								   onChange={(e) => setEmail(e.target.value)}
+								   className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-gray-900 placeholder-gray-500"
+								   placeholder="Ej. su.correo@ejemplo.com"
+								   required
+							   />
+						   </div>
+					   )}
 					<div>
 						<label htmlFor="customerType" className="block text-sm font-medium text-gray-700">¿A qué te dedicas?</label>
 						<select
@@ -473,17 +495,17 @@ const KusamLeadForm = ({ variant = 'kusam' }: KusamLeadFormProps) => {
 						</select>
 					</div>
 					<button
-						type="submit"
-						className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-lg font-semibold bg-stone-400 text-white hover:bg-stone-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-stone-600 transition duration-150 ease-in-out"
-						style={{
-							backgroundImage: `url('/wood/var4.png')`,
-							backgroundSize: '100px 100px',
-							backgroundRepeat: 'repeat',
-							backgroundBlendMode: 'multiply'
-						}}
-					>
-						Comienza A Explorar
-					</button>
+						   type="submit"
+						   className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-lg font-semibold bg-stone-400 text-white hover:bg-stone-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-stone-600 transition duration-150 ease-in-out"
+						   style={{
+							   backgroundImage: `url('/wood/var4.png')`,
+							   backgroundSize: '100px 100px',
+							   backgroundRepeat: 'repeat',
+							   backgroundBlendMode: 'multiply'
+						   }}
+					   >
+						   {variant === 'evento-especial' ? 'Explora Nuestro Catalogo' : 'Comienza A Explorar'}
+					   </button>
 				</form>
 			</motion.div>
 		</div>

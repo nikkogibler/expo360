@@ -19,11 +19,10 @@ export default function CustomerIdInitializer() {
     hasCheckedStatus.current = true;
 
     const checkCustomerStatusAndRedirect = async () => {
-      // If we're on any event landing page or admin, we don't need to check anything.
-      const eventLandingPages = ['/kusam', '/saltillo', '/vasconcelos'];
+      // Only skip redirect logic for admin pages
       const isAdminPage = pathname.startsWith('/admin');
-      if (eventLandingPages.includes(pathname) || isAdminPage) {
-        console.log('On event landing or admin page, no redirection needed.');
+      if (isAdminPage) {
+        console.log('On admin page, no redirection needed.');
         return;
       }
 
@@ -41,7 +40,7 @@ export default function CustomerIdInitializer() {
         return;
       }
 
-      // Case 2: Customer ID exists, but we need to check if their profile is complete.
+      // Case 2: Customer ID exists, check if their profile is complete.
       console.log('Checking customer status in Supabase for ID:', customerId);
       const { data: customer, error } = await supabase
         .from('customers')
@@ -53,11 +52,26 @@ export default function CustomerIdInitializer() {
         console.error('Error fetching customer status:', error);
         return;
       }
-      
-      const isAnonymous = !customer || !customer.name || customer.email?.endsWith('@temp.com');
-      
+
+      console.log('[CustomerIdInitializer] Customer data:', customer);
+  // Consider customer confirmed if they have a name and whatsapp, and email is either empty or not a temp email
+  const isAnonymous = !customer || !customer.name || !customer.whatsapp || (customer.email && customer.email.endsWith('@temp.com'));
+      console.log('[CustomerIdInitializer] isAnonymous:', isAnonymous, 'pathname:', pathname);
+
+      // If on /evento-especial and customer is confirmed, redirect to event catalog
+      if (pathname === '/evento-especial' && !isAnonymous) {
+        console.log('[CustomerIdInitializer] Redirecting to /evento-especial/catalogo');
+        router.push('/evento-especial/catalogo');
+        return;
+      }
+
       // If the user has a customer ID but is still considered anonymous, redirect them.
       if (isAnonymous) {
+        // Do NOT redirect if on /evento-especial
+        if (pathname === '/evento-especial') {
+          console.log('Customer is anonymous on /evento-especial, no redirect.');
+          return;
+        }
         console.log('Customer is anonymous, redirecting to landing page for signup.');
         let eventLanding = '/kusam';
         if (pathname.startsWith('/saltillo')) eventLanding = '/saltillo';
