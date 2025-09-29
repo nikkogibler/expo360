@@ -60,8 +60,8 @@ export default function CustomerIdInitializer() {
 
       // If on /evento-especial and customer is confirmed, redirect to event catalog
       if (pathname === '/evento-especial' && !isAnonymous) {
-        console.log('[CustomerIdInitializer] Redirecting to /evento-especial/catalogo');
-        router.push('/evento-especial/catalogo');
+        console.log('[CustomerIdInitializer] Redirecting to /kusam/catalogo');
+        router.push('/kusam/catalogo');
         return;
       }
 

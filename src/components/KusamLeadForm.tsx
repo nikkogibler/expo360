@@ -121,8 +121,7 @@ const KusamLeadForm = ({ variant = 'kusam', hideEmail = false }: KusamLeadFormPr
 				if (existingCustomer) {
 					const isFullyRegistered = existingCustomer.name &&
 						existingCustomer.name !== 'Visitante Anónimo' &&
-						existingCustomer.email &&
-						!existingCustomer.email.endsWith('@temp.com') &&
+						(existingCustomer.email !== undefined && existingCustomer.email !== null && !existingCustomer.email.endsWith('@temp.com')) &&
 						existingCustomer.whatsapp &&
 						existingCustomer.customer_type;
 					console.log('[KusamLeadForm] isFullyRegistered:', isFullyRegistered);
@@ -184,9 +183,16 @@ const KusamLeadForm = ({ variant = 'kusam', hideEmail = false }: KusamLeadFormPr
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
 		const fullWhatsappNumber = selectedCountry.dial_code === '' ? localWhatsapp : `${selectedCountry.dial_code}${localWhatsapp}`;
-		if (!name || !fullWhatsappNumber || !email || !customerType) {
-			alert('Por favor, complete todos los campos.');
-			return;
+		if (variant === 'evento-especial') {
+			if (!name || !fullWhatsappNumber || !customerType) {
+				alert('Por favor, ingrese su nombre, WhatsApp y seleccione su industria.');
+				return;
+			}
+		} else {
+			if (!name || !fullWhatsappNumber || !email || !customerType) {
+				alert('Por favor, complete todos los campos.');
+				return;
+			}
 		}
 		const sourceQrCode = searchParams.get('source_qr_code');
 		if (currentCustomerId === null) {
@@ -211,8 +217,8 @@ const KusamLeadForm = ({ variant = 'kusam', hideEmail = false }: KusamLeadFormPr
 				.update({
 					name,
 					whatsapp: fullWhatsappNumber,
-					email,
-					customer_type: customerType,
+					email: email || '',
+					customer_type: customerType || '',
 					landing_source: VARIANT_TO_LANDING_SOURCE[variant]
 				})
 				.eq('customer_id', customerIdToUse)
@@ -230,8 +236,8 @@ const KusamLeadForm = ({ variant = 'kusam', hideEmail = false }: KusamLeadFormPr
 					customer_id: customerIdToUse,
 					name,
 					whatsapp: fullWhatsappNumber,
-					email,
-					customer_type: customerType,
+					email: email || '',
+					customer_type: customerType || '',
 					landing_source: VARIANT_TO_LANDING_SOURCE[variant]
 				})
 				.select();
@@ -252,24 +258,19 @@ const KusamLeadForm = ({ variant = 'kusam', hideEmail = false }: KusamLeadFormPr
 		// Check variant to determine redirect path
 		let defaultRedirectPath;
 		if (variant === 'saltillo' || variant === 'vasconcelos') {
-			// Check if user came from admin path
 			const cameFromAdmin = redirectFrom && redirectFrom.startsWith('/admin');
 			if (cameFromAdmin) {
-				// For admin users, redirect to admin catalog
 				defaultRedirectPath = `/admin/catalogo?customer_id=${customerIdToUse}`;
 			} else {
-				// For non-admin users, redirect to regular catalog
 				defaultRedirectPath = `/kusam/catalogo?customer_id=${customerIdToUse}`;
 			}
+		} else if (variant === 'evento-especial') {
+			defaultRedirectPath = `/kusam/catalogo?customer_id=${customerIdToUse}`;
 		} else {
-			// For original kusam variant, maintain existing flow (go to instructions)
 			defaultRedirectPath = `/kusam/instructions?customer_id=${customerIdToUse}`;
 		}
-		
-		   const newRedirectPath = redirectFrom ? `${redirectFrom}?${redirectParams.toString()}` : defaultRedirectPath;
-		   if (variant !== 'evento-especial') {
-			   router.push(newRedirectPath);
-		   }
+		const newRedirectPath = redirectFrom ? `${redirectFrom}?${redirectParams.toString()}` : defaultRedirectPath;
+		router.push(newRedirectPath);
 	};
 
 	if (isLoadingCustomerStatus) {
@@ -377,10 +378,10 @@ const KusamLeadForm = ({ variant = 'kusam', hideEmail = false }: KusamLeadFormPr
 					)}
 				</div>
 
-				<p className="text-gray-700 mb-6 text-center text-md">
-																									 {variant === 'evento-especial'
-																										 ? 'Regístrate para descubrir lo mejor de México en muebles.'
-																										 : '¡Bienvenido! Para iniciar su recorrido interactivo y obtener una cotización personalizada, por favor complete sus datos.'}
+						<p className="text-gray-700 mb-6 text-center text-md">
+																																	  {variant === 'evento-especial'
+																																		  ? 'Regístrate para descubrir lo mejor de Kusam.'
+																																		  : '¡Bienvenido! Para iniciar su recorrido interactivo y obtener una cotización personalizada, por favor complete sus datos.'}
 				</p>
 
 				<form onSubmit={handleSubmit} className="space-y-4">
@@ -460,40 +461,40 @@ const KusamLeadForm = ({ variant = 'kusam', hideEmail = false }: KusamLeadFormPr
 								   onChange={(e) => setEmail(e.target.value)}
 								   className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-gray-900 placeholder-gray-500"
 								   placeholder="Ej. su.correo@ejemplo.com"
-								   required
+								   required={variant !== 'evento-especial'}
 							   />
 						   </div>
 					   )}
-					<div>
-						<label htmlFor="customerType" className="block text-sm font-medium text-gray-700">¿A qué te dedicas?</label>
-						<select
-							id="customerType"
-							name="customerType"
-							value={customerType}
-							onChange={(e) => setCustomerType(e.target.value)}
-							className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-gray-900"
-							required
-						>
-							<option value="">Selecciona tu industria</option>
-							<option value="ArquitecturaDiseño">Despacho de Arquitectura/Diseño</option>
-							<option value="HoteleriaTurismo">Hotel / Resort / Turismo</option>
-							<option value="RestaurantesCafes">Restaurante / Cafetería</option>
-							<option value="DesarrolladorInmobiliario">Desarrollador Inmobiliario</option>
-							<option value="ConstructorContratista">Constructora / Contratista</option>
-							<option value="Inversionista">Inversionista</option>
-							<option value="SectorPublico">Sector Público (Gobierno)</option>
-							<option value="SpaBienestar">Spa / Centro de Bienestar</option>
-							<option value="ClubDeportivoSocial">Club Deportivo / Social</option>
-							<option value="ResidencialParticular">Cliente Residencial / Particular</option>
-							<option value="ComercioRetail">Comercio / Retail</option>
-							<option value="Educacion">Institución Educativa</option>
-							<option value="Industrial">Sector Industrial</option>
-							<option value="SaludMedicina">Salud / Medicina (Clínicas, Hospitales)</option>
-							<option value="Agroindustria">Agroindustria</option>
-							<option value="OtroNegocio">Otro Tipo de Negocio</option>
-							<option value="Estudiante">Estudiante / Académico</option>
-						</select>
-					</div>
+					   <div>
+						   <label htmlFor="customerType" className="block text-sm font-medium text-gray-700">¿A qué te dedicas?</label>
+						   <select
+							   id="customerType"
+							   name="customerType"
+							   value={customerType}
+							   onChange={(e) => setCustomerType(e.target.value)}
+							   className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-gray-900"
+							   required
+						   >
+							   <option value="">Selecciona tu industria</option>
+							   <option value="ArquitecturaDiseño">Despacho de Arquitectura/Diseño</option>
+							   <option value="HoteleriaTurismo">Hotel / Resort / Turismo</option>
+							   <option value="RestaurantesCafes">Restaurante / Cafetería</option>
+							   <option value="DesarrolladorInmobiliario">Desarrollador Inmobiliario</option>
+							   <option value="ConstructorContratista">Constructora / Contratista</option>
+							   <option value="Inversionista">Inversionista</option>
+							   <option value="SectorPublico">Sector Público (Gobierno)</option>
+							   <option value="SpaBienestar">Spa / Centro de Bienestar</option>
+							   <option value="ClubDeportivoSocial">Club Deportivo / Social</option>
+							   <option value="ResidencialParticular">Cliente Residencial / Particular</option>
+							   <option value="ComercioRetail">Comercio / Retail</option>
+							   <option value="Educacion">Institución Educativa</option>
+							   <option value="Industrial">Sector Industrial</option>
+							   <option value="SaludMedicina">Salud / Medicina (Clínicas, Hospitales)</option>
+							   <option value="Agroindustria">Agroindustria</option>
+							   <option value="OtroNegocio">Otro Tipo de Negocio</option>
+							   <option value="Estudiante">Estudiante / Académico</option>
+						   </select>
+					   </div>
 					<button
 						   type="submit"
 						   className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-lg font-semibold bg-stone-400 text-white hover:bg-stone-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-stone-600 transition duration-150 ease-in-out"
