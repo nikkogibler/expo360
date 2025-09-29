@@ -30,6 +30,9 @@ interface CustomerFavorite {
 }
 
 export default function KusamPaymentPage() {
+  // State for dynamic discount banner and rate
+  const [landingPageBanner, setLandingPageBanner] = useState<any>(null);
+  const [discountRate, setDiscountRate] = useState<number>(0);
   const [selectedMethod, setSelectedMethod] = useState('mercadopago');
   const [loadingTotal, setLoadingTotal] = useState(true);
   const [calculatedTotal, setCalculatedTotal] = useState<number>(0);
@@ -100,29 +103,31 @@ export default function KusamPaymentPage() {
         const landingSource = customerData?.landing_source || null;
         setCustomerLandingSource(landingSource);
 
-          // --- DISCOUNT LOGIC COMMENTED OUT ---
-          // let discountRate = null;
-          // let debugLandingPageRow = null;
-          // if (landingSource) {
-          //   const { data: landingPages, error: landingPageError } = await supabase
-          //     .from('landing_pages')
-          //     .select('*');
-          //   if (landingPageError) console.warn('Error fetching landing_pages:', landingPageError);
-          //   let matched = null;
-          //   if (Array.isArray(landingPages)) {
-          //     matched = landingPages.find(lp =>
-          //       typeof lp.name === 'string' &&
-          //       lp.name.trim().toLowerCase() === landingSource.trim().toLowerCase()
-          //     );
-          //   }
-          //   debugLandingPageRow = matched;
-          //   if (matched && typeof matched.discount_applied === 'number') {
-          //     discountRate = matched.discount_applied;
-          //   }
-          // }
-          // if (discountRate === null) {
-          //   discountRate = getDiscountForLandingSource(landingSource);
-          // }
+        // Fetch discount from landing_pages
+        let localDiscountRate = null;
+        let localLandingPageBanner = null;
+        if (landingSource) {
+          const { data: landingPages, error: landingPageError } = await supabase
+            .from('landing_pages')
+            .select('*');
+          if (landingPageError) console.warn('Error fetching landing_pages:', landingPageError);
+          let matched = null;
+          if (Array.isArray(landingPages)) {
+            matched = landingPages.find(lp =>
+              typeof lp.name === 'string' &&
+              lp.name.trim().toLowerCase() === landingSource.trim().toLowerCase()
+            );
+          }
+          localLandingPageBanner = matched;
+          if (matched && typeof matched.discount_applied === 'number') {
+            localDiscountRate = matched.discount_applied;
+          }
+        }
+        if (localDiscountRate === null) {
+          localDiscountRate = getDiscountForLandingSource(landingSource);
+        }
+        setLandingPageBanner(localLandingPageBanner);
+        setDiscountRate(localDiscountRate || 0);
 
         // Fetch products
         const { data: productsData, error: productsError } = await supabase
@@ -145,17 +150,14 @@ export default function KusamPaymentPage() {
           }
         });
 
-          // --- NO DISCOUNT APPLIED ---
-          const originalAmount = total;
-          const discount = 0;
-          const finalTotal = originalAmount;
+        // Apply discount
+        const originalAmount = total;
+        const discount = localDiscountRate ? Math.round(originalAmount * (localDiscountRate / 100)) : 0;
+        const finalTotal = originalAmount - discount;
 
-          setOriginalTotal(originalAmount);
-          setDiscountAmount(discount);
-          setCalculatedTotal(finalTotal);
-          // if (typeof window !== 'undefined') {
-          //   window.__debugLandingPageRow = debugLandingPageRow;
-          // }
+        setOriginalTotal(originalAmount);
+        setDiscountAmount(discount);
+        setCalculatedTotal(finalTotal);
 
       } catch (err: unknown) {
         console.error('Error calculating total:', err);
@@ -352,6 +354,8 @@ export default function KusamPaymentPage() {
           />
         </div>
 
+        {/* Removed dynamic discount banner from payment page. */}
+
         <h1 className="text-3xl font-bold text-gray-800 mb-6 text-center">
           Confirmar Compra
         </h1>
@@ -362,10 +366,20 @@ export default function KusamPaymentPage() {
           <p className="text-center text-red-600 text-lg mb-4">{paymentError}</p>
         ) : (
           <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-green-50 rounded-lg border border-blue-200">
-            {/* Simple pricing display, no discounts */}
+            {/* Pricing display with discount */}
             <div className="flex justify-between items-center mb-2">
-              <span className="text-gray-600">Total a Pagar:</span>
-              <span className="text-xl font-bold text-green-600">{formatCurrency(originalTotal)}</span>
+              <span className="text-gray-600">Subtotal:</span>
+              <span className="text-xl font-bold text-gray-800">{formatCurrency(originalTotal)}</span>
+            </div>
+            {discountAmount > 0 && (
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-blue-600">Descuento ({discountRate}%):</span>
+                <span className="text-xl font-bold text-blue-600">-{formatCurrency(discountAmount)}</span>
+              </div>
+            )}
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-green-600">Total a Pagar:</span>
+              <span className="text-xl font-bold text-green-600">{formatCurrency(calculatedTotal)}</span>
             </div>
           </div>
         )}

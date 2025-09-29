@@ -278,6 +278,9 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({ onClose, onSubmit
 
 
 export default function KusamCartPage() {
+  // Discount banner state
+  const [landingPageBanner, setLandingPageBanner] = useState<any>(null);
+  const [discountRate, setDiscountRate] = useState<number>(0);
   const [customerLandingSource, setCustomerLandingSource] = useState<string | null>(null);
   const [landingPageImageUrl, setLandingPageImageUrl] = useState<string | null>(null);
   const [showConfirmationModal, setShowConfirmationModal] = useState(false);
@@ -301,7 +304,7 @@ export default function KusamCartPage() {
 
   useEffect(() => {
     // Fetch landing_source (or name) and landing_pages image_url for dynamic image
-    async function fetchLandingSourceAndImage() {
+    async function fetchLandingSourceAndBanner() {
       const customerId = typeof window !== 'undefined' ? localStorage.getItem('kusam_customer_id') : null;
       if (!customerId) return;
       const { data: customerData, error: customerError } = await supabase
@@ -316,20 +319,26 @@ export default function KusamCartPage() {
         if (landingSource) {
           const { data: landingPages, error: landingPageError } = await supabase
             .from('landing_pages')
-            .select('name, image_url')
+            .select('*')
             .eq('name', landingSource)
             .maybeSingle();
-          if (!landingPageError && landingPages && landingPages.image_url) {
-            setLandingPageImageUrl(landingPages.image_url.replace(/^\/public/, ''));
+          if (!landingPageError && landingPages) {
+            setLandingPageBanner(landingPages);
+            setDiscountRate(typeof landingPages.discount_applied === 'number' ? landingPages.discount_applied : 0);
+            setLandingPageImageUrl(landingPages.image_url ? landingPages.image_url.replace(/^\/public/, '') : null);
           } else {
+            setLandingPageBanner(null);
+            setDiscountRate(0);
             setLandingPageImageUrl(null);
           }
         } else {
+          setLandingPageBanner(null);
+          setDiscountRate(0);
           setLandingPageImageUrl(null);
         }
       }
     }
-    fetchLandingSourceAndImage();
+    fetchLandingSourceAndBanner();
     // Only proceed if data hasn't been fetched yet
     if (hasFetchedData.current) {
       console.log('--- useEffect (initCustomerAndFetchFavorites) skipped: Data already fetched ---');
@@ -560,16 +569,7 @@ export default function KusamCartPage() {
           Mis Piezas Favoritas
         </h1>
         <p className="text-gray-600 mb-6 text-center">
-          Aquí está la selección de productos Kusam que has capturado en{' '}
-          <span className="inline-flex items-center align-middle mx-1">
-            <Image
-              src={landingPageImageUrl ? landingPageImageUrl.replace(/^\/public/, '') : '/expo_mueble.png'}
-              alt={customerLandingSource ? customerLandingSource + ' Logo' : 'Expo Mueble Internacional Logo'}
-              width={90}
-              height={18}
-              className="inline-block"
-            />
-          </span>.
+          Aquí está la selección de productos Kusam que has capturado.
         </p>
 
         {/* Updated Grid Container:
@@ -609,19 +609,28 @@ export default function KusamCartPage() {
           )}
         </div>
 
-        {/* 
-            <p className="text-blue-800 text-lg font-semibold">
-                OFERTA EXCLUSIVA: Todas las compras completadas en <span className="inline-flex items-center align-middle mx-1">
-                    <Image
-                        src="/expo_mueble.png"
-                        alt="Expo Mueble Internacional Logo"
-                        width={100}
-                        height={20}
-                        className="inline-block"
-                    />
-                </span> reciben un <span className="font-bold text-xl">DESCUENTO ESPECIAL de 15%</span>.
-            </p>
-        </div> */}
+        {/* Dynamic Discount Banner - Centered and visually improved */}
+        {!loadingFavorites && !favoritesError && discountRate > 0 && (
+          <div className="mb-8 flex flex-col items-center justify-center p-4 bg-blue-50 rounded-md border-blue-200 border" style={{ minHeight: '100px' }}>
+            <div className="flex flex-col items-center justify-center">
+              <span className="text-blue-800 text-lg font-semibold mb-2 block">OFERTA EXCLUSIVA</span>
+              <div className="flex items-center justify-center mb-2">
+                <span className="text-blue-800 text-base">Todas las compras completadas en</span>
+                <span className="inline-flex items-center align-middle mx-2">
+                  <Image
+                    src={landingPageBanner?.image_url ? landingPageBanner.image_url.replace(/^\/public/, '') : "/expo_mueble.png"}
+                    alt={landingPageBanner?.name || "Evento Especial"}
+                    width={175}
+                    height={35}
+                    className="inline-block"
+                  />
+                </span>
+                <span className="text-blue-800 text-base">reciben un</span>
+              </div>
+              <span className="font-bold text-xl text-blue-900">DESCUENTO ESPECIAL de {discountRate}%</span>
+            </div>
+          </div>
+        )}
 
         <button
           onClick={handleSubmitQuote}
