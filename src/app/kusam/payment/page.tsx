@@ -137,24 +137,27 @@ export default function KusamPaymentPage() {
           productPriceAndNameMap.set(product.id, { price: product.price, name: product.name });
         });
 
-        let total = 0;
+        // Calculate discounted item prices and sum for total
+        let originalAmount = 0;
+        let discountedTotal = 0;
         (likedFavorites as CustomerFavorite[]).forEach(fav => {
           const productDetails = productPriceAndNameMap.get(fav.product_id);
           if (productDetails !== undefined) {
-            total += productDetails.price * fav.quantity;
+            const itemSubtotal = productDetails.price * fav.quantity;
+            originalAmount += itemSubtotal;
+            // Discount and round each item price, then sum
+            const discountedUnitPrice = Number((productDetails.price * (1 - (localDiscountRate || 0) / 100)).toFixed(2));
+            discountedTotal += discountedUnitPrice * fav.quantity;
           } else {
             console.warn(`Product price or name not found for ID: ${fav.product_id}`);
           }
         });
 
-        // Apply discount
-        const originalAmount = total;
-        const discount = localDiscountRate ? Math.round(originalAmount * (localDiscountRate / 100)) : 0;
-        const finalTotal = originalAmount - discount;
-
+        // Calculate total discount
+        const discount = originalAmount - discountedTotal;
         setOriginalTotal(originalAmount);
         setDiscountAmount(discount);
-        setCalculatedTotal(finalTotal);
+        setCalculatedTotal(discountedTotal);
 
       } catch (err: unknown) {
         console.error('Error calculating total:', err);
@@ -261,25 +264,26 @@ export default function KusamPaymentPage() {
         productDetailsMap.set(product.id, { price: product.price, name: product.name });
       });
 
-      const itemsForPreference = likedFavorites.map(fav => {
-        const details = productDetailsMap.get(fav.product_id);
-        if (!details) {
-          console.warn(`Product details not found for ID: ${fav.product_id}`);
+        const itemsForPreference = likedFavorites.map(fav => {
+          const details = productDetailsMap.get(fav.product_id);
+          if (!details) {
+            console.warn(`Product details not found for ID: ${fav.product_id}`);
+            return {
+              id: fav.product_id,
+              title: `Producto ID: ${fav.product_id}`,
+              quantity: fav.quantity,
+              unit_price: 0,
+            };
+          }
+          // Apply discount to each item price
+          const discountedPrice = details.price * (1 - (discountRate / 100));
           return {
             id: fav.product_id,
-            title: `Producto ID: ${fav.product_id}`,
+            title: details.name,
             quantity: fav.quantity,
-            unit_price: 0,
+            unit_price: Number(discountedPrice.toFixed(2)),
           };
-        }
-        // --- NO DISCOUNT APPLIED ---
-        return {
-          id: fav.product_id,
-          title: details.name,
-          quantity: fav.quantity,
-          unit_price: Number(details.price.toFixed(2)),
-        };
-      });
+        });
 
       // 3. Create MercadoPago preference via Edge Function
       const response = await fetch('https://dpbxyauaobvcdwdgzcxc.supabase.co/functions/v1/create-mercadopago-preference', {
