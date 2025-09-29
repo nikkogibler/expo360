@@ -175,16 +175,16 @@ export default function QuotePage() {
     const prod = products[fav.product_id];
     return prod ? sum + prod.price * fav.quantity : sum;
   }, 0);
-  
-  // --- DISCOUNT DISABLED ---
-  const discountRate = 0;
-  const discount = 0;
-  const subtotalAfterDiscount = subtotal;
-  const iva = subtotal * IVA_RATE;
-  const totalConDescuento = subtotal + iva;
-  const ivaSinDescuento = iva;
-  const totalSinDescuento = subtotal + iva;
-  const customerHasDiscount = false;
+
+  // Get discount rate from config using landing source
+  const discountRate = getDiscountForLandingSource(customerLandingSource);
+  const customerHasDiscount = hasDiscount(customerLandingSource);
+  const discount = customerHasDiscount ? subtotal * discountRate : 0;
+  const subtotalAfterDiscount = subtotal - discount;
+  const iva = subtotalAfterDiscount * IVA_RATE;
+  const totalConDescuento = subtotalAfterDiscount + iva;
+  const ivaSinDescuento = subtotal * IVA_RATE;
+  const totalSinDescuento = subtotal + ivaSinDescuento;
 
   // Format currency
   const formatCurrency = useCallback(
@@ -324,9 +324,10 @@ export default function QuotePage() {
                     })}
                   </div>
                 </div>
-                {/* Simple Quote, no discounts */}
-                <div className="flex flex-col md:flex-row gap-[13px] md:gap-[21px] mb-[21px] w-full">
-                  <div className="flex-1 bg-green-50 border border-green-400 rounded-[21px] p-[21px] shadow-sm flex flex-col justify-between min-w-[233px]">
+                {/* Quote summary with discount logic */}
+                <div className="flex flex-col gap-[21px] mb-[21px] w-full">
+                  {/* Discounted summary */}
+                  <div className="bg-green-50 border border-green-400 rounded-[21px] p-[21px] shadow-sm flex flex-col justify-between min-w-[233px]">
                     <div className="text-green-900 text-[21px] font-bold mb-[13px] flex items-center gap-[8px]">
                       <svg className="w-[18px] h-[21px] text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -335,13 +336,23 @@ export default function QuotePage() {
                     </div>
                     <div className="flex flex-col items-end gap-[5px] text-[13px] text-green-900">
                       <div>
-                        <span className="font-semibold">Subtotal:</span> {formatCurrency(subtotal)}
+                        <span className="font-semibold">Subtotal (antes de descuento):</span> {formatCurrency(subtotal)}
                       </div>
+                      {customerHasDiscount && (
+                        <>
+                          <div>
+                            <span className="font-semibold">Descuento ({Math.round(discountRate * 100)}%):</span> -{formatCurrency(discount)}
+                          </div>
+                          <div>
+                            <span className="font-semibold">Subtotal (después de descuento):</span> {formatCurrency(subtotalAfterDiscount)}
+                          </div>
+                        </>
+                      )}
                       <div>
                         <span className="font-semibold">IVA 16%:</span> {formatCurrency(iva)}
                       </div>
                       <div className="text-[18px] font-extrabold mt-[8px] text-green-700 drop-shadow">
-                        <span className="font-semibold">TOTAL:</span> {formatCurrency(totalConDescuento)}
+                        <span className="font-semibold">TOTAL CON DESCUENTO:</span> {formatCurrency(totalConDescuento)}
                       </div>
                     </div>
                     <button
@@ -356,6 +367,43 @@ export default function QuotePage() {
                     >
                       ¡PROCEDER AL PAGO!
                     </button>
+                  </div>
+                  {/* Non-discounted summary */}
+                  <div className="bg-white border border-gray-300 rounded-[21px] p-[21px] shadow-sm flex flex-col justify-between min-w-[233px]">
+                    <div className="text-gray-900 text-[19px] font-bold mb-[13px] flex items-center gap-[8px]">
+                      <span role="img" aria-label="thinking" className="mr-2">🧐</span>
+                      No estas seguro?
+                    </div>
+                    <div className="text-gray-700 text-[13px] mb-[8px]">Solo las compras completadas hoy reciben descuento.</div>
+                    <div className="flex flex-col items-end gap-[5px] text-[13px] text-gray-900">
+                      <div>
+                        <span className="font-semibold">Subtotal:</span> {formatCurrency(subtotal)}
+                      </div>
+                      <div>
+                        <span className="font-semibold">IVA 16%:</span> {formatCurrency(ivaSinDescuento)}
+                      </div>
+                      <div className="text-[18px] font-extrabold mt-[8px] text-red-600 drop-shadow">
+                        <span className="font-semibold">TOTAL SIN DESCUENTO:</span> {formatCurrency(totalSinDescuento)}
+                      </div>
+                      {/* Tip with share SVG */}
+                      <div className="mt-4 flex items-center text-gray-700 text-sm">
+                        <svg className="w-5 h-5 mr-2 text-gray-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 12v.01M12 4v.01M20 12v.01M12 20v.01M8.59 16.59L4 12l4.59-4.59M15.41 7.41L20 12l-4.59 4.59" />
+                        </svg>
+                        <span>
+                          <b>Tip:</b> En tu teléfono, después de tocar <b>Imprimir</b>, usa el botón de <b>compartir</b> <svg className="inline w-4 h-4 align-text-bottom mx-1 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 12v.01M12 4v.01M20 12v.01M12 20v.01M8.59 16.59L4 12l4.59-4.59M15.41 7.41L20 12l-4.59 4.59" /></svg> que aparece en las opciones de impresión para <b>guardar como PDF o imagen</b> esta cotización en tu dispositivo.
+                        </span>
+                      </div>
+                      {/* Print/Save Quote Button - full width */}
+                      <button
+                        className="mt-[10px] w-full px-6 py-3 border-2 border-black text-black rounded-lg font-semibold transition-colors shadow-none bg-transparent hover:bg-gray-100"
+                        style={{ background: 'none' }}
+                        onClick={() => window.print()}
+                      >
+                        Imprimir o Guardar Cotización (PDF)
+                      </button>
+                    </div>
+                    {/* Tip with share SVG */}
                   </div>
                 </div>
               </>

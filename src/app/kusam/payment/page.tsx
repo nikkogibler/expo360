@@ -381,6 +381,13 @@ export default function KusamPaymentPage() {
               <span className="text-green-600">Total a Pagar:</span>
               <span className="text-xl font-bold text-green-600">{formatCurrency(calculatedTotal)}</span>
             </div>
+            {discountAmount > 0 && (
+              <div className="w-full flex justify-center items-center mb-2 mt-4">
+                <span className="text-base font-normal text-green-600 text-center w-full block">
+                  💰 ¡Ahorras {formatCurrency(discountAmount)} con este descuento!
+                </span>
+              </div>
+            )}
           </div>
         )}
 
