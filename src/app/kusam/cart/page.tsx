@@ -255,14 +255,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({ onClose, onSubmit
           Tu lista ha sido enviada a nuestros asesores.
         </p>
         <p className="text-gray-800 text-lg font-semibold mb-6">
-          Completa tu orden <b>HOY</b> <br /> y
-          recibirás{' '}
-          <span className="text-4xl font-extrabold text-green-700 animate-pulse drop-shadow-[0_0_16px_rgba(59,130,246,0.7)] align-middle">
-            15%
-          </span>{' '}
-          de descuento.
-          <br />
-          Haz:
+          Completa tu orden <b>HOY</b>
         </p>
         <button
           onClick={handleOrderClick}
@@ -274,7 +267,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({ onClose, onSubmit
             backgroundColor: '#6b7280',
           }}
         >
-          CLICK AQUI
+          HAZ CLICK AQUI
         </button>
         <p className="text-sm text-gray-500 mt-4 cursor-pointer hover:underline" onClick={onClose}>
         </p>
@@ -285,6 +278,8 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({ onClose, onSubmit
 
 
 export default function KusamCartPage() {
+  const [customerLandingSource, setCustomerLandingSource] = useState<string | null>(null);
+  const [landingPageImageUrl, setLandingPageImageUrl] = useState<string | null>(null);
   const [showConfirmationModal, setShowConfirmationModal] = useState(false);
   const router = useRouter(); 
 
@@ -305,6 +300,36 @@ export default function KusamCartPage() {
   }, [allVariantsMap]);
 
   useEffect(() => {
+    // Fetch landing_source (or name) and landing_pages image_url for dynamic image
+    async function fetchLandingSourceAndImage() {
+      const customerId = typeof window !== 'undefined' ? localStorage.getItem('kusam_customer_id') : null;
+      if (!customerId) return;
+      const { data: customerData, error: customerError } = await supabase
+        .from('customers')
+        .select('landing_source, name')
+        .eq('customer_id', customerId)
+        .maybeSingle();
+      if (!customerError && customerData) {
+        // Use landing_source, fallback to name
+        const landingSource = customerData.landing_source || customerData.name || null;
+        setCustomerLandingSource(landingSource);
+        if (landingSource) {
+          const { data: landingPages, error: landingPageError } = await supabase
+            .from('landing_pages')
+            .select('name, image_url')
+            .eq('name', landingSource)
+            .maybeSingle();
+          if (!landingPageError && landingPages && landingPages.image_url) {
+            setLandingPageImageUrl(landingPages.image_url.replace(/^\/public/, ''));
+          } else {
+            setLandingPageImageUrl(null);
+          }
+        } else {
+          setLandingPageImageUrl(null);
+        }
+      }
+    }
+    fetchLandingSourceAndImage();
     // Only proceed if data hasn't been fetched yet
     if (hasFetchedData.current) {
       console.log('--- useEffect (initCustomerAndFetchFavorites) skipped: Data already fetched ---');
@@ -537,13 +562,13 @@ export default function KusamCartPage() {
         <p className="text-gray-600 mb-6 text-center">
           Aquí está la selección de productos Kusam que has capturado en{' '}
           <span className="inline-flex items-center align-middle mx-1">
-              <Image
-                  src="/expo_mueble.png"
-                  alt="Expo Mueble Internacional Logo"
-                  width={90}
-                  height={18}
-                  className="inline-block"
-              />
+            <Image
+              src={landingPageImageUrl ? landingPageImageUrl.replace(/^\/public/, '') : '/expo_mueble.png'}
+              alt={customerLandingSource ? customerLandingSource + ' Logo' : 'Expo Mueble Internacional Logo'}
+              width={90}
+              height={18}
+              className="inline-block"
+            />
           </span>.
         </p>
 
