@@ -176,9 +176,34 @@ export default function QuotePage() {
     return prod ? sum + prod.price * fav.quantity : sum;
   }, 0);
 
-  // Get discount rate from config using landing source
-  const discountRate = getDiscountForLandingSource(customerLandingSource);
-  const customerHasDiscount = hasDiscount(customerLandingSource);
+  // Get discount rate from Supabase landing_pages table using landing_source
+  const [discountRate, setDiscountRate] = useState(0);
+  const [customerHasDiscount, setCustomerHasDiscount] = useState(false);
+  useEffect(() => {
+    async function fetchDiscount() {
+      if (!customerLandingSource) {
+        setDiscountRate(0);
+        setCustomerHasDiscount(false);
+        return;
+      }
+      // Query landing_pages for discount_applied
+      const { data: landingPage, error: landingErr } = await supabase
+        .from('landing_pages')
+        .select('discount_applied')
+        .eq('name', customerLandingSource)
+        .maybeSingle();
+      if (!landingErr && landingPage && typeof landingPage.discount_applied === 'number' && landingPage.discount_applied > 0) {
+        // Convert percentage to decimal (e.g., 5 -> 0.05)
+        setDiscountRate(landingPage.discount_applied / 100);
+        setCustomerHasDiscount(true);
+      } else {
+        setDiscountRate(0);
+        setCustomerHasDiscount(false);
+      }
+    }
+    fetchDiscount();
+  }, [customerLandingSource]);
+
   const discount = customerHasDiscount ? subtotal * discountRate : 0;
   const subtotalAfterDiscount = subtotal - discount;
   const iva = subtotalAfterDiscount * IVA_RATE;
