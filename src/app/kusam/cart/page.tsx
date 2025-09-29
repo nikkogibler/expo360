@@ -584,7 +584,7 @@ export default function KusamCartPage() {
           )}
         </div>
 
-        <div className="mb-8 text-center p-4 bg-blue-50 rounded-md border-blue-200 border" style={{ minHeight: '100px' }}>
+        {/* 
             <p className="text-blue-800 text-lg font-semibold">
                 OFERTA EXCLUSIVA: Todas las compras completadas en <span className="inline-flex items-center align-middle mx-1">
                     <Image
@@ -596,7 +596,7 @@ export default function KusamCartPage() {
                     />
                 </span> reciben un <span className="font-bold text-xl">DESCUENTO ESPECIAL de 15%</span>.
             </p>
-        </div>
+        </div> */}
 
         <button
           onClick={handleSubmitQuote}

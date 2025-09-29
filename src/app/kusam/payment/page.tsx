@@ -8,7 +8,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { supabase } from '@/utils/supabase';
 import { PostgrestError } from '@supabase/supabase-js';
-import { getDiscountForLandingSource } from '../../../config/discountConfig';
+import { getDiscountForLandingSource, getDiscountDisplayName } from '../../../config/discountConfig';
 
 // --- NEW: Import initMercadoPago and Wallet components from Mercado Pago SDK for React ---
 import { initMercadoPago, Wallet } from '@mercadopago/sdk-react';
@@ -63,21 +63,13 @@ export default function KusamPaymentPage() {
       setLoadingTotal(true);
       setPaymentError(null);
       setCalculatedTotal(0);
-      setOriginalTotal(0); // --- NEW ---
-      setDiscountAmount(0); // --- NEW ---
+      setOriginalTotal(0);
+      setDiscountAmount(0);
       setPreferenceId(null);
 
       const customerId = typeof window !== 'undefined' ? localStorage.getItem('kusam_customer_id') : null;
-      // --- NEW: Fetch customer email (example: from supabase auth session or DB) ---
-      // If you have Supabase auth session and the user is logged in:
       const { data: { user } } = await supabase.auth.getUser();
-      if (user?.email) {
-        setCustomerEmail(user.email);
-      } else {
-        // Fallback or handle case where email isn't readily available
-        setCustomerEmail('guest@example.com'); // --- CHANGE THIS TO A MORE APPROPRIATE FALLBACK OR FETCH FROM YOUR CRM/DB ---
-      }
-
+      setCustomerEmail(user?.email || 'guest@example.com');
 
       if (!customerId) {
         setPaymentError('No se encontró el ID de cliente. Por favor, inicie sesión o regrese al carrito.');
@@ -91,45 +83,54 @@ export default function KusamPaymentPage() {
           .select('product_id, quantity')
           .eq('customer_id', customerId)
           .eq('is_liked', true);
-
-        if (favoritesError) {
-          throw favoritesError;
-        }
-
+        if (favoritesError) throw favoritesError;
         if (!likedFavorites || likedFavorites.length === 0) {
           setPaymentError('No tienes productos favoritos para calcular un total.');
           setLoadingTotal(false);
           return;
         }
 
-        // Fetch customer landing source for discount calculation
+        // Fetch customer landing source
         const { data: customerData, error: customerError } = await supabase
           .from('customers')
           .select('landing_source')
           .eq('customer_id', customerId)
           .maybeSingle();
-
-        if (customerError) {
-          console.warn('Could not fetch customer data for discount calculation:', customerError);
-        }
-
+        if (customerError) console.warn('Could not fetch customer data for discount calculation:', customerError);
         const landingSource = customerData?.landing_source || null;
         setCustomerLandingSource(landingSource);
 
-        // --- REMOVED: const uniqueProductIds = [...new Set(likedFavorites.map(fav => fav.product_id))]; ---
+          // --- DISCOUNT LOGIC COMMENTED OUT ---
+          // let discountRate = null;
+          // let debugLandingPageRow = null;
+          // if (landingSource) {
+          //   const { data: landingPages, error: landingPageError } = await supabase
+          //     .from('landing_pages')
+          //     .select('*');
+          //   if (landingPageError) console.warn('Error fetching landing_pages:', landingPageError);
+          //   let matched = null;
+          //   if (Array.isArray(landingPages)) {
+          //     matched = landingPages.find(lp =>
+          //       typeof lp.name === 'string' &&
+          //       lp.name.trim().toLowerCase() === landingSource.trim().toLowerCase()
+          //     );
+          //   }
+          //   debugLandingPageRow = matched;
+          //   if (matched && typeof matched.discount_applied === 'number') {
+          //     discountRate = matched.discount_applied;
+          //   }
+          // }
+          // if (discountRate === null) {
+          //   discountRate = getDiscountForLandingSource(landingSource);
+          // }
 
-        // Make sure to select 'name' here for the Mercado Pago item title
+        // Fetch products
         const { data: productsData, error: productsError } = await supabase
           .from('products')
-          .select('id, price, name'); // --- CHANGE: ADD 'name' here ---
-
-        if (productsError) {
-          throw productsError;
-        }
-
+          .select('id, price, name');
+        if (productsError) throw productsError;
         const typedProductsData: Product[] = productsData as Product[];
-
-        const productPriceAndNameMap = new Map<string, { price: number; name: string }>(); // Map to store price and name
+        const productPriceAndNameMap = new Map<string, { price: number; name: string }>();
         (typedProductsData || []).forEach(product => {
           productPriceAndNameMap.set(product.id, { price: product.price, name: product.name });
         });
@@ -144,15 +145,17 @@ export default function KusamPaymentPage() {
           }
         });
 
-        // --- Calculate discount based on customer landing source ---
-        const originalAmount = total;
-        const discountRate = getDiscountForLandingSource(landingSource);
-        const discount = originalAmount * discountRate;
-        const finalTotal = originalAmount - discount;
+          // --- NO DISCOUNT APPLIED ---
+          const originalAmount = total;
+          const discount = 0;
+          const finalTotal = originalAmount;
 
-        setOriginalTotal(originalAmount);
-        setDiscountAmount(discount);
-        setCalculatedTotal(finalTotal);
+          setOriginalTotal(originalAmount);
+          setDiscountAmount(discount);
+          setCalculatedTotal(finalTotal);
+          // if (typeof window !== 'undefined') {
+          //   window.__debugLandingPageRow = debugLandingPageRow;
+          // }
 
       } catch (err: unknown) {
         console.error('Error calculating total:', err);
@@ -270,15 +273,12 @@ export default function KusamPaymentPage() {
             unit_price: 0,
           };
         }
-        
-        const discountRate = getDiscountForLandingSource(customerLandingSource);
-        const discountedPrice = details.price * (1 - discountRate);
-        
+        // --- NO DISCOUNT APPLIED ---
         return {
           id: fav.product_id,
           title: details.name,
           quantity: fav.quantity,
-          unit_price: Number(discountedPrice.toFixed(2)),
+          unit_price: Number(details.price.toFixed(2)),
         };
       });
 
@@ -361,39 +361,11 @@ export default function KusamPaymentPage() {
         ) : paymentError ? (
           <p className="text-center text-red-600 text-lg mb-4">{paymentError}</p>
         ) : (
-          // --- NEW: Enhanced pricing display with discount breakdown ---
           <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-green-50 rounded-lg border border-blue-200">
-            {/* Expo Banner */}
-            <div className="text-center mb-4">
-              <div className="inline-flex items-center bg-amber-100 text-amber-800 px-3 py-1 rounded-full text-sm font-semibold">
-                🎪 DESCUENTO EXCLUSIVO EXPO MUEBLE
-              </div>
-            </div>
-
-            {/* Original Price */}
+            {/* Simple pricing display, no discounts */}
             <div className="flex justify-between items-center mb-2">
-              <span className="text-gray-600">Subtotal:</span>
-              <span className="text-gray-600 line-through">{formatCurrency(originalTotal)}</span>
-            </div>
-
-            {/* Discount Line */}
-            <div className="flex justify-between items-center mb-3">
-              <span className="text-green-700 font-semibold">Descuento Expo (15%):</span>
-              <span className="text-green-700 font-bold text-lg">-{formatCurrency(discountAmount)}</span>
-            </div>
-
-            {/* Divider */}
-            <hr className="border-gray-300 mb-3" />
-
-            {/* Final Total */}
-            <div className="flex justify-between items-center">
-              <span className="text-xl font-bold text-gray-800">Total a Pagar:</span>
-              <span className="text-xl font-bold text-green-600">{formatCurrency(calculatedTotal)}</span>
-            </div>
-
-            {/* Savings Message */}
-            <div className="text-center mt-3 text-sm text-green-700 font-medium">
-              💰 ¡Ahorras {formatCurrency(discountAmount)} con este descuento!
+              <span className="text-gray-600">Total a Pagar:</span>
+              <span className="text-xl font-bold text-green-600">{formatCurrency(originalTotal)}</span>
             </div>
           </div>
         )}

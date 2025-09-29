@@ -176,16 +176,15 @@ export default function QuotePage() {
     return prod ? sum + prod.price * fav.quantity : sum;
   }, 0);
   
-  const discountRate = getDiscountForLandingSource(customerLandingSource);
-  const discount = subtotal * discountRate;
-  const subtotalAfterDiscount = subtotal - discount;
-  const iva = subtotalAfterDiscount * IVA_RATE;
-  const totalConDescuento = subtotalAfterDiscount + iva;
-  const ivaSinDescuento = subtotal * IVA_RATE;
-  const totalSinDescuento = subtotal + ivaSinDescuento;
-  
-  // Check if customer has any discount
-  const customerHasDiscount = hasDiscount(customerLandingSource);
+  // --- DISCOUNT DISABLED ---
+  const discountRate = 0;
+  const discount = 0;
+  const subtotalAfterDiscount = subtotal;
+  const iva = subtotal * IVA_RATE;
+  const totalConDescuento = subtotal + iva;
+  const ivaSinDescuento = iva;
+  const totalSinDescuento = subtotal + iva;
+  const customerHasDiscount = false;
 
   // Format currency
   const formatCurrency = useCallback(
@@ -325,7 +324,7 @@ export default function QuotePage() {
                     })}
                   </div>
                 </div>
-                {/* Discounted Quote + Button */}
+                {/* Simple Quote, no discounts */}
                 <div className="flex flex-col md:flex-row gap-[13px] md:gap-[21px] mb-[21px] w-full">
                   <div className="flex-1 bg-green-50 border border-green-400 rounded-[21px] p-[21px] shadow-sm flex flex-col justify-between min-w-[233px]">
                     <div className="text-green-900 text-[21px] font-bold mb-[13px] flex items-center gap-[8px]">
@@ -338,21 +337,11 @@ export default function QuotePage() {
                       <div>
                         <span className="font-semibold">Subtotal:</span> {formatCurrency(subtotal)}
                       </div>
-                      {customerHasDiscount && (
-                        <>
-                          <div>
-                            <span className="font-semibold">{getDiscountDisplayName(customerLandingSource)}:</span> <span className="text-green-700">-{formatCurrency(discount)}</span>
-                          </div>
-                          <div>
-                            <span className="font-semibold">Subtotal con Descuento:</span> {formatCurrency(subtotalAfterDiscount)}
-                          </div>
-                        </>
-                      )}
                       <div>
-                        <span className="font-semibold">IVA 16%:</span> {formatCurrency(customerHasDiscount ? iva : ivaSinDescuento)}
+                        <span className="font-semibold">IVA 16%:</span> {formatCurrency(iva)}
                       </div>
                       <div className="text-[18px] font-extrabold mt-[8px] text-green-700 drop-shadow">
-                        <span className="font-semibold">TOTAL{customerHasDiscount ? ' CON DESCUENTO' : ''}:</span> {formatCurrency(customerHasDiscount ? totalConDescuento : totalSinDescuento)}
+                        <span className="font-semibold">TOTAL:</span> {formatCurrency(totalConDescuento)}
                       </div>
                     </div>
                     <button
@@ -365,60 +354,10 @@ export default function QuotePage() {
                         backgroundColor: '#6b7280',
                       }}
                     >
-                      {customerHasDiscount ? '¡QUIERO MI DESCUENTO!' : '¡PROCEDER AL PAGO!'}
+                      ¡PROCEDER AL PAGO!
                     </button>
                   </div>
                 </div>
-                {/* Non-discounted Quote + Button - Only show when customer has discount for comparison */}
-                {customerHasDiscount && (
-                  <div className="flex flex-col md:flex-row gap-[13px] md:gap-[21px] mb-[21px] w-full">
-                    <div className="flex-1 bg-gray-50 border border-gray-300 rounded-[18px] p-[21px] shadow-sm flex flex-col justify-between min-w-[233px]">
-                      <div className="text-gray-800 text-[21px] font-bold mb-[13px]">No estas seguro? 🧐 </div>
-                      <div className="text-gray-700 text-sm mb-[8px]">Solo las compras completadas hoy reciben descuento.</div>
-                      <div className="flex flex-col items-end gap-[5px] text-[13px] text-gray-800">
-                        <div>
-                          <span className="font-semibold">Subtotal:</span> {formatCurrency(subtotal)}
-                        </div>
-                        <div>
-                          <span className="font-semibold">IVA 16%:</span> {formatCurrency(ivaSinDescuento)}
-                        </div>
-                        <div className="text-[18px] font-extrabold mt-[8px] text-red-700 drop-shadow">
-                          <span className="font-semibold">TOTAL SIN DESCUENTO:</span> {formatCurrency(totalSinDescuento)}
-                        </div>
-                      </div>
-                    {/* Print dialog share/save instruction for mobile */}
-                    <div className="flex flex-col items-center mb-2 mt-2">
-                      <span className="flex items-center gap-2 text-black/80 text-sm">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="feather feather-share">
-                          <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
-                          <polyline points="16 6 12 2 8 6"></polyline>
-                          <line x1="12" y1="2" x2="12" y2="15"></line>
-                        </svg>
-                        <span>
-                          <strong>Tip:</strong> En tu teléfono, después de tocar <span className="underline">Imprimir</span>, usa el botón de <span className="underline">compartir</span>{' '}
-                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'inline', verticalAlign: 'middle' }}>
-                            <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
-                            <polyline points="16 6 12 2 8 6"></polyline>
-                            <line x1="12" y1="2" x2="12" y2="15"></line>
-                          </svg>{' '}
-                          que aparece en las opciones de impresión para <span className="underline">guardar como PDF o imagen</span> esta cotización en tu dispositivo.
-                        </span>
-                      </span>
-                    </div>
-                    <button
-                      onClick={async () => {
-                        const customerId = typeof window !== 'undefined' ? localStorage.getItem('kusam_customer_id') : null;
-                        await logQuoteEvent({ eventType: 'print_or_download_quote', customerId });
-                        window.print();
-                      }}
-                      className="mt-[10px] w-full px-6 py-3 border-2 border-black text-black rounded-lg font-semibold transition-colors shadow-none bg-transparent hover:bg-gray-100"
-                      style={{ background: 'none' }}
-                    >
-                      Imprimir o Guardar Cotización (PDF)
-                    </button>
-                  </div>
-                </div>
-                )}
               </>
             )}
           </div>
