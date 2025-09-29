@@ -388,11 +388,19 @@ const KusamLeadForm = ({ variant = 'kusam', hideEmail = false }: KusamLeadFormPr
 							Comienza Aquí
 						</p>
 					)}
-					{variant !== 'kusam' && variant !== 'evento-especial' && (
-						<p className="text-gray-600 mt-2 text-lg">
-							Comienza tu experiencia Kusam aquí
-						</p>
-					)}
+			       {(variant === 'vasconcelos' || variant === 'saltillo') && (
+				       <div className="flex flex-col items-center justify-center mb-4">
+					       <Image
+						       src="/other-images/jpgtest.jpg"
+						       alt="Kusam Evento Especial"
+						       width={400}
+						       height={220}
+						       style={{ objectFit: 'cover', borderRadius: '1rem' }}
+						       className="mx-auto"
+						       priority
+					       />
+				       </div>
+			       )}
 				</div>
 
 						<p className="text-gray-700 mb-6 text-center text-md">
