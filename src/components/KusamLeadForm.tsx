@@ -75,20 +75,37 @@ const getInstructionsPath = (customerId?: string) => {
 };
 
 const KusamLeadForm = ({ variant = 'kusam', hideEmail = false }: KusamLeadFormProps) => {
-			const [name, setName] = useState('');
-			const [localWhatsapp, setLocalWhatsapp] = useState('');
-			const [selectedCountry, setSelectedCountry] = useState<CountryCode>(countryCodes[0]);
-			const [email, setEmail] = useState('');
-			const [customerType, setCustomerType] = useState('');
-			const [currentCustomerId, setCurrentCustomerId] = useState<string | null>(null);
-			const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-			const [isLoadingCustomerStatus, setIsLoadingCustomerStatus] = useState(true);
+						const [name, setName] = useState('');
+						const [localWhatsapp, setLocalWhatsapp] = useState('');
+						const [selectedCountry, setSelectedCountry] = useState<CountryCode>(countryCodes[0]);
+						const [email, setEmail] = useState('');
+						const [customerType, setCustomerType] = useState('');
+						const [currentCustomerId, setCurrentCustomerId] = useState<string | null>(null);
+						const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+						const [isLoadingCustomerStatus, setIsLoadingCustomerStatus] = useState(true);
 
-			const router = useRouter();
-			const pathname = usePathname();
-			const searchParams = useSearchParams();
-			const dropdownRef = useRef<HTMLDivElement>(null);
-			const redirectFrom = searchParams.get('redirect_from');
+						const router = useRouter();
+						const pathname = usePathname();
+						const searchParams = useSearchParams();
+						const dropdownRef = useRef<HTMLDivElement>(null);
+						const redirectFrom = searchParams.get('redirect_from');
+
+		// Clear customer session if ?clear_session=true is present
+		useEffect(() => {
+			if (searchParams.get('clear_session') === 'true') {
+				// Remove customer ID from localStorage
+				localStorage.removeItem('kusam_customer_id');
+				// Optionally clear customer Supabase session (do NOT log out admin)
+				// If you store customer auth separately, clear it here
+				// Reset other customer-related state if needed
+				setCurrentCustomerId(null);
+				setName('');
+				setEmail('');
+				setCustomerType('');
+				setLocalWhatsapp('');
+				setSelectedCountry(countryCodes[0]);
+			}
+		}, [searchParams]);
 
 	useEffect(() => {
 		const handleClickOutside = (event: MouseEvent) => {
