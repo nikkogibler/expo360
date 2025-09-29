@@ -200,9 +200,10 @@ const CartItemCard = memo(function CartItemCard({ item, index, onRemove }: CartI
 interface ConfirmationModalProps {
   onClose: () => void;
   onSubmitOrder: () => void;
+  discountRate: number;
 }
 
-const ConfirmationModal: React.FC<ConfirmationModalProps> = ({ onClose, onSubmitOrder }) => {
+const ConfirmationModal: React.FC<ConfirmationModalProps> = ({ onClose, onSubmitOrder, discountRate }) => {
 // const router = useRouter(); 
 
   const modalVariants: Variants = {
@@ -254,21 +255,30 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({ onClose, onSubmit
         <p className="text-gray-700 text-lg mb-6">
           Tu lista ha sido enviada a nuestros asesores.
         </p>
-        <p className="text-gray-800 text-lg font-semibold mb-6">
-          Completa tu orden <b>HOY</b>
-        </p>
-        <button
-          onClick={handleOrderClick}
-          className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-xl font-bold text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-stone-600 transition duration-150 ease-in-out"
-          style={{
-            backgroundImage: `url('/wood/var5.png')`,
-            backgroundSize: '100px 100px',
-            backgroundRepeat: 'repeat',
-            backgroundColor: '#6b7280',
-          }}
-        >
-          HAZ CLICK AQUI
-        </button>
+          <p className="text-gray-800 text-lg font-semibold mb-6">
+            Completa tu orden <b>HOY</b>
+            <span> y recibe un 
+              <b
+                className="text-green-600 animate-pulse-slow"
+                style={{ fontSize: '2.5em', fontWeight: 'bold', verticalAlign: 'middle', margin: '0 0.2em' }}
+              >
+                {discountRate}% de descuento
+              </b>
+              hacia el total de tu compra.
+            </span>
+          </p>
+          <button
+            onClick={handleOrderClick}
+            className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-xl font-bold text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-stone-600 transition duration-150 ease-in-out"
+            style={{
+              backgroundImage: `url('/wood/verde.png')`,
+              backgroundSize: '100px 100px',
+              backgroundRepeat: 'repeat',
+              backgroundColor: '#6b7280',
+            }}
+          >
+            QUIERO MI DESCUENTO
+          </button>
         <p className="text-sm text-gray-500 mt-4 cursor-pointer hover:underline" onClick={onClose}>
         </p>
       </motion.div>
@@ -678,6 +688,7 @@ export default function KusamCartPage() {
           <ConfirmationModal
             onClose={() => setShowConfirmationModal(false)}
             onSubmitOrder={handleOrderCompletionClick}
+            discountRate={discountRate}
           />
         )}
       </AnimatePresence>
