@@ -85,14 +85,14 @@ const ProductCard = ({ product, index }: ProductCardProps) => {
 			setImageLoaded(false);
 			setLoadingProgress(0);
 		}
-	}, [product.image_url, retryCount]);
+		}, [retryCount]);
 
 	const handleImageLoad = useCallback(() => {
 		setImageError(false);
 		setImageLoading(false);
 		setImageLoaded(true);
 		setLoadingProgress(100);
-	}, [product.image_url]);
+		}, []);
 
 	useEffect(() => {
 		setImageError(false);

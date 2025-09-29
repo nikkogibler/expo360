@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { supabase } from '../../../utils/supabase';
-import { getDiscountForLandingSource, hasDiscount, getDiscountDisplayName } from '../../../config/discountConfig';
+import { } from '../../../config/discountConfig';
 
 // Log quote event to Supabase
 async function logQuoteEvent({
@@ -74,6 +74,7 @@ export default function QuotePage() {
   const [customerName, setCustomerName] = useState<string>('');
   const [quoteDate, setQuoteDate] = useState<string>('');
   const [customerLandingSource, setCustomerLandingSource] = useState<string | null>(null);
+  const [landingPageImageUrl, setLandingPageImageUrl] = useState<string | null>(null);
 
   // Fetch favorites and products
   useEffect(() => {
@@ -138,6 +139,21 @@ export default function QuotePage() {
               customerNameValue = customerData.name;
             }
             setCustomerLandingSource(customerData.landing_source || null);
+            // Fetch landing page image URL by exact match
+            if (customerData.landing_source) {
+              const { data: landingPage, error: landingErr } = await supabase
+                .from('landing_pages')
+                .select('image_url')
+                .eq('name', customerData.landing_source)
+                .maybeSingle();
+              if (!landingErr && landingPage && typeof landingPage.image_url === 'string' && landingPage.image_url.length > 0) {
+                setLandingPageImageUrl(landingPage.image_url.replace(/^\/public/, ''));
+              } else {
+                setLandingPageImageUrl('/expo_mueble.png'); // fallback image
+              }
+            } else {
+              setLandingPageImageUrl('/expo_mueble.png'); // fallback image
+            }
           }
         }
         setCustomerName(customerNameValue);
@@ -359,6 +375,12 @@ export default function QuotePage() {
                       </svg>
                       ¡Completa Tu Compra Hoy!
                     </div>
+                    {/* Dynamic landing page image */}
+                    {customerHasDiscount && (
+                      <div className="flex justify-end mb-2">
+                        <Image src={landingPageImageUrl || '/expo_mueble.png'} alt="Landing Page Banner" width={175} height={35} className="inline-block rounded" />
+                      </div>
+                    )}
                     <div className="flex flex-col items-end gap-[5px] text-[13px] text-green-900">
                       <div>
                         <span className="font-semibold">Subtotal (antes de descuento):</span> {formatCurrency(subtotal)}

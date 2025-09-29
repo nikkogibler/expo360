@@ -289,16 +289,16 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({ onClose, onSubmit
 
 export default function KusamCartPage() {
   // Discount banner state
-  const [landingPageBanner, setLandingPageBanner] = useState<any>(null);
+  // Removed unused state variable: landingPageBanner
   const [discountRate, setDiscountRate] = useState<number>(0);
-  const [customerLandingSource, setCustomerLandingSource] = useState<string | null>(null);
-  const [landingPageImageUrl, setLandingPageImageUrl] = useState<string | null>(null);
+  // Removed unused state variables: customerLandingSource, landingPageImageUrl
   const [showConfirmationModal, setShowConfirmationModal] = useState(false);
   const router = useRouter(); 
 
   const [favoriteItems, setFavoriteItems] = useState<ItemProps[]>([]);
   const [loadingFavorites, setLoadingFavorites] = useState(true);
   const [favoritesError, setFavoritesError] = useState<string | null>(null);
+  const [eventLogoUrl, setEventLogoUrl] = useState<string>('/expo_mueble.png');
   const [hasCustomerId, setHasCustomerId] = useState<boolean | null>(null);
 
   const [allVariantsMap, setAllVariantsMap] = useState<Map<string, ProductVariant>>(new Map());
@@ -325,26 +325,27 @@ export default function KusamCartPage() {
       if (!customerError && customerData) {
         // Use landing_source, fallback to name
         const landingSource = customerData.landing_source || customerData.name || null;
-        setCustomerLandingSource(landingSource);
+  // Removed: setCustomerLandingSource(landingSource);
         if (landingSource) {
-          const { data: landingPages, error: landingPageError } = await supabase
+          const { data: landingPage, error: landingPageError } = await supabase
             .from('landing_pages')
-            .select('*')
+            .select('discount_applied, image_url')
             .eq('name', landingSource)
             .maybeSingle();
-          if (!landingPageError && landingPages) {
-            setLandingPageBanner(landingPages);
-            setDiscountRate(typeof landingPages.discount_applied === 'number' ? landingPages.discount_applied : 0);
-            setLandingPageImageUrl(landingPages.image_url ? landingPages.image_url.replace(/^\/public/, '') : null);
+          if (!landingPageError && landingPage) {
+            setDiscountRate(typeof landingPage.discount_applied === 'number' ? landingPage.discount_applied : 0);
+            if (typeof landingPage.image_url === 'string' && landingPage.image_url.length > 0) {
+              setEventLogoUrl(landingPage.image_url.replace(/^\/public/, ''));
+            } else {
+              setEventLogoUrl('/expo_mueble.png');
+            }
           } else {
-            setLandingPageBanner(null);
             setDiscountRate(0);
-            setLandingPageImageUrl(null);
+            setEventLogoUrl('/expo_mueble.png');
           }
         } else {
-          setLandingPageBanner(null);
           setDiscountRate(0);
-          setLandingPageImageUrl(null);
+          setEventLogoUrl('/expo_mueble.png');
         }
       }
     }
@@ -628,8 +629,8 @@ export default function KusamCartPage() {
                 <span className="text-blue-800 text-base">Todas las compras completadas en</span>
                 <span className="inline-flex items-center align-middle mx-2">
                   <Image
-                    src={landingPageBanner?.image_url ? landingPageBanner.image_url.replace(/^\/public/, '') : "/expo_mueble.png"}
-                    alt={landingPageBanner?.name || "Evento Especial"}
+                    src={eventLogoUrl}
+                    alt={"Evento Especial"}
                     width={175}
                     height={35}
                     className="inline-block"

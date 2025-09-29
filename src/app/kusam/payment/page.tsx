@@ -8,7 +8,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { supabase } from '@/utils/supabase';
 import { PostgrestError } from '@supabase/supabase-js';
-import { getDiscountForLandingSource, getDiscountDisplayName } from '../../../config/discountConfig';
+import { getDiscountForLandingSource } from '../../../config/discountConfig';
 
 // --- NEW: Import initMercadoPago and Wallet components from Mercado Pago SDK for React ---
 import { initMercadoPago, Wallet } from '@mercadopago/sdk-react';
@@ -31,7 +31,7 @@ interface CustomerFavorite {
 
 export default function KusamPaymentPage() {
   // State for dynamic discount banner and rate
-  const [landingPageBanner, setLandingPageBanner] = useState<any>(null);
+  // Removed unused state variable: landingPageBanner
   const [discountRate, setDiscountRate] = useState<number>(0);
   const [selectedMethod, setSelectedMethod] = useState('mercadopago');
   const [loadingTotal, setLoadingTotal] = useState(true);
@@ -39,7 +39,7 @@ export default function KusamPaymentPage() {
   const [originalTotal, setOriginalTotal] = useState<number>(0);
   const [discountAmount, setDiscountAmount] = useState<number>(0);
   const [paymentError, setPaymentError] = useState<string | null>(null);
-  const [customerLandingSource, setCustomerLandingSource] = useState<string | null>(null);
+  // Removed unused state variable: customerLandingSource
   
   // --- ADD MISSING STATE VARIABLES ---
   const [preferenceId, setPreferenceId] = useState<string | null>(null);
@@ -101,32 +101,29 @@ export default function KusamPaymentPage() {
           .maybeSingle();
         if (customerError) console.warn('Could not fetch customer data for discount calculation:', customerError);
         const landingSource = customerData?.landing_source || null;
-        setCustomerLandingSource(landingSource);
+  // Removed: setCustomerLandingSource(landingSource);
 
         // Fetch discount from landing_pages
-        let localDiscountRate = null;
-        let localLandingPageBanner = null;
+        let localDiscountRate: number | null = null;
         if (landingSource) {
           const { data: landingPages, error: landingPageError } = await supabase
             .from('landing_pages')
             .select('*');
           if (landingPageError) console.warn('Error fetching landing_pages:', landingPageError);
-          let matched = null;
           if (Array.isArray(landingPages)) {
-            matched = landingPages.find(lp =>
+            const matched = landingPages.find(lp =>
               typeof lp.name === 'string' &&
               lp.name.trim().toLowerCase() === landingSource.trim().toLowerCase()
             );
-          }
-          localLandingPageBanner = matched;
-          if (matched && typeof matched.discount_applied === 'number') {
-            localDiscountRate = matched.discount_applied;
+            if (matched && typeof matched.discount_applied === 'number') {
+              localDiscountRate = matched.discount_applied;
+            }
           }
         }
         if (localDiscountRate === null) {
           localDiscountRate = getDiscountForLandingSource(landingSource);
         }
-        setLandingPageBanner(localLandingPageBanner);
+  // Removed: setLandingPageBanner(localLandingPageBanner);
         setDiscountRate(localDiscountRate || 0);
 
         // Fetch products
