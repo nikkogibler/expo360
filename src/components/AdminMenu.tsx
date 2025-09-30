@@ -3,9 +3,9 @@ import { useRouter } from 'next/navigation';
 import { supabase } from '../../lib/supabaseClient';
 
 const menuOptions = [
-  { label: 'Sign Out', action: 'signout' },
-  { label: 'Change Avatar', action: 'avatar' },
+  { label: 'Librería de Imágenes', action: 'image-library' },
   { label: 'Settings', action: 'settings' },
+  { label: 'Sign Out', action: 'signout' },
 ];
 
 interface AdminMenuProps {
@@ -34,14 +34,14 @@ const AdminMenu: React.FC<AdminMenuProps> = ({ open, setOpen }) => {
   }, [open, setOpen]);
 
   async function handleMenuClick(action: string) {
-    if (action === 'signout') {
+    if (action === 'image-library') {
+      router.push('/admin/image-library');
+    } else if (action === 'settings') {
+      router.push('/admin/settings');
+    } else if (action === 'signout') {
       await supabase.auth.signOut();
       document.cookie = 'user_email=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
       router.push('/admin/signin');
-    } else if (action === 'avatar') {
-      alert('Change avatar clicked');
-    } else if (action === 'settings') {
-      router.push('/admin/settings');
     }
     setOpen(false);
   }

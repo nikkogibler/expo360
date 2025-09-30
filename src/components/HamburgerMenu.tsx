@@ -3,6 +3,7 @@ import { useRouter } from 'next/navigation';
 import { supabase } from '../../lib/supabaseClient';
 
 const menuOptions = [
+  { label: 'Librería de Imágenes', action: 'image-library' },
   { label: 'Sign Out', action: 'signout' },
   { label: 'Change Avatar', action: 'avatar' },
   { label: 'Settings', action: 'settings' },
@@ -30,7 +31,9 @@ export default function HamburgerMenu() {
   }, [open]);
 
   async function handleMenuClick(action: string) {
-    if (action === 'signout') {
+    if (action === 'image-library') {
+      router.push('/admin/image-library');
+    } else if (action === 'signout') {
       await supabase.auth.signOut();
       document.cookie = 'user_email=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
       router.push('/admin/signin');

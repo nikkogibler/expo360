@@ -271,7 +271,8 @@ const KusamLeadForm = ({ variant = 'kusam', hideEmail = false }: KusamLeadFormPr
 		}
 		const redirectParams = new URLSearchParams(searchParams.toString());
 		redirectParams.delete('redirect_from');
-		
+		redirectParams.delete('clear_session'); // Remove clear_session param after registration
+
 		// Check variant to determine redirect path
 		let defaultRedirectPath;
 		if (variant === 'saltillo' || variant === 'vasconcelos') {

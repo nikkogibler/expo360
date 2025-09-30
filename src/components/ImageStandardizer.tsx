@@ -24,6 +24,17 @@ interface ImageStandardizerProps {
 }
 
 export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
+  // Utility: Convert base64 string to Blob
+  function base64ToBlob(base64: string): Blob {
+    const [meta, data] = base64.split(',');
+    const mime = meta.match(/:(.*?);/)?.[1] || 'image/png';
+    const binary = atob(data);
+    const array = [];
+    for (let i = 0; i < binary.length; i++) {
+      array.push(binary.charCodeAt(i));
+    }
+    return new Blob([new Uint8Array(array)], { type: mime });
+  }
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [selectedFabric, setSelectedFabric] = useState<string>('');
   const [selectedFrame, setSelectedFrame] = useState<string>('');
@@ -48,7 +59,8 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
     hasCredits, 
     isProcessing: creditProcessing, 
     processWithCredits, 
-    canProcess 
+    canProcess,
+    refreshCredits
   } = useCreditAwareProcessing(userId || '');
 
   // Get current user
@@ -145,12 +157,17 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
     }
   };
 
+  // Helper to generate consistent file name
+  function getImageFileName() {
+    return `kusam-furniture-${selectedFabric.toLowerCase().replace(/\s+/g, '-')}-${selectedFrame.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}.png`;
+  }
+
   const handleDownload = () => {
     if (!editedImageUrl) return;
-    
+    const fileName = getImageFileName();
     const link = document.createElement('a');
     link.href = editedImageUrl;
-    link.download = `kusam-furniture-${selectedFabric.toLowerCase().replace(' ', '-')}-${selectedFrame.toLowerCase().replace(' ', '-')}.png`;
+    link.download = fileName;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -163,7 +180,9 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
   };
 
   const handleSubmit = async () => {
+    console.log('[ImageStandardizer] handleSubmit called');
     if (!imageFile) {
+      console.log('[ImageStandardizer] No image file selected');
       setError('Por favor, sube una imagen primero.');
       return;
     }
@@ -183,14 +202,16 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
     }
 
     if (!canProcess) {
+      console.log('[ImageStandardizer] No credits available');
       setError('No hay créditos disponibles para procesar la imagen.');
       return;
     }
 
-    setIsLoading(true);
-    setError(null);
-    setEditedImageUrl(null);
-    setAiDescription(null);
+  setIsLoading(true);
+  setError(null);
+  setEditedImageUrl(null);
+  setAiDescription(null);
+  console.log('[ImageStandardizer] Starting image processing...');
 
     // Create image details for credit tracking
     const imageDetails = {
@@ -206,75 +227,111 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
     // Process with credit awareness (credits only deducted after validation passes)
     const result = await processWithCredits(async () => {
       setProcessingStatus('Convirtiendo imagen a base64...');
+      console.log('[ImageStandardizer] Reading image file as base64');
 
       try {
-      const base64Image = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result as string);
-        reader.onerror = reject;
-        reader.readAsDataURL(imageFile);
-      });
+        const base64Image = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(imageFile);
+        });
 
-      setProcessingStatus('Enviando imagen para estandarización...');
+        setProcessingStatus('Enviando imagen para estandarización...');
+        console.log('[ImageStandardizer] Sending image to /api/process-furniture');
 
-      // Create modifications string from selected options
-      let modifications = `Additionally, change the cushion fabric to ${selectedFabric || 'canvas beige'} and the frame material appearance to ${selectedFrame || 'the current material'}`;
-      
-      // Add perspective specification if selected
-      if (selectedPerspective) {
-        modifications += `. PERSPECTIVE: Show the furniture from a ${selectedPerspective}`;
-      }
-      
-      // Add additional prompt if provided
-      if (additionalPrompt.trim()) {
-        modifications += `. USER ADDITIONAL INSTRUCTIONS: ${additionalPrompt.trim()}`;
-      }
-
-      const res = await fetch('/api/process-furniture', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          image: base64Image,
-          modifications: modifications,
-        }),
-      });
-
-      setProcessingStatus('Procesando respuesta del servidor...');
-
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || 'Algo salió mal.');
-      }
-
-      const data = await res.json();
-      console.log('API Response:', data); // Debug log
-      console.log('Generated Image URL:', data.editedImageUrl?.substring(0, 50) + '...'); // Debug log
-      console.log('Has Generated Image:', data.hasGeneratedImage); // Debug log
-      console.log('Raw Response Available:', !!data.rawResponse); // Debug log
-      
-      // Handle the base64 image from the response
-      if (data.editedImageUrl && data.hasGeneratedImage) {
-        console.log('Setting edited image URL, length:', data.editedImageUrl.length);
-        // Validate the data URL
-        if (validateBase64Image(data.editedImageUrl)) {
-          setEditedImageUrl(data.editedImageUrl);
-          console.log('Successfully set valid image data URL');
-        } else {
-          console.log('Invalid image data URL format');
-          setError('Imagen generada pero con formato inválido.');
+        // Create modifications string from selected options
+        let modifications = `Additionally, change the cushion fabric to ${selectedFabric || 'canvas beige'} and the frame material appearance to ${selectedFrame || 'the current material'}`;
+        
+        // Add perspective specification if selected
+        if (selectedPerspective) {
+          modifications += `. PERSPECTIVE: Show the furniture from a ${selectedPerspective}`;
         }
-      } else if (data.rawResponse) {
+        
+        // Add additional prompt if provided
+        if (additionalPrompt.trim()) {
+          modifications += `. USER ADDITIONAL INSTRUCTIONS: ${additionalPrompt.trim()}`;
+        }
+
+        const res = await fetch('/api/process-furniture', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            image: base64Image,
+            modifications: modifications,
+          }),
+        });
+
+        setProcessingStatus('Procesando respuesta del servidor...');
+        console.log('[ImageStandardizer] Awaiting response from /api/process-furniture');
+
+        let data;
+        try {
+          data = await res.json();
+        } catch (jsonErr) {
+          console.error('[ImageStandardizer] Error parsing response JSON:', jsonErr);
+          throw new Error('Error parsing response JSON: ' + jsonErr);
+        }
+
+        if (!res.ok) {
+          console.error('[ImageStandardizer] API returned error:', data.error);
+          throw new Error(data.error || 'Algo salió mal.');
+        }
+
+        console.log('[ImageStandardizer] API Response:', data);
+        console.log('[ImageStandardizer] Generated Image URL:', data.editedImageUrl?.substring(0, 50) + '...');
+        console.log('[ImageStandardizer] Has Generated Image:', data.hasGeneratedImage);
+        console.log('[ImageStandardizer] Raw Response Available:', !!data.rawResponse);
+        
+        // Handle the base64 image from the response
+        if (data.editedImageUrl && data.hasGeneratedImage) {
+          console.log('[ImageStandardizer] Setting edited image URL, length:', data.editedImageUrl.length);
+          // Validate the data URL
+          if (validateBase64Image(data.editedImageUrl)) {
+            setEditedImageUrl(data.editedImageUrl);
+            console.log('[ImageStandardizer] Successfully set valid image data URL');
+            // Immediately refresh credits when success message is shown
+            refreshCredits();
+
+            // --- Upload to Supabase Storage ---
+            try {
+              const fileName = getImageFileName();
+              const blob = base64ToBlob(data.editedImageUrl);
+              console.log('[ImageStandardizer] Uploading image to Supabase Storage:', fileName);
+              const { error: uploadError } = await supabase.storage
+                .from('product-images')
+                .upload(fileName, blob, {
+                  cacheControl: '3600',
+                  upsert: true,
+                });
+              if (uploadError) {
+                console.error('[ImageStandardizer] Supabase upload error:', JSON.stringify(uploadError, null, 2));
+                setError('La imagen fue generada pero no se pudo guardar en Supabase.');
+              } else {
+                console.log('[ImageStandardizer] Imagen subida exitosamente a Supabase Storage:', fileName);
+              }
+            } catch (err) {
+              console.error('[ImageStandardizer] Error uploading image to Supabase:', err);
+              setError('Error al subir la imagen generada a Supabase.');
+            }
+            // --- End upload ---
+
+          } else {
+            console.log('[ImageStandardizer] Invalid image data URL format');
+            setError('Imagen generada pero con formato inválido.');
+          }
+        } else if (data.rawResponse) {
         // Try to extract base64 from raw response as fallback
-        console.log('Attempting to extract base64 from rawResponse...');
+        console.log('[ImageStandardizer] Attempting to extract base64 from rawResponse...');
         try {
           const rawData = typeof data.rawResponse === 'string' ? 
             JSON.parse(data.rawResponse) : data.rawResponse;
           
           // First, check if there's an 'id' field containing base64 data
           if (rawData.id && typeof rawData.id === 'string' && rawData.id.length > 100) {
-            console.log('Found id field in rawResponse, length:', rawData.id.length);
+            console.log('[ImageStandardizer] Found id field in rawResponse, length:', rawData.id.length);
             let base64Data = rawData.id;
             
             // Remove 'gen-1' prefix if present
@@ -286,9 +343,9 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
             
             if (validateBase64Image(imageDataUrl)) {
               setEditedImageUrl(imageDataUrl);
-              console.log('Successfully extracted and validated base64 from rawResponse id field');
+              console.log('[ImageStandardizer] Successfully extracted and validated base64 from rawResponse id field');
             } else {
-              console.log('Extracted base64 from id field failed validation');
+              console.log('[ImageStandardizer] Extracted base64 from id field failed validation');
               setError('Imagen extraída pero con formato inválido.');
             }
           } else {
@@ -302,22 +359,22 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
               
               if (validateBase64Image(imageDataUrl)) {
                 setEditedImageUrl(imageDataUrl);
-                console.log('Successfully extracted and validated base64 from rawResponse (fallback)');
+                console.log('[ImageStandardizer] Successfully extracted and validated base64 from rawResponse (fallback)');
               } else {
-                console.log('Extracted base64 failed validation (fallback)');
+                console.log('[ImageStandardizer] Extracted base64 failed validation (fallback)');
                 setError('Imagen extraída pero con formato inválido.');
               }
             } else {
-              console.log('No base64 data found in rawResponse');
+              console.log('[ImageStandardizer] No base64 data found in rawResponse');
               setError('No se pudo generar la imagen. Intenta con otra imagen.');
             }
           }
         } catch (parseError) {
-          console.error('Error parsing rawResponse:', parseError);
+          console.error('[ImageStandardizer] Error parsing rawResponse:', parseError);
           setError('Error procesando la respuesta del servidor.');
         }
       } else {
-        console.log('No generated image found in response');
+        console.log('[ImageStandardizer] No generated image found in response');
         setError('No se pudo generar la imagen. El modelo AI no devolvió una imagen editada.');
       }
       
@@ -325,10 +382,11 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
         setAiDescription(data.description);
       }
 
-      return await res.json();
+      // No need to return res.json() again, data is already parsed
+      return data;
 
     } catch (err: unknown) {
-      console.error('Error in processing:', err);
+      console.error('[ImageStandardizer] Error in processing:', err);
       const errorMessage = err instanceof Error ? err.message : 'Error desconocido al procesar la imagen';
       throw new Error(errorMessage);
     }
@@ -338,6 +396,8 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
     setProcessingStatus('');
 
     if (result.success && result.result) {
+      // Refresh credits after successful image generation
+      refreshCredits();
       const data = result.result;
       console.log('API Response:', data); // Debug log
       console.log('Generated Image URL:', data.editedImageUrl?.substring(0, 50) + '...'); // Debug log
@@ -615,6 +675,13 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
         <div className="text-red-500 mt-4 p-3 bg-red-50 rounded-lg border border-red-200">
           <p className="font-medium">Error:</p>
           <p>{error}</p>
+        </div>
+      )}
+
+      {/* Success message for upload */}
+      {!error && editedImageUrl && (
+        <div className="text-green-600 mt-4 p-3 bg-green-50 rounded-lg border border-green-200">
+          <p className="font-medium">Tu imagen fué agregada a la libreria de imagenes Kusam.</p>
         </div>
       )}
 

@@ -180,7 +180,7 @@ export const useCreditAnalytics = (timeframe: 'day' | 'week' | 'month' = 'week')
  * Combines credit checking, deduction, and refund logic
  */
 export const useCreditAwareProcessing = (userId: string) => {
-  const { credits, hasCredits, threshold } = useCredits();
+  const { credits, hasCredits, threshold, refreshCredits } = useCredits();
   const { deductCredit, refundCredit, isDeducting } = useCreditDeduction();
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -239,11 +239,12 @@ export const useCreditAwareProcessing = (userId: string) => {
   }, [hasCredits, deductCredit, refundCredit, userId]);
 
   return {
-    credits,
-    hasCredits,
-    threshold,
-    isProcessing: isProcessing || isDeducting,
-    processWithCredits,
-    canProcess: hasCredits && !isProcessing && !isDeducting
+  credits,
+  hasCredits,
+  threshold,
+  isProcessing: isProcessing || isDeducting,
+  processWithCredits,
+  canProcess: hasCredits && !isProcessing && !isDeducting,
+  refreshCredits
   };
 };

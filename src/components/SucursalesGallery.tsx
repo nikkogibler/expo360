@@ -89,9 +89,15 @@ const SucursalesGallery = () => {
 
   const handleCardClick = (card: SucursalCard) => {
     if (card.isActive && card.route !== '#') {
-      // Always append ?clear_session=true for admin workflow and open in new tab
-      const routeWithClearSession = `${card.route}?clear_session=true`;
-      window.open(routeWithClearSession, '_blank');
+      // Always append ?clear_session=true for all active routes
+      let routeToOpen = card.route;
+      // If there are already query params, use &clear_session=true
+      if (routeToOpen.includes('?')) {
+        routeToOpen = `${routeToOpen}&clear_session=true`;
+      } else {
+        routeToOpen = `${routeToOpen}?clear_session=true`;
+      }
+      window.open(routeToOpen, '_blank');
     }
   };
 
