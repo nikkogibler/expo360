@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useRef, useCallback } from 'react';
-import { useGesture } from '@use-gesture/react';
+
+import Image from 'next/image';
 
 type ImageItem = string | { src: string; alt?: string };
 
@@ -57,12 +57,12 @@ const DEFAULT_IMAGES: ImageItem[] = [
   }
 ];
 
-const DEFAULTS = {
-  maxVerticalRotationDeg: 5,
-  dragSensitivity: 20,
-  enlargeTransitionMs: 300,
-  segments: 35
-};
+// const DEFAULTS = {
+//   maxVerticalRotationDeg: 5,
+//   dragSensitivity: 20,
+//   enlargeTransitionMs: 300,
+//   segments: 35
+// };
 
 // --- Begin DomeGallery implementation ---
 // (Full code from user prompt pasted below)
@@ -125,9 +125,11 @@ function DomeGallery({ images = DEFAULT_IMAGES }: DomeGalleryProps) {
               (e.currentTarget as HTMLDivElement).style.zIndex = '1';
             }}
           >
-            <img
+            <Image
               src={src}
               alt={alt}
+              width={220}
+              height={220}
               style={{
                 width: '100%',
                 height: '100%',

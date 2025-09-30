@@ -1,6 +1,6 @@
 "use client";
 
-import React, { Children, cloneElement, useEffect, useMemo, useRef, useState } from "react";
+import React, { useRef, useState } from "react";
 import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from "framer-motion";
 
 export type DockItemData = {
@@ -21,11 +21,12 @@ export type DockProps = {
   spring?: Parameters<typeof useSpring>[1];
 };
 
+import type { MotionValue } from "framer-motion";
 type DockItemProps = {
   className?: string;
   children: React.ReactNode;
   onClick?: () => void;
-  mouseX: any;
+  mouseX: MotionValue<number>;
   spring: Parameters<typeof useSpring>[1];
   distance: number;
   baseItemSize: number;
@@ -125,13 +126,13 @@ export default function Dock({
   magnification = 70,
   distance = 200,
   panelHeight = 64,
-  dockHeight = 256,
+  // dockHeight = 256, // Removed unused dockHeight assignment
   baseItemSize = 50
 }: DockProps) {
   const mouseX = useMotionValue(Infinity);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
-  const maxHeight = useMemo(() => Math.max(dockHeight, magnification + magnification / 2 + 4), [magnification]);
+  // Removed unused maxHeight variable
   // For simplicity, just use panelHeight for now
   const height = panelHeight;
 
