@@ -264,6 +264,15 @@ const ProductCard = ({ product, index }: ProductCardProps) => {
 };
 
 export default function AdminCatalogPage() {
+  // Popup state for Editar Producto Existente
+  const [showEditProductPopup, setShowEditProductPopup] = useState(false);
+
+  // Auto-close popup after 3 seconds
+  useEffect(() => {
+    if (!showEditProductPopup) return;
+    const timeout = setTimeout(() => setShowEditProductPopup(false), 1500);
+    return () => clearTimeout(timeout);
+  }, [showEditProductPopup]);
   const [products, setProducts] = useState<Product[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -725,16 +734,52 @@ export default function AdminCatalogPage() {
             
             {/* Add Product Button - Placeholder for now */}
             <div className="mb-6 flex gap-4 justify-center">
-              <button 
-                className="text-white font-bold py-3 px-6 rounded-lg shadow-lg transition-all duration-200 flex items-center gap-2 opacity-60 cursor-not-allowed"
+              <button
+                className="text-white font-bold py-3 px-6 rounded-lg shadow-lg transition-all duration-200 flex items-center gap-2 opacity-60 cursor-not-allowed hover:opacity-80 focus:outline-none"
                 style={{ backgroundColor: '#595144' }}
-                disabled
+                onClick={() => setShowEditProductPopup(true)}
+                type="button"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                 </svg>
                 Editar Producto Existente
               </button>
+              {/* Popup for Editar Producto Existente */}
+              <AnimatePresence>
+                {showEditProductPopup && (
+                  <motion.div
+                    className="fixed inset-0 z-50 flex items-center justify-center"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.7, ease: [0.4, 0, 0.2, 1] }}
+                  >
+                    <motion.div
+                      className="absolute inset-0"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.7, ease: [0.4, 0, 0.2, 1] }}
+                      style={{ background: 'rgba(0,0,0,0.32)' }}
+                    />
+                    <motion.div
+                      className="relative bg-transparent flex flex-col items-center p-0"
+                      style={{ minWidth: 0, minHeight: 0, display: 'flex', justifyContent: 'center', alignItems: 'center' }}
+                      initial={{ scale: 0.95, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      exit={{ scale: 0.95, opacity: 0 }}
+                      transition={{
+                        opacity: { duration: 0.5, ease: [0.4, 0, 0.2, 1] },
+                        scale: { duration: 0.5, ease: [0.4, 0, 0.2, 1] }
+                      }}
+                      tabIndex={-1}
+                    >
+                      <img src="/enconstruccion.png" alt="En construcción" style={{ maxWidth: 960, maxHeight: 660, width: '75vw', height: 'auto', objectFit: 'contain' }} />
+                    </motion.div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
               
               <button 
                 className="text-white font-bold py-3 px-6 rounded-lg shadow-lg transition-all duration-200 flex items-center gap-2 hover:opacity-90"
