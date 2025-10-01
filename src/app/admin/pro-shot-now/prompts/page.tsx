@@ -1,5 +1,9 @@
 "use client";
 import React, { useEffect, useState } from "react";
+
+import HamburgerMenu from "../../../../components/HamburgerMenu";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { StorageError } from '@supabase/storage-js';
 import { supabase } from "../../../../../lib/supabaseClient";
 
@@ -18,6 +22,21 @@ import { supabase } from "../../../../../lib/supabaseClient";
 	}
 
 export default function PromptVisualizer() {
+	// Copy to clipboard handler
+	const handleCopyPrompt = (promptText: string) => {
+		if (navigator && navigator.clipboard) {
+			navigator.clipboard.writeText(promptText);
+		} else {
+			// fallback
+			const textarea = document.createElement('textarea');
+			textarea.value = promptText;
+			document.body.appendChild(textarea);
+			textarea.select();
+			document.execCommand('copy');
+			document.body.removeChild(textarea);
+		}
+	};
+	const router = useRouter();
 	const [prompts, setPrompts] = useState<Prompt[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
@@ -84,21 +103,66 @@ export default function PromptVisualizer() {
 				}
 			});
 		return (
-			<div
-				className="min-h-screen w-full flex flex-col items-center justify-start px-4 py-10"
-				style={{
-					backgroundImage: "url('/vine_2b.png')",
-					backgroundRepeat: "repeat",
-					backgroundSize: "400px 400px",
-					backgroundPosition: "center",
-				}}
-			>
-					<div className="w-full max-w-6xl mx-auto mb-8" style={{ minHeight: '280px' }}>
+				<div
+					className="min-h-screen w-full flex flex-col items-center justify-start px-4 py-10"
+					style={{
+						backgroundImage: "url('/vine_2b.png')",
+						backgroundRepeat: "repeat",
+						backgroundSize: "400px 400px",
+						backgroundPosition: "center",
+					}}
+				>
+										{/* Header with Back Arrow, Logo (left) and Hamburger Menu (right) */}
+										<div className="w-full max-w-6xl mx-auto flex flex-row items-center justify-between mb-4">
+											  <div className="flex flex-row items-center gap-3" style={{ marginLeft: '-40px' }}>
+																	<button
+																		onClick={() => router.push('/admin/pro-shot-now')}
+													style={{
+														background: 'none',
+														border: 'none',
+														cursor: 'pointer',
+														color: '#666',
+														padding: '8px',
+														borderRadius: '6px',
+														transition: 'all 0.2s ease',
+														display: 'flex',
+														alignItems: 'center',
+														justifyContent: 'center',
+														marginTop: '7px',
+													}}
+													onMouseEnter={e => {
+														e.currentTarget.style.color = '#333';
+														e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.05)';
+													}}
+													onMouseLeave={e => {
+														e.currentTarget.style.color = '#666';
+														e.currentTarget.style.backgroundColor = 'transparent';
+													}}
+												>
+													<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+														<path d="M19 12H5M12 19L5 12L12 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+													</svg>
+												</button>
+																						<div onClick={() => router.push('/admin/pro-shot-now')} style={{ cursor: 'pointer' }}>
+																							<Image
+																								src="/kusam_main.webp"
+																								alt="Kusam Logo"
+																								width={120}
+																								height={30}
+																								style={{ objectFit: 'contain', height: 'auto', opacity: 0.8 }}
+																								priority
+																							/>
+																						</div>
+											</div>
+											<div className="flex flex-row items-center">
+												<HamburgerMenu />
+											</div>
+										</div>
+					<div className="w-full max-w-6xl mx-auto mb-8 flex justify-center items-center" style={{ minHeight: '280px' }}>
 						<img 
 							src="/admin/prompts_header.png" 
 							alt="Prompt Visualizer Header" 
-							className="w-full h-full object-cover"
-							style={{ maxHeight: '280px', minHeight: '280px', objectFit: 'cover' }}
+							style={{ maxHeight: '420px', minHeight: '420px', objectFit: 'cover', display: 'block', margin: '0 auto', marginLeft: '80px', width: '150%' }}
 						/>
 					</div>
 				{loading && <div className="text-lg text-gray-700">Cargando prompts...</div>}
@@ -182,9 +246,19 @@ export default function PromptVisualizer() {
 											<span className="w-16 h-16 bg-gray-200 rounded flex items-center justify-center text-xs text-gray-400 border border-amber-100">No image</span>
 										)}
 									</td>
-									<td className="px-4 py-2 max-w-[400px] whitespace-pre-line text-gray-800 text-sm font-medium align-top">
-										{prompt.prompt}
-									</td>
+														<td className="px-4 py-2 max-w-[400px] whitespace-pre-line text-gray-800 text-sm font-medium align-top">
+															<span>{prompt.prompt}</span>
+															<button
+																onClick={() => handleCopyPrompt(prompt.prompt)}
+																title="Copy prompt"
+																style={{ marginLeft: 8, verticalAlign: 'middle', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+															>
+																<svg width="18" height="18" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+																	<rect x="7" y="7" width="9" height="9" rx="2" stroke="#b45309" strokeWidth="1.5" fill="#fff9eb"/>
+																	<rect x="4" y="4" width="9" height="9" rx="2" stroke="#b45309" strokeWidth="1.5" fill="#fff9eb"/>
+																</svg>
+															</button>
+														</td>
 									<td className="px-4 py-2 align-top">
 										<div className="flex flex-wrap gap-1">
 											{prompt.tags && prompt.tags.length > 0 ? prompt.tags.map((tag: string) => (

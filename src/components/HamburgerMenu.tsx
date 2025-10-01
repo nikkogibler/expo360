@@ -3,10 +3,11 @@ import { useRouter } from 'next/navigation';
 import { supabase } from '../../lib/supabaseClient';
 
 const menuOptions = [
+  { label: 'Admin Dashboard', action: 'admin-dashboard' },
   { label: 'Librería de Imágenes', action: 'image-library' },
-  { label: 'Sign Out', action: 'signout' },
-  { label: 'Change Avatar', action: 'avatar' },
-  { label: 'Settings', action: 'settings' },
+  { label: 'Optimizador de Imágenes', action: 'image-optimizer' },
+  { label: 'Colección de Prompts', action: 'prompt-collection' },
+  { label: 'Preferencias', action: 'settings' },
 ];
 
 export default function HamburgerMenu() {
@@ -31,14 +32,18 @@ export default function HamburgerMenu() {
   }, [open]);
 
   async function handleMenuClick(action: string) {
-    if (action === 'image-library') {
+    if (action === 'admin-dashboard') {
+      router.push('/admin');
+    } else if (action === 'image-library') {
       router.push('/admin/image-library');
+    } else if (action === 'image-optimizer') {
+      router.push('/admin/image-standardizer');
+    } else if (action === 'prompt-collection') {
+      router.push('/admin/pro-shot-now/prompts');
     } else if (action === 'signout') {
       await supabase.auth.signOut();
       document.cookie = 'user_email=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
       router.push('/admin/signin');
-    } else if (action === 'avatar') {
-      alert('Change avatar clicked');
     } else if (action === 'settings') {
       alert('Settings clicked');
     }
@@ -76,9 +81,12 @@ export default function HamburgerMenu() {
             minWidth: '160px',
             zIndex: 100,
             padding: '0.5rem 0',
+            display: 'flex',
+            flexDirection: 'column',
           }}
         >
-          {menuOptions.map((opt) => (
+          {/* Main menu options */}
+          {menuOptions.map((opt, idx) => (
             <button
               key={opt.action}
               onClick={() => handleMenuClick(opt.action)}
@@ -91,13 +99,32 @@ export default function HamburgerMenu() {
                 fontSize: '1rem',
                 color: '#4B2E09',
                 cursor: 'pointer',
-                borderBottom: '1px solid #eee',
+                borderBottom: idx === menuOptions.length - 1 ? 'none' : '1px solid #eee',
                 outline: 'none',
               }}
             >
               {opt.label}
             </button>
           ))}
+          {/* Sign Out at the bottom */}
+          <div style={{ borderTop: '1px solid #eee', marginTop: 4 }} />
+          <button
+            key="signout"
+            onClick={() => handleMenuClick('signout')}
+            style={{
+              width: '100%',
+              background: 'none',
+              border: 'none',
+              padding: '0.75rem 1.5rem',
+              textAlign: 'left',
+              fontSize: '1rem',
+              color: '#B91C1C',
+              cursor: 'pointer',
+              outline: 'none',
+            }}
+          >
+            Sign Out
+          </button>
         </div>
       )}
     </div>

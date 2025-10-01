@@ -529,8 +529,26 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
     >
       <div className="flex justify-between items-center mb-6">
         <div className="flex-1">
-          <h1 className="text-3xl font-bold"> Optimizador de Fotos Kusam </h1>
-          <p className="text-sm text-gray-600 mt-1">AI-powered image optimization</p>
+          <div className="text-xs font-semibold mt-2" style={{ lineHeight: 1.2 }}>
+            ProShotNow™ by{' '}
+            <a
+              href="https://interzekt.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                fontWeight: 'bold',
+                background: 'linear-gradient(90deg, #8B5CF6, #2563EB, #EC4899)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text',
+                color: 'transparent',
+                textDecoration: 'none',
+                padding: '0 2px',
+              }}
+            >
+              Interzekt.com
+            </a>
+          </div>
         </div>
         
         <div className="flex items-center space-x-4">

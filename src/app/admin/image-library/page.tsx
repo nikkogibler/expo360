@@ -1,6 +1,9 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
+import HamburgerMenu from '../../../components/HamburgerMenu';
+import Image from "next/image";
+import { useRouter } from "next/navigation";
 type ImageItem = string | { src: string; alt?: string };
 import DomeGallery from '../../../components/DomeGallery';
 import Dock, { DockItemData } from '../../../components/Dock';
@@ -8,6 +11,7 @@ import { FaHome, FaImages, FaUserShield } from 'react-icons/fa';
 import { supabase } from '@/utils/supabase';
 
 const ImageLibraryPage = () => {
+  const router = useRouter();
   const [images, setImages] = useState<ImageItem[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -70,10 +74,56 @@ const ImageLibraryPage = () => {
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        justifyContent: 'center',
+        justifyContent: 'flex-start',
         overflow: 'auto',
       }}
     >
+      {/* Header with Back Arrow, Logo (left) and Hamburger Menu (right) */}
+      <div className="w-full max-w-6xl mx-auto flex flex-row items-center justify-between mb-4 px-6" style={{ marginTop: 24, position: 'relative', zIndex: 10 }}>
+  <div className="flex flex-row items-center gap-3" style={{ marginLeft: '-300px' }}>
+          <button
+            onClick={() => router.push('/admin/pro-shot-now')}
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              color: '#666',
+              padding: '8px',
+              borderRadius: '6px',
+              transition: 'all 0.2s ease',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginTop: '7px',
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.color = '#333';
+              e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.05)';
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.color = '#666';
+              e.currentTarget.style.backgroundColor = 'transparent';
+            }}
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M19 12H5M12 19L5 12L12 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </button>
+          <div onClick={() => router.push('/admin/pro-shot-now')} style={{ cursor: 'pointer' }}>
+            <Image
+              src="/kusam_main.webp"
+              alt="Kusam Logo"
+              width={120}
+              height={30}
+              style={{ objectFit: 'contain', height: 'auto', opacity: 0.8 }}
+              priority
+            />
+          </div>
+        </div>
+  <div className="flex flex-row items-center" style={{ marginRight: '-202px' }}>
+          <HamburgerMenu />
+        </div>
+      </div>
       <div style={{ width: '100%', maxWidth: 1200, height: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         {loading ? (
           <div className="text-xl text-gray-600">Cargando galería...</div>
