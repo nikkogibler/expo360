@@ -151,21 +151,27 @@ export default function Dock({
         role="toolbar"
         aria-label="Application dock"
       >
-        {items.map((item, index) => (
-          <DockItem
-            key={index}
-            onClick={item.onClick}
-            className={item.className}
-            mouseX={mouseX}
-            spring={spring}
-            distance={distance}
-            magnification={magnification}
-            baseItemSize={baseItemSize}
-          >
-            <DockIcon>{item.icon}</DockIcon>
-            <DockLabel isVisible={hoveredIndex === index}>{item.label}</DockLabel>
-          </DockItem>
-        ))}
+        {items.map((item, index) => {
+          // For the third button (index 2), override onClick to open Airtable link
+          const isThird = index === 2;
+          return (
+            <DockItem
+              key={index}
+              onClick={isThird
+                ? () => window.open('https://airtable.com/appRBsiKS1NXvQycF/tblD5ZvT8tj9Jw9LD/viwwYkpy2F9d1pgGJ?blocks=hide', '_blank')
+                : item.onClick}
+              className={item.className}
+              mouseX={mouseX}
+              spring={spring}
+              distance={distance}
+              magnification={magnification}
+              baseItemSize={baseItemSize}
+            >
+              <DockIcon>{item.icon}</DockIcon>
+              <DockLabel isVisible={hoveredIndex === index}>{item.label}</DockLabel>
+            </DockItem>
+          );
+        })}
       </motion.div>
     </motion.div>
   );
