@@ -1,20 +1,33 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { supabaseService } from '@/utils/supabaseServiceRole';
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { image, modifications } = body;
+  const body = await request.json();
+  const { content, modifications, userId, tela, estructura, fileName } = body;
 
-    if (!image) {
-      return NextResponse.json({ error: 'No image provided' }, { status: 400 });
+    // Validate content array
+    if (!Array.isArray(content) || content.length < 2) {
+      return NextResponse.json({ error: 'No images provided or content array malformed' }, { status: 400 });
+    }
+
+    // Extract images from content array
+    const userImageObj = content[0];
+    const blankImageObj = content[content.length - 1];
+    const userImage = userImageObj?.image_url?.url;
+    const blankImage = blankImageObj?.image_url?.url;
+
+    if (!userImage || !blankImage) {
+      return NextResponse.json({ error: 'Image data missing in content array' }, { status: 400 });
     }
 
     console.log('Processing furniture image request...');
-    console.log('Image received:', image.substring(0, 50) + '...');
+    console.log('User image received:', userImage.substring(0, 50) + '...');
+    console.log('Blank image received:', blankImage.substring(0, 50) + '...');
     console.log('Modifications requested:', modifications);
 
-    // Validate that image is base64 encoded
-    if (!image.startsWith('data:image/')) {
+    // Validate that images are base64 encoded
+    if (!userImage.startsWith('data:image/') || !blankImage.startsWith('data:image/')) {
       return NextResponse.json({ error: 'Invalid image format. Expected base64 data URL.' }, { status: 400 });
     }
 
@@ -41,7 +54,9 @@ export async function POST(request: NextRequest) {
             content: [
               {
                 type: 'text',
-                text: `You are a professional furniture photographer and image standardization expert. Take this product image and apply the following standardization steps:
+                text: `IMPORTANT: The output must be a vertical, tall, 9:16 portrait image. Use the second (blank) image as the aspect ratio reference.
+
+You are a professional furniture photographer and image standardization expert. Take this product image and apply the following standardization steps:
 
 **Angle**: Rotate the furniture to a 45-degree front-right (three-quarter) angle (if not already shown)
 
@@ -58,17 +73,15 @@ export async function POST(request: NextRequest) {
 **Cleanliness**: Remove visual noise, props, logos, or reflections. Ensure a polished and consistent presentation across images
 
 **Proportions**: Keep true-to-life scale and realistic materials without distortion
-
 Additional modifications requested: ${modifications}
 
-Please generate a standardized product image following these exact specifications. Return the processed image as your response.`
+Please generate a standardized product image following these exact specifications. Return the processed image as your response.
+
+Again, ensure the output is a vertical, tall, 9:16 portrait image matching the aspect ratio of the blank reference image.`
               },
-              {
-                type: 'image_url',
-                image_url: {
-                  url: image
-                }
-              }
+              // User image first, blank image last
+              { type: 'image_url', image_url: { url: userImage } },
+              { type: 'image_url', image_url: { url: blankImage } }
             ]
           }
         ],
@@ -212,6 +225,57 @@ Please generate a standardized product image following these exact specification
     // Check token usage for debugging
     if (data.usage) {
       console.log(`Has Generated Image: ${hasGeneratedImage}, Success: ${!!editedImageUrl}, Image tokens in completion: ${data.usage.completion_tokens_details?.image_tokens || 0}, Total tokens: ${data.usage.total_tokens}`);
+    }
+
+    // --- LOG PROMPT USAGE TO image_prompts TABLE ---
+    let userName = null;
+    if (userId) {
+      // Use the service role client to fetch user name from profiles table (by id)
+      const { data: profile } = await supabaseService
+        .from('profiles')
+        .select('name')
+        .eq('id', userId)
+        .maybeSingle();
+      if (profile && profile.name) {
+        userName = profile.name;
+      } else {
+        userName = null; // fallback to null if not found
+      }
+      console.log('[Prompt Logging] Looked up userName for userId', userId, ':', userName);
+    }
+
+    // Extract token usage if available
+    let tokensUsed = null;
+    if (data.usage && typeof data.usage.total_tokens !== 'undefined') {
+      tokensUsed = data.usage.total_tokens;
+    }
+
+    // Get public URL for the generated image in Supabase Storage using the provided fileName
+    let publicImageUrl = null;
+    if (fileName) {
+      try {
+        const publicUrlObj = supabaseService.storage.from('product-images').getPublicUrl(fileName);
+        publicImageUrl = publicUrlObj.data?.publicUrl || null;
+      } catch (e) {
+        console.error('Error getting public image URL:', e);
+      }
+    }
+
+    const { error: promptLogError, data: promptLogData } = await supabaseService
+      .from('image_prompts')
+      .insert({
+        prompt_text: modifications,
+        tokens_used: tokensUsed,
+        output_image: publicImageUrl,
+        user: userName, // This is now the display name, not the UUID
+        tela: tela || null,
+        estructura: estructura || null,
+        created_at: new Date().toISOString()
+      });
+    if (promptLogError) {
+      console.error('[Prompt Logging] Failed to insert prompt log:', promptLogError);
+    } else {
+      console.log('[Prompt Logging] Successfully inserted prompt log:', promptLogData);
     }
 
     if (hasGeneratedImage && editedImageUrl) {

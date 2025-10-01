@@ -299,10 +299,6 @@ export default function AdminCatalogPage() {
   });
 
   // Library Image Modal state
-  const [showLibraryModal, setShowLibraryModal] = useState(false);
-  const [libraryImages, setLibraryImages] = useState<string[]>([]);
-  const [libraryLoading, setLibraryLoading] = useState(false);
-  const [selectedLibraryImage, setSelectedLibraryImage] = useState<string | null>(null);
 
 
   // ...existing code...
@@ -434,7 +430,7 @@ export default function AdminCatalogPage() {
     };
 
     try {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('products')
         .insert([productToInsert])
         .select();
@@ -1238,26 +1234,26 @@ export default function AdminCatalogPage() {
                                   const ext = file.name.split('.').pop();
                                   const fileName = `${newProduct.sku || 'product'}_${Date.now()}.${ext}`;
                                   // Upload to Supabase Storage (catalogo_new bucket)
-                                  const { data, error } = await supabase.storage
+                                  const uploadResult = await supabase.storage
                                     .from('catalogo_new')
                                     .upload(fileName, file, {
                                       cacheControl: '3600',
                                       upsert: true
                                     });
-                                  if (error) {
-                                    console.error('Error uploading image:', error);
-                                    alert('Error al subir la imagen: ' + error.message);
+                                  if (uploadResult.error) {
+                                    console.error('Error uploading image:', uploadResult.error);
+                                    alert('Error al subir la imagen: ' + uploadResult.error.message);
                                     return;
                                   }
                                   // Get public URL
-                                  const { data: publicUrlData } = supabase.storage
+                                  const publicUrlData = supabase.storage
                                     .from('catalogo_new')
-                                    .getPublicUrl(data.path);
-                                  if (!publicUrlData?.publicUrl) {
+                                    .getPublicUrl(uploadResult.data.path);
+                                  if (!publicUrlData?.data?.publicUrl) {
                                     alert('No se pudo obtener la URL pública de la imagen.');
                                     return;
                                   }
-                                  setNewProduct((prev) => ({ ...prev, image_url: publicUrlData.publicUrl }));
+                                  setNewProduct((prev) => ({ ...prev, image_url: publicUrlData.data.publicUrl }));
                                   alert('Imagen subida exitosamente.');
                                 } catch (err) {
                                   console.error('Unexpected error uploading image:', err);
@@ -1266,6 +1262,7 @@ export default function AdminCatalogPage() {
                               }}
                             />
                           </div>
+                          {/*
                           <button
                             type="button"
                             className="mt-2 px-4 py-2 bg-blue-100 text-blue-800 rounded-md border border-blue-200 hover:bg-blue-200 transition-colors text-sm font-medium"
@@ -1273,6 +1270,7 @@ export default function AdminCatalogPage() {
                           >
                             Utiliza una imagen de tu librería Kusam
                           </button>
+                          */}
                         </div>
                       </div>
                     </div>

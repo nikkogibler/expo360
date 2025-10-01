@@ -189,7 +189,7 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
 
     // Pre-validation: Check file type and size BEFORE deducting credits
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
-    const maxSize = 2 * 1024 * 1024; // 2MB in bytes
+  const maxSize = 3 * 1024 * 1024; // 3MB in bytes
 
     if (!allowedTypes.includes(imageFile.type.toLowerCase())) {
       setError('Solo se permiten archivos JPG y PNG. Por favor, convierte tu archivo HEIC a JPG o PNG.');
@@ -197,7 +197,7 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
     }
 
     if (imageFile.size > maxSize) {
-      setError('El archivo es demasiado grande. El tamaño máximo permitido es 2MB.');
+  setError('El archivo es demasiado grande. El tamaño máximo permitido es 3MB.');
       return;
     }
 
@@ -229,7 +229,9 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
       setProcessingStatus('Convirtiendo imagen a base64...');
       console.log('[ImageStandardizer] Reading image file as base64');
 
+
       try {
+        // Read user image as base64
         const base64Image = await new Promise<string>((resolve, reject) => {
           const reader = new FileReader();
           reader.onloadend = () => resolve(reader.result as string);
@@ -237,30 +239,54 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
           reader.readAsDataURL(imageFile);
         });
 
+        // Read blank 9:16 image as base64 (from public folder)
+        setProcessingStatus('Preparando imagen de referencia 9:16...');
+        const blankImageBase64 = await fetch('/white_canvas.png')
+          .then(res => res.blob())
+          .then(blob => new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result as string);
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+          }));
+
+        // Log which images are being included
+        console.log('[ImageStandardizer] Images included in content array:', {
+          userImage: base64Image?.substring(0, 80) + (base64Image?.length > 80 ? '...' : ''),
+          blankImage: blankImageBase64?.substring(0, 80) + (blankImageBase64?.length > 80 ? '...' : '')
+        });
+
         setProcessingStatus('Enviando imagen para estandarización...');
-        console.log('[ImageStandardizer] Sending image to /api/process-furniture');
+        console.log('[ImageStandardizer] Sending images to /api/process-furniture');
 
-        // Create modifications string from selected options
-        let modifications = `Additionally, change the cushion fabric to ${selectedFabric || 'canvas beige'} and the frame material appearance to ${selectedFrame || 'the current material'}`;
-        
-        // Add perspective specification if selected
+        // Create modifications string from user prompt only (no tela/estructura)
+        let modifications = '';
         if (selectedPerspective) {
-          modifications += `. PERSPECTIVE: Show the furniture from a ${selectedPerspective}`;
+          modifications += `PERSPECTIVE: Show the furniture from a ${selectedPerspective}. `;
         }
-        
-        // Add additional prompt if provided
         if (additionalPrompt.trim()) {
-          modifications += `. USER ADDITIONAL INSTRUCTIONS: ${additionalPrompt.trim()}`;
+          modifications += `USER ADDITIONAL INSTRUCTIONS: ${additionalPrompt.trim()}`;
         }
 
+        // Compose content array for API
+        const content = [
+          { type: 'image_url', image_url: { url: blankImageBase64 } },
+          { type: 'image_url', image_url: { url: base64Image } }
+        ];
+
+        const fileName = getImageFileName();
         const res = await fetch('/api/process-furniture', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            image: base64Image,
-            modifications: modifications,
+            content,
+            modifications,
+            userId: userId || null,
+            tela: selectedFabric,
+            estructura: selectedFrame,
+            fileName,
           }),
         });
 
@@ -546,7 +572,7 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
                       Ningún archivo seleccionado
                     </p>
                     <p className="text-xs text-gray-400 mt-2">
-                      Solo JPG y PNG, máximo 2MB
+                      Solo JPG y PNG, máximo 3MB
                     </p>
                   </>
                 )}
@@ -681,7 +707,7 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
       {/* Success message for upload */}
       {!error && editedImageUrl && (
         <div className="text-green-600 mt-4 p-3 bg-green-50 rounded-lg border border-green-200">
-          <p className="font-medium">Tu imagen fué agregada a la libreria de imagenes Kusam.</p>
+          <p className="font-medium">Tu imagen fue agregada a la librería de imágenes Kusam.</p>
         </div>
       )}
 
@@ -748,7 +774,7 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
                 </div>
               </div>
               <p className="text-sm text-gray-600 mt-2">
-                Imagen estandarizada con formato 9:16, fondo blanco, iluminación profesional y especificaciones de Kusam
+                Imagen estandarizada con fondo blanco, iluminación profesional y especificaciones de Kusam
               </p>
             </div>
           )}
