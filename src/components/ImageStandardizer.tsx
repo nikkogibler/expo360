@@ -119,9 +119,7 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
           setFabricOptions(fabrics);
           setFrameOptions(frames);
 
-          // Set default selections
-          if (fabrics.length > 0) setSelectedFabric(fabrics[0].name);
-          if (frames.length > 0) setSelectedFrame(frames[0].name);
+          // Do not set default selections; always default to placeholder
         }
       } catch (err) {
         console.error('Error in fetchOptions:', err);
@@ -325,9 +323,14 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
             try {
               const fileName = getImageFileName();
               const blob = base64ToBlob(data.editedImageUrl);
-              console.log('[ImageStandardizer] Uploading image to Supabase Storage:', fileName);
+              // Use userId from React state for bucket selection
+              let bucket = 'product-images';
+              if (userId === 'c9abd999-f0ab-4cd2-954c-db4ed288392e') {
+                bucket = 'nikko-tests';
+              }
+              console.log(`[ImageStandardizer] Uploading image to Supabase Storage bucket: ${bucket}`, fileName);
               const { error: uploadError } = await supabase.storage
-                .from('product-images')
+                .from(bucket)
                 .upload(fileName, blob, {
                   cacheControl: '3600',
                   upsert: true,
@@ -774,7 +777,7 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
                 </div>
               </div>
               <p className="text-sm text-gray-600 mt-2">
-                Imagen estandarizada con fondo blanco, iluminación profesional y especificaciones de Kusam
+                Imagen profesional generada con las características solicitadas.
               </p>
             </div>
           )}

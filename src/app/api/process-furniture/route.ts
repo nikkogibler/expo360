@@ -56,6 +56,8 @@ export async function POST(request: NextRequest) {
                 type: 'text',
                 text: `IMPORTANT: The output must be a vertical, tall, 9:16 portrait image. Use the second (blank) image as the aspect ratio reference.
 
+NOTE: The uploaded image may be of any kind of product, not just furniture. Apply the following steps to any product image provided.
+
 You are a professional furniture photographer and image standardization expert. Take this product image and apply the following standardization steps:
 
 **Angle**: Rotate the furniture to a 45-degree front-right (three-quarter) angle (if not already shown)
