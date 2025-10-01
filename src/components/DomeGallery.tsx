@@ -111,7 +111,7 @@ function DomeGallery({ images = DEFAULT_IMAGES }: DomeGalleryProps) {
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
-    } catch (err) {
+    } catch {
       alert('Failed to download image.');
     }
   };

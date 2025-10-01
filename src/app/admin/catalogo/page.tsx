@@ -775,7 +775,14 @@ export default function AdminCatalogPage() {
                       }}
                       tabIndex={-1}
                     >
-                      <img src="/enconstruccion.png" alt="En construcción" style={{ maxWidth: 960, maxHeight: 660, width: '75vw', height: 'auto', objectFit: 'contain' }} />
+                      <Image
+                        src="/enconstruccion.png"
+                        alt="En construcción"
+                        width={960}
+                        height={660}
+                        style={{ maxWidth: 960, maxHeight: 660, width: '75vw', height: 'auto', objectFit: 'contain' }}
+                        priority
+                      />
                     </motion.div>
                   </motion.div>
                 )}
