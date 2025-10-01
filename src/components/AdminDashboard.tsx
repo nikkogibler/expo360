@@ -567,7 +567,7 @@ const MagicBento: React.FC<BentoProps> = ({
         router.push('/admin/catalogo');
         break;
       case 'Editar Fotos con KusamAI':
-        setShowImageEditor(true);
+        router.push('/admin/pro-shot-now');
         break;
       case 'Base de Datos Airtable':
         window.open('https://airtable.com/appRBsiKS1NXvQycF/tblD5ZvT8tj9Jw9LD/viwwYkpy2F9d1pgGJ?blocks=hide', '_blank');
