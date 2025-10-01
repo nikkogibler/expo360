@@ -4,7 +4,6 @@ import React, { useEffect, useState } from "react";
 import HamburgerMenu from "../../../../components/HamburgerMenu";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { StorageError } from '@supabase/storage-js';
 import { supabase } from "../../../../../lib/supabaseClient";
 
 	interface Prompt {
@@ -18,7 +17,6 @@ import { supabase } from "../../../../../lib/supabaseClient";
 		user?: string;
 		tela?: string;
 		estructura?: string;
-		[key: string]: any;
 	}
 
 export default function PromptVisualizer() {
@@ -57,26 +55,35 @@ export default function PromptVisualizer() {
 						return;
 					}
 							// Use output_image column directly for card backgrounds
-							setPrompts(
-								(data || []).map((row: any) => ({
-									id: row.prompt_id,
-									prompt: row.prompt_text,
-									tags: [],
-									created_by: row.user,
-									created_at: row.created_at,
-									tokens_used: row.tokens_used,
-									output_image: row.output_image,
-									user: row.user,
-									tela: row.tela,
-									estructura: row.estructura,
-								}))
-							);
+									setPrompts(
+													(Array.isArray(data) ? data : []).map((row: {
+														prompt_id: string;
+														prompt_text: string;
+														user?: string;
+														created_at: string;
+														tokens_used?: number;
+														output_image?: string;
+														tela?: string;
+														estructura?: string;
+													}) => ({
+												id: String(row.prompt_id ?? ''),
+												prompt: String(row.prompt_text ?? ''),
+												tags: [],
+												created_by: typeof row.user === 'string' ? row.user : undefined,
+												created_at: String(row.created_at ?? ''),
+												tokens_used: typeof row.tokens_used === 'number' ? row.tokens_used : undefined,
+												output_image: typeof row.output_image === 'string' ? row.output_image : undefined,
+												user: typeof row.user === 'string' ? row.user : undefined,
+												tela: typeof row.tela === 'string' ? row.tela : undefined,
+												estructura: typeof row.estructura === 'string' ? row.estructura : undefined,
+											}))
+									);
 							setLoading(false);
 				};
 				fetchPrompts();
 			}, []);
 
-		const [debugInfo, setDebugInfo] = useState('');
+		// const [debugInfo, setDebugInfo] = useState('');
 
 		// Filtering and sorting state
 		const [selectedTag, setSelectedTag] = useState<string>('');
@@ -159,11 +166,14 @@ export default function PromptVisualizer() {
 											</div>
 										</div>
 					<div className="w-full max-w-6xl mx-auto mb-8 flex justify-center items-center" style={{ minHeight: '280px' }}>
-						<img 
-							src="/admin/prompts_header.png" 
-							alt="Prompt Visualizer Header" 
-							style={{ maxHeight: '420px', minHeight: '420px', objectFit: 'cover', display: 'block', margin: '0 auto', marginLeft: '80px', width: '150%' }}
-						/>
+									<Image
+										src="/admin/prompts_header.png"
+										alt="Prompt Visualizer Header"
+										width={1200}
+										height={420}
+										style={{ maxHeight: '420px', minHeight: '420px', objectFit: 'cover', display: 'block', margin: '0 auto', marginLeft: '80px', width: '150%' }}
+										priority
+									/>
 					</div>
 				{loading && <div className="text-lg text-gray-700">Cargando prompts...</div>}
 				{error && (
@@ -240,9 +250,9 @@ export default function PromptVisualizer() {
 							{filteredPrompts.map((prompt) => (
 								<tr key={prompt.id} className="bg-white hover:bg-amber-50 transition-all border border-amber-100 rounded-lg shadow-sm">
 									<td className="px-2 py-2 align-middle">
-										{prompt.output_image ? (
-											<img src={prompt.output_image} alt="Prompt output" className="w-16 h-16 object-cover rounded shadow border border-amber-200" onError={e => { e.currentTarget.src = '/file.svg'; }} />
-										) : (
+															{prompt.output_image ? (
+																  <Image src={prompt.output_image} alt="Prompt output" width={64} height={64} className="w-16 h-16 object-cover rounded shadow border border-amber-200" onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => { (e.target as HTMLImageElement).src = '/file.svg'; }} />
+															) : (
 											<span className="w-16 h-16 bg-gray-200 rounded flex items-center justify-center text-xs text-gray-400 border border-amber-100">No image</span>
 										)}
 									</td>

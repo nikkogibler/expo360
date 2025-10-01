@@ -65,10 +65,13 @@ export default function OptimizadorPage() {
       </div>
       {/* Optimizador header image */}
   <div className="w-full max-w-3xl mx-auto mb-0 flex justify-center items-center" style={{ minHeight: '180px' }}>
-        <img
+        <Image
           src="/admin/optimizador_header.png"
           alt="Optimizador Header"
+          width={800}
+          height={180}
           style={{ width: '100%', height: 'auto', objectFit: 'cover', borderRadius: 8 }}
+          priority
         />
       </div>
       <div className="w-full max-w-3xl mx-auto p-6">
