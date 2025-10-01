@@ -1,4 +1,4 @@
-
+"use client";
 import Image from 'next/image';
 
 type ImageItem = string | { src: string; alt?: string };
