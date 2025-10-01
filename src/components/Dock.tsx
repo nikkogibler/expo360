@@ -126,7 +126,7 @@ export default function Dock({
   magnification = 70,
   distance = 200,
   panelHeight = 64,
-  // dockHeight = 256, // Removed unused dockHeight assignment
+  // ...existing code...
   baseItemSize = 50
 }: DockProps) {
   const mouseX = useMotionValue(Infinity);

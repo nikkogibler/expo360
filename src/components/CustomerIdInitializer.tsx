@@ -4,6 +4,7 @@
 import { useEffect, useRef } from 'react';
 import { useSearchParams, usePathname, useRouter } from 'next/navigation';
 import { supabase } from '@/utils/supabase';
+import { adminList } from '../config/adminList';
 
 export default function CustomerIdInitializer() {
   const searchParams = useSearchParams();
@@ -18,7 +19,26 @@ export default function CustomerIdInitializer() {
     if (hasCheckedStatus.current) return;
     hasCheckedStatus.current = true;
 
+
     const checkCustomerStatusAndRedirect = async () => {
+      // Exempt authenticated admins from all customer redirects
+      const getCookie = (name: string): string | null => {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) {
+          const part = parts.pop();
+          if (part) {
+            return part.split(';').shift() ?? null;
+          }
+        }
+        return null;
+      };
+      const email = getCookie('user_email');
+      const decodedEmail = email ? decodeURIComponent(email) : null;
+      if (decodedEmail && adminList.includes(decodedEmail)) {
+        console.log('Authenticated admin detected, skipping all customer redirects.');
+        return;
+      }
       // Only skip redirect logic for admin pages
       const isAdminPage = pathname.startsWith('/admin');
       if (isAdminPage) {

@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import { useState, useEffect, useCallback } from 'react';
 import { motion, Variants, AnimatePresence } from 'framer-motion';
@@ -275,13 +275,13 @@ export default function AdminCatalogPage() {
   const [categories, setCategories] = useState<string[]>([]);
   const [collections, setCollections] = useState<string[]>([]);
   const [burgerOpen, setBurgerOpen] = useState(false);
-  
-  // Modal state
+
+  // Add Product Modal state
   const [showAddProductModal, setShowAddProductModal] = useState(false);
   const [modalStep, setModalStep] = useState<1 | 2 | 'success'>(1); // 1 for first page, 2 for second page, 'success' for completion
   const [copySuccess, setCopySuccess] = useState(false);
-  
-  // Form state for new product
+
+  // Product creation form state
   const [newProduct, setNewProduct] = useState({
     name: '',
     sku: '',
@@ -294,12 +294,39 @@ export default function AdminCatalogPage() {
     estructuras_disponibles: '',
     aplica_color_tela: false,
     colores_estructura_disponibles: '',
-    is_active: true
+    is_active: true,
+    image_url: ''
   });
+
+  // Library Image Modal state
+  const [showLibraryModal, setShowLibraryModal] = useState(false);
+  const [libraryImages, setLibraryImages] = useState<string[]>([]);
+  const [libraryLoading, setLibraryLoading] = useState(false);
+  const [selectedLibraryImage, setSelectedLibraryImage] = useState<string | null>(null);
+
+
+  // ...existing code...
+      {/* Library Image Modal */}
 
   // Authentication check
   const isAuthenticated = useAdminAuth();
   const router = useRouter();
+
+  // DEBUG: Log JWT payload after login
+  useEffect(() => {
+    (async () => {
+      // Only run in browser and if supabase.auth exists
+      if (typeof window !== 'undefined' && supabase && supabase.auth) {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session && session.access_token) {
+          const payload = JSON.parse(atob(session.access_token.split('.')[1]));
+          console.log('Decoded JWT payload:', payload);
+        } else {
+          console.log('No Supabase session found.');
+        }
+      }
+    })();
+  }, []);
 
   // Navigation functions
   const handleBackToAdmin = () => {
@@ -320,7 +347,8 @@ export default function AdminCatalogPage() {
       estructuras_disponibles: '',
       aplica_color_tela: false,
       colores_estructura_disponibles: '',
-      is_active: true
+      is_active: true,
+      image_url: ''
     });
   };
 
@@ -387,11 +415,40 @@ export default function AdminCatalogPage() {
       return;
     }
 
-    console.log('Saving product:', newProduct);
-    // TODO: Implement save to Supabase
-    
-    // For now, go to success page (will implement actual save later)
-    setModalStep('success');
+    // Prepare data for Supabase
+    const productToInsert = {
+      name: newProduct.name,
+      sku: newProduct.sku,
+      legacy_sku: newProduct.legacy_sku || null,
+      price: parseFloat(newProduct.price),
+      description: newProduct.description || null,
+      category: newProduct.category || null,
+      colección: newProduct.colección || null,
+      medidas: newProduct.medidas || null,
+      estructuras_disponibles: newProduct.estructuras_disponibles || null,
+      has_fabric_colors: !!newProduct.aplica_color_tela,
+      has_frame_finish: !!newProduct.colores_estructura_disponibles,
+      is_active: !!newProduct.is_active,
+          image_url: newProduct.image_url || null,
+          // You may want to handle JSON fields separately
+    };
+
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .insert([productToInsert])
+        .select();
+      if (error) {
+        console.error('Error inserting product:', error);
+        alert('Error al guardar el producto: ' + error.message);
+        return;
+      }
+      setModalStep('success');
+      // Optionally refresh product list or update UI
+    } catch (err) {
+      console.error('Unexpected error:', err);
+      alert('Error inesperado al guardar el producto.');
+    }
   };
 
   // Fetch products from Supabase
@@ -1145,35 +1202,77 @@ export default function AdminCatalogPage() {
                       {/* Image Upload Section */}
                       <div>
                         <h3 className="text-lg font-semibold text-gray-900 mb-4">Imagen del Producto</h3>
-                        <div 
-                          className="border-2 border-dashed border-gray-300 rounded-md p-6 text-center hover:border-green-400 transition-colors cursor-pointer"
-                          onClick={() => document.getElementById('image-upload')?.click()}
-                        >
-                          <div className="space-y-2">
-                            <svg className="w-12 h-12 text-gray-400 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                            </svg>
-                            <div className="text-sm text-gray-600">
-                              <p className="font-medium">Haz clic para subir una imagen</p>
-                              <p>o arrastra y suelta aquí</p>
+                        <div className="flex flex-col gap-3">
+                          <div 
+                            className="border-2 border-dashed border-gray-300 rounded-md p-6 text-center hover:border-green-400 transition-colors cursor-pointer"
+                            onClick={() => document.getElementById('image-upload')?.click()}
+                          >
+                            <div className="space-y-2">
+                              <svg className="w-12 h-12 text-gray-400 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                              </svg>
+                              <div className="text-sm text-gray-600">
+                                <p className="font-medium">Haz clic para subir una imagen</p>
+                                <p>o arrastra y suelta aquí</p>
+                              </div>
+                              <p className="text-xs text-gray-500">
+                                PNG, JPG, WEBP hasta 10MB
+                              </p>
                             </div>
-                            <p className="text-xs text-gray-500">
-                              PNG, JPG, WEBP hasta 10MB
-                            </p>
+                            <input 
+                              id="image-upload"
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={async (e) => {
+                                const file = e.target.files?.[0];
+                                if (!file) return;
+                                // Validate file size (max 10MB)
+                                if (file.size > 10 * 1024 * 1024) {
+                                  alert('La imagen debe ser menor a 10MB.');
+                                  return;
+                                }
+                                // Show uploading state (optional: you can add a state for this)
+                                try {
+                                  // Generate a unique filename: sku + timestamp + ext
+                                  const ext = file.name.split('.').pop();
+                                  const fileName = `${newProduct.sku || 'product'}_${Date.now()}.${ext}`;
+                                  // Upload to Supabase Storage (catalogo_new bucket)
+                                  const { data, error } = await supabase.storage
+                                    .from('catalogo_new')
+                                    .upload(fileName, file, {
+                                      cacheControl: '3600',
+                                      upsert: true
+                                    });
+                                  if (error) {
+                                    console.error('Error uploading image:', error);
+                                    alert('Error al subir la imagen: ' + error.message);
+                                    return;
+                                  }
+                                  // Get public URL
+                                  const { data: publicUrlData } = supabase.storage
+                                    .from('catalogo_new')
+                                    .getPublicUrl(data.path);
+                                  if (!publicUrlData?.publicUrl) {
+                                    alert('No se pudo obtener la URL pública de la imagen.');
+                                    return;
+                                  }
+                                  setNewProduct((prev) => ({ ...prev, image_url: publicUrlData.publicUrl }));
+                                  alert('Imagen subida exitosamente.');
+                                } catch (err) {
+                                  console.error('Unexpected error uploading image:', err);
+                                  alert('Error inesperado al subir la imagen.');
+                                }
+                              }}
+                            />
                           </div>
-                          <input 
-                            id="image-upload"
-                            type="file"
-                            accept="image/*"
-                            className="hidden"
-                            onChange={(e) => {
-                              const file = e.target.files?.[0];
-                              if (file) {
-                                console.log('File selected:', file);
-                                // TODO: Handle file upload to Supabase Storage
-                              }
-                            }}
-                          />
+                          <button
+                            type="button"
+                            className="mt-2 px-4 py-2 bg-blue-100 text-blue-800 rounded-md border border-blue-200 hover:bg-blue-200 transition-colors text-sm font-medium"
+                            onClick={() => setShowLibraryModal(true)}
+                          >
+                            Utiliza una imagen de tu librería Kusam
+                          </button>
                         </div>
                       </div>
                     </div>
