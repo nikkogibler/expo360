@@ -195,6 +195,7 @@ export default function AdminSettings() {
                 value={currentPassword}
                 onChange={(e) => setCurrentPassword(e.target.value)}
                 className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                style={{ color: '#4B2E09', fontWeight: 'bold' }}
                 required
                 disabled={loading}
               />
@@ -210,6 +211,7 @@ export default function AdminSettings() {
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                style={{ color: '#4B2E09', fontWeight: 'bold' }}
                 required
                 disabled={loading}
               />
@@ -234,6 +236,7 @@ export default function AdminSettings() {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                style={{ color: '#4B2E09', fontWeight: 'bold' }}
                 required
                 disabled={loading}
               />
