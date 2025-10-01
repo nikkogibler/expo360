@@ -1,4 +1,5 @@
 import { supabase } from '../../lib/supabaseClient';
+import { exemptAdminUUIDs } from '../config/adminList';
 
 export interface CreditUsageRecord {
   id: string;
@@ -98,6 +99,15 @@ export class CreditService {
     userId: string,
     imageDetails?: Record<string, unknown>
   ): Promise<CreditDeductionResult> {
+    // Exempt certain admin UUIDs from credit deduction
+    if (exemptAdminUUIDs.includes(userId)) {
+      return {
+        success: true,
+        remainingCredits: Number.POSITIVE_INFINITY,
+        usageRecordId: undefined,
+        error: undefined
+      };
+    }
     try {
       // Call the atomic credit deduction function
       const { data, error } = await supabase.rpc('deduct_admin_credit', {
