@@ -69,11 +69,12 @@ const DEFAULT_IMAGES: ImageItem[] = [
 
 
 
-import React from 'react';
+import React, { useState } from 'react';
+
 
 function DomeGallery({ images = DEFAULT_IMAGES }: DomeGalleryProps) {
-  // Debug: Log images received
-  console.log('[DomeGallery] images prop:', images);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<{ src: string; alt?: string } | null>(null);
 
   if (!images || images.length === 0) {
     return (
@@ -83,66 +84,177 @@ function DomeGallery({ images = DEFAULT_IMAGES }: DomeGalleryProps) {
     );
   }
 
+  const openModal = (img: ImageItem) => {
+    if (typeof img === 'string') {
+      setSelectedImage({ src: img });
+    } else {
+      setSelectedImage(img);
+    }
+    setModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setModalOpen(false);
+    setSelectedImage(null);
+  };
+
+  const handleDownload = async () => {
+    if (!selectedImage) return;
+    try {
+      const response = await fetch(selectedImage.src);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = selectedImage.alt || 'image.jpg';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      alert('Failed to download image.');
+    }
+  };
+
   return (
-    <div
-      style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-  gap: '2mm', // minimal spacing in millimeters
-        width: '100%',
-        padding: '2rem 0',
-        justifyItems: 'center',
-        alignItems: 'center',
-      }}
-    >
-      {images.map((img, idx) => {
-        const src = typeof img === 'string' ? img : img.src;
-        const alt = typeof img === 'string' ? '' : img.alt || '';
-        return (
+    <>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+          gap: '2mm',
+          width: '100%',
+          padding: '2rem 0',
+          justifyItems: 'center',
+          alignItems: 'center',
+        }}
+      >
+        {images.map((img, idx) => {
+          const src = typeof img === 'string' ? img : img.src;
+          const alt = typeof img === 'string' ? '' : img.alt || '';
+          return (
+            <div
+              key={src + idx}
+              style={{
+                boxShadow: '0 4px 24px 0 rgba(0,0,0,0.10)',
+                borderRadius: '20px',
+                overflow: 'hidden',
+                background: '#fff',
+                transition: 'transform 0.25s cubic-bezier(.25,1,.5,1)',
+                cursor: 'pointer',
+                width: '220px',
+                height: '220px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                position: 'relative',
+              }}
+              className="gallery-card"
+              onClick={() => openModal(img)}
+              onMouseEnter={e => {
+                (e.currentTarget as HTMLDivElement).style.transform = 'scale(1.06)';
+                (e.currentTarget as HTMLDivElement).style.zIndex = '2';
+              }}
+              onMouseLeave={e => {
+                (e.currentTarget as HTMLDivElement).style.transform = 'scale(1)';
+                (e.currentTarget as HTMLDivElement).style.zIndex = '1';
+              }}
+            >
+              <Image
+                src={src}
+                alt={alt}
+                width={220}
+                height={220}
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                  borderRadius: '20px',
+                  boxShadow: '0 2px 8px 0 rgba(0,0,0,0.08)',
+                  transition: 'box-shadow 0.2s',
+                }}
+              />
+            </div>
+          );
+        })}
+      </div>
+      {modalOpen && selectedImage && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh',
+            background: 'rgba(0,0,0,0.7)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+          }}
+          onClick={closeModal}
+        >
           <div
-            key={src + idx}
             style={{
-              boxShadow: '0 4px 24px 0 rgba(0,0,0,0.10)',
-              borderRadius: '20px',
-              overflow: 'hidden',
               background: '#fff',
-              transition: 'transform 0.25s cubic-bezier(.25,1,.5,1)',
-              cursor: 'pointer',
-              width: '220px',
-              height: '220px',
+              borderRadius: '20px',
+              padding: '1.5rem',
+              boxShadow: '0 8px 32px 0 rgba(0,0,0,0.25)',
+              maxWidth: '90vw',
+              maxHeight: '90vh',
               display: 'flex',
+              flexDirection: 'column',
               alignItems: 'center',
-              justifyContent: 'center',
               position: 'relative',
             }}
-            className="gallery-card"
-            onMouseEnter={e => {
-              (e.currentTarget as HTMLDivElement).style.transform = 'scale(1.06)';
-              (e.currentTarget as HTMLDivElement).style.zIndex = '2';
-            }}
-            onMouseLeave={e => {
-              (e.currentTarget as HTMLDivElement).style.transform = 'scale(1)';
-              (e.currentTarget as HTMLDivElement).style.zIndex = '1';
-            }}
+            onClick={e => e.stopPropagation()}
           >
             <Image
-              src={src}
-              alt={alt}
-              width={220}
-              height={220}
+              src={selectedImage.src}
+              alt={selectedImage.alt || ''}
+              width={810}
+              height={810}
               style={{
-                width: '100%',
-                height: '100%',
-                objectFit: 'cover',
-                borderRadius: '20px',
-                boxShadow: '0 2px 8px 0 rgba(0,0,0,0.08)',
-                transition: 'box-shadow 0.2s',
+                maxWidth: '85vw',
+                maxHeight: '81vh',
+                borderRadius: '16px',
+                objectFit: 'contain',
+                marginBottom: '1rem',
               }}
             />
+            <button
+              onClick={handleDownload}
+              style={{
+                background: '#4B2E09',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '8px',
+                padding: '0.5rem 1.5rem',
+                fontSize: '1rem',
+                cursor: 'pointer',
+                marginBottom: '0.5rem',
+              }}
+              type="button"
+            >
+              Download
+            </button>
+            <button
+              onClick={closeModal}
+              style={{
+                background: 'transparent',
+                color: '#4B2E09',
+                border: 'none',
+                fontSize: '1.2rem',
+                cursor: 'pointer',
+                marginTop: '0.5rem',
+              }}
+            >
+              Close
+            </button>
           </div>
-        );
-      })}
-    </div>
+        </div>
+      )}
+    </>
   );
 }
 
