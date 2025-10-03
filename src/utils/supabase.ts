@@ -44,3 +44,23 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     detectSessionInUrl: true,
   },
 });
+
+// Clear any invalid auth tokens on initialization (client-side only)
+if (typeof window !== 'undefined') {
+  supabase.auth.onAuthStateChange((event, session) => {
+    if (event === 'TOKEN_REFRESHED') {
+      console.log('Auth token refreshed successfully');
+    }
+  });
+  
+  // Check for invalid refresh token and clear if needed
+  supabase.auth.getSession().catch((error) => {
+    if (error.message?.includes('Refresh Token Not Found') || error.message?.includes('Invalid Refresh Token')) {
+      console.log('Clearing invalid auth session');
+      supabase.auth.signOut({ scope: 'local' }).catch(() => {
+        // Fallback: manually clear localStorage
+        localStorage.removeItem('supabase.auth.token');
+      });
+    }
+  });
+}

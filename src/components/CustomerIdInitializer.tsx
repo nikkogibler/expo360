@@ -50,6 +50,11 @@ export default function CustomerIdInitializer() {
 
       // Case 1: No customer ID exists in local storage.
       if (!customerId) {
+        // Do NOT redirect if on /evento-especial
+        if (pathname === '/evento-especial') {
+          console.log('No customer ID found on /evento-especial, but no redirect needed.');
+          return;
+        }
         console.log('No customer ID found, redirecting to landing page.');
         // Redirect to the correct event landing page
         let eventLanding = '/kusam';
