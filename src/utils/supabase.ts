@@ -47,7 +47,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 
 // Clear any invalid auth tokens on initialization (client-side only)
 if (typeof window !== 'undefined') {
-  supabase.auth.onAuthStateChange((event, session) => {
+  supabase.auth.onAuthStateChange((event) => {
     if (event === 'TOKEN_REFRESHED') {
       console.log('Auth token refreshed successfully');
     }
