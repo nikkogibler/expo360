@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
-import HamburgerMenu from '../../../components/HamburgerMenu';
+import BurgerMenu from '../../../components/BurgerMenu';
+import AdminMenu from '../../../components/AdminMenu';
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 type ImageItem = string | { src: string; alt?: string };
@@ -14,6 +15,7 @@ const ImageLibraryPage = () => {
   const router = useRouter();
   const [images, setImages] = useState<ImageItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [burgerOpen, setBurgerOpen] = useState(false);
 
   useEffect(() => {
     async function fetchImages() {
@@ -120,8 +122,9 @@ const ImageLibraryPage = () => {
             />
           </div>
         </div>
-  <div className="flex flex-row items-center" style={{ marginRight: '-202px' }}>
-          <HamburgerMenu />
+  <div className="flex flex-row items-center" style={{ marginRight: '-202px', position: 'relative' }}>
+          <BurgerMenu isOpen={burgerOpen} onClick={() => setBurgerOpen((o) => !o)} />
+          <AdminMenu open={burgerOpen} setOpen={setBurgerOpen} currentPage="image-library" />
         </div>
       </div>
       <div style={{ width: '100%', maxWidth: 1200, height: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

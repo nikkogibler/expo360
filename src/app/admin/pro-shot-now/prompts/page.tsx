@@ -1,7 +1,8 @@
 "use client";
 import React, { useEffect, useState } from "react";
 
-import HamburgerMenu from "../../../../components/HamburgerMenu";
+import BurgerMenu from "../../../../components/BurgerMenu";
+import AdminMenu from "../../../../components/AdminMenu";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../../../../lib/supabaseClient";
@@ -38,6 +39,7 @@ export default function PromptVisualizer() {
 	const [prompts, setPrompts] = useState<Prompt[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
+	const [burgerOpen, setBurgerOpen] = useState(false);
 
 			useEffect(() => {
 				const fetchPrompts = async () => {
@@ -161,8 +163,9 @@ export default function PromptVisualizer() {
 																							/>
 																						</div>
 											</div>
-											<div className="flex flex-row items-center">
-												<HamburgerMenu />
+											<div className="flex flex-row items-center" style={{ position: 'relative' }}>
+												<BurgerMenu isOpen={burgerOpen} onClick={() => setBurgerOpen((o) => !o)} />
+												<AdminMenu open={burgerOpen} setOpen={setBurgerOpen} currentPage="prompts" />
 											</div>
 										</div>
 					<div className="w-full max-w-6xl mx-auto mb-8 flex justify-center items-center" style={{ minHeight: '280px' }}>

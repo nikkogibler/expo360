@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import BurgerMenu from './BurgerMenu';
+import AdminMenu from './AdminMenu';
 
 interface SucursalCard {
   id: string;
@@ -127,7 +128,10 @@ const SucursalesGallery = () => {
             className="h-8 w-auto"
           />
         </div>
-        <BurgerMenu isOpen={burgerOpen} onClick={() => setBurgerOpen(!burgerOpen)} />
+        <div style={{ position: 'relative' }}>
+          <BurgerMenu isOpen={burgerOpen} onClick={() => setBurgerOpen(!burgerOpen)} />
+          <AdminMenu open={burgerOpen} setOpen={setBurgerOpen} currentPage="sucursales" />
+        </div>
       </div>
 
       {/* Hero Image */}

@@ -1,12 +1,16 @@
 
 'use client';
+import { useState } from 'react';
 import ImageStandardizer from '../../../../components/ImageStandardizer';
-import HamburgerMenu from '../../../../components/HamburgerMenu';
+import BurgerMenu from '../../../../components/BurgerMenu';
+import AdminMenu from '../../../../components/AdminMenu';
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 
 export default function OptimizadorPage() {
   const router = useRouter();
+  const [burgerOpen, setBurgerOpen] = useState(false);
+  
   return (
     <div
       className="min-h-screen w-full flex flex-col items-center justify-start px-4 py-10"
@@ -59,8 +63,9 @@ export default function OptimizadorPage() {
             />
           </div>
         </div>
-        <div className="flex flex-row items-center" style={{ marginRight: '-32px' }}>
-          <HamburgerMenu />
+        <div className="flex flex-row items-center" style={{ marginRight: '-32px', position: 'relative' }}>
+          <BurgerMenu isOpen={burgerOpen} onClick={() => setBurgerOpen((o) => !o)} />
+          <AdminMenu open={burgerOpen} setOpen={setBurgerOpen} currentPage="optimizador" />
         </div>
       </div>
       {/* Optimizador header image */}

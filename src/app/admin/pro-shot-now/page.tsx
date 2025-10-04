@@ -1,12 +1,15 @@
 "use client";
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
-import HamburgerMenu from '@/components/HamburgerMenu';
+import BurgerMenu from '@/components/BurgerMenu';
+import AdminMenu from '@/components/AdminMenu';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 
 export default function ProShotNowLanding() {
   const router = useRouter();
+  const [burgerOpen, setBurgerOpen] = useState(false);
+  
   return (
     <div
       className="min-h-screen flex flex-col items-center justify-start relative"
@@ -59,8 +62,9 @@ export default function ProShotNowLanding() {
             />
           </div>
         </div>
-  <div className="flex flex-row items-center" style={{ marginRight: '16px', marginTop: '12px' }}>
-          <HamburgerMenu />
+  <div className="flex flex-row items-center" style={{ marginRight: '16px', marginTop: '12px', position: 'relative' }}>
+          <BurgerMenu isOpen={burgerOpen} onClick={() => setBurgerOpen((o) => !o)} />
+          <AdminMenu open={burgerOpen} setOpen={setBurgerOpen} currentPage="pro-shot-now" />
         </div>
       </div>
   {/* Main content centered vertically and horizontally, but slightly higher */}
