@@ -6,7 +6,7 @@ import { supabase } from '../../lib/supabaseClient';
 const menuOptions = [
   { label: 'Admin Dashboard', action: 'admin-dashboard' },
   { label: 'Librería de Imágenes', action: 'image-library' },
-  { label: 'Optimizador de Imágenes', action: 'image-optimizer' },
+  { label: 'Optimizador de Imágenes', action: 'pro-shot-now-optimizer' },
   { label: 'Colección de Prompts', action: 'prompt-collection' },
   { label: 'Preferencias', action: 'settings' },
 ];
@@ -37,8 +37,8 @@ export default function HamburgerMenu() {
       router.push('/admin');
     } else if (action === 'image-library') {
       router.push('/admin/image-library');
-    } else if (action === 'image-optimizer') {
-      router.push('/admin/image-standardizer');
+    } else if (action === 'pro-shot-now-optimizer') {
+      router.push('/admin/pro-shot-now/optimizador');
     } else if (action === 'prompt-collection') {
       router.push('/admin/pro-shot-now/prompts');
     } else if (action === 'signout') {
