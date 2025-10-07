@@ -68,8 +68,8 @@ const cardData: BentoCardProps[] = [
   {
     color: '#F8F5F0',
     backgroundImage: 'url(/admin/ai_logo.png)', // Make sure this path exists
-    description: 'Estandarizar fotos de productos con opciones reales de telas y estructuras.',
-    label: 'Editar Fotos con KusamAI' // <-- New card label
+    description: '.',
+    label: 'ProShotNow™' // <-- New card label
   },
 
   {
@@ -566,7 +566,7 @@ const MagicBento: React.FC<BentoProps> = ({
       case 'Catálogo de Productos':
         router.push('/admin/catalogo');
         break;
-      case 'Editar Fotos con KusamAI':
+      case 'Editar Fotos con ProShotNow™':
         router.push('/admin/pro-shot-now');
         break;
       case 'Base de Datos Airtable':
@@ -812,7 +812,21 @@ const MagicBento: React.FC<BentoProps> = ({
                       </>
                     )}
                     <div className="card__header flex justify-between gap-3 relative" style={{ zIndex: 2 }}>
-                      <span className="card__label text-base" style={{ color: '#4B2E09', fontWeight: 'bold', display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%', height: '100%' }}>{card.label}</span>
+                      <span className="card__label text-base" style={{ color: '#4B2E09', fontWeight: 'bold', display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%', height: '100%' }}>
+                        {card.label && card.label.includes('ProShotNow™') ? (
+                          <>
+                            {card.label.split('ProShotNow™')[0]}
+                            <span style={{
+                              background: 'linear-gradient(90deg, #8B5CF6, #2563EB, #EC4899)',
+                              WebkitBackgroundClip: 'text',
+                              WebkitTextFillColor: 'transparent',
+                              backgroundClip: 'text',
+                            }}>
+                              ProShotNow™
+                            </span>
+                          </>
+                        ) : (card.label || '')}
+                      </span>
                     </div>
                     <div className="card__content flex flex-col relative" style={{ zIndex: 2 }}>
                       <h3 className={`card__title font-bold text-base m-0 mb-1 ${textAutoHide ? 'text-clamp-1' : ''}`} style={{ color: '#4B2E09' }}>
@@ -824,6 +838,61 @@ const MagicBento: React.FC<BentoProps> = ({
                       >
                         {card.description}
                       </p>
+                      {card.label && card.label.includes('ProShotNow™') && (
+                        <div style={{ marginTop: '12px' }}>
+                          <a 
+                            href="https://interzekt.com" 
+                            target="_blank" 
+                            rel="noopener noreferrer" 
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 backdrop-blur-sm rounded-full text-xs font-semibold border transition-colors duration-300 cursor-pointer"
+                            style={{
+                              backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                              borderColor: 'rgba(75, 46, 9, 0.3)',
+                              opacity: 1,
+                              transform: 'none'
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+                            }}
+                          >
+                            <svg 
+                              xmlns="http://www.w3.org/2000/svg" 
+                              width="24" 
+                              height="24" 
+                              viewBox="0 0 24 24" 
+                              fill="none" 
+                              stroke="currentColor" 
+                              strokeWidth="2" 
+                              strokeLinecap="round" 
+                              strokeLinejoin="round" 
+                              className="w-3.5 h-3.5"
+                              style={{ color: '#EAB308' }}
+                            >
+                              <path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"></path>
+                              <path d="M20 2v4"></path>
+                              <path d="M22 4h-4"></path>
+                              <circle cx="4" cy="20" r="2"></circle>
+                            </svg>
+                            <span style={{ color: '#4B2E09' }}>
+                              Powered by{' '}
+                              <span 
+                                className="font-bold"
+                                style={{
+                                  background: 'linear-gradient(to right, #06B6D4, #EC4899, #8B5CF6)',
+                                  WebkitBackgroundClip: 'text',
+                                  WebkitTextFillColor: 'transparent',
+                                  backgroundClip: 'text',
+                                }}
+                              >
+                                Interzekt
+                              </span>
+                            </span>
+                          </a>
+                        </div>
+                      )}
                     </div>
                   </ParticleCard>
                 );
