@@ -565,7 +565,7 @@ export default function AdminCatalogPage() {
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
       const filePath = `${fileName}`;
 
-      const { data: uploadData, error: uploadError } = await supabase.storage
+      const { error: uploadError } = await supabase.storage
         .from('product_variables')
         .upload(filePath, newVariable.image, {
           cacheControl: '3600',
