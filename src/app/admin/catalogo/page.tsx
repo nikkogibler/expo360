@@ -35,6 +35,7 @@ interface Product {
 interface ProductCardProps {
   product: Product;
   index: number;
+  onToggleActive: (productId: string, currentStatus: boolean) => Promise<void>;
 }
 
 // Animation variants following your existing pattern
@@ -65,9 +66,10 @@ const itemVariants: Variants = {
 };
 
 // Product Card Component (identical to public catalog)
-const ProductCard = ({ product, index }: ProductCardProps) => {
+const ProductCard = ({ product, index, onToggleActive }: ProductCardProps) => {
   const [imageError, setImageError] = useState(false);
   const [imageLoading, setImageLoading] = useState(true);
+  const [isTogglingActive, setIsTogglingActive] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
   const [imageKey, setImageKey] = useState(0);
@@ -233,6 +235,33 @@ const ProductCard = ({ product, index }: ProductCardProps) => {
           <div className="absolute top-2 right-2 bg-blue-600 text-white px-2 py-1 rounded-md text-sm font-semibold z-30">
             {formatCurrency(product.price)}
           </div>
+          
+          {/* Is Active Toggle */}
+          <div 
+            className="absolute top-2 left-2 bg-white rounded-lg shadow-md px-3 py-2 z-30 flex items-center gap-2 cursor-pointer hover:bg-gray-50 transition-colors"
+            onClick={async (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              if (isTogglingActive) return;
+              setIsTogglingActive(true);
+              try {
+                await onToggleActive(product.id, product.is_active);
+              } finally {
+                setIsTogglingActive(false);
+              }
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={product.is_active}
+              onChange={() => {}} // Handled by parent div onClick
+              className="w-4 h-4 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500 pointer-events-none"
+              disabled={isTogglingActive}
+            />
+            <span className={`text-xs font-semibold ${product.is_active ? 'text-green-700' : 'text-gray-500'}`}>
+              {isTogglingActive ? 'Actualizando...' : (product.is_active ? 'Activo' : 'Inactivo')}
+            </span>
+          </div>
         </div>
 
         {/* Product Info */}
@@ -278,6 +307,7 @@ export default function AdminCatalogPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedCollection, setSelectedCollection] = useState<string>('all');
+  const [selectedActiveStatus, setSelectedActiveStatus] = useState<'all' | 'active' | 'inactive'>('all');
   const [sortBy, setSortBy] = useState<'name' | 'price' | 'newest'>('name');
   const [categories, setCategories] = useState<string[]>([]);
   const [collections, setCollections] = useState<string[]>([]);
@@ -835,7 +865,7 @@ export default function AdminCatalogPage() {
       const { data: productsData, error: productsError } = await supabase
         .from('products')
         .select('*')
-        .eq('is_active', true)
+        // Admin view: fetch ALL products regardless of active status
         .order('name', { ascending: true });
 
       if (productsError) {
@@ -949,6 +979,14 @@ export default function AdminCatalogPage() {
       filtered = filtered.filter(product => product.colección === selectedCollection);
     }
 
+    // Active status filter
+    if (selectedActiveStatus === 'active') {
+      filtered = filtered.filter(product => product.is_active === true);
+    } else if (selectedActiveStatus === 'inactive') {
+      filtered = filtered.filter(product => product.is_active === false);
+    }
+    // if 'all', don't filter by active status
+
     // Sort products
     filtered.sort((a, b) => {
       switch (sortBy) {
@@ -963,7 +1001,44 @@ export default function AdminCatalogPage() {
     });
 
     setFilteredProducts(filtered);
-  }, [products, searchTerm, selectedCategory, selectedCollection, sortBy]);
+  }, [products, searchTerm, selectedCategory, selectedCollection, selectedActiveStatus, sortBy]);
+
+  // Toggle product active status
+  const handleToggleProductActive = async (productId: string, currentStatus: boolean) => {
+    try {
+      console.log('🔄 Toggling product active status:', productId, 'from', currentStatus, 'to', !currentStatus);
+      
+      const { error } = await supabase
+        .from('products')
+        .update({ is_active: !currentStatus })
+        .eq('id', productId);
+
+      if (error) {
+        console.error('❌ Error toggling product status:', error);
+        alert('Error al actualizar el estado: ' + error.message);
+        return;
+      }
+
+      console.log('✅ Product status toggled successfully');
+      
+      // Update local state immediately for instant feedback
+      setProducts(prevProducts =>
+        prevProducts.map(p =>
+          p.id === productId ? { ...p, is_active: !currentStatus } : p
+        )
+      );
+      
+      // Also update filtered products
+      setFilteredProducts(prevFiltered =>
+        prevFiltered.map(p =>
+          p.id === productId ? { ...p, is_active: !currentStatus } : p
+        )
+      );
+    } catch (err) {
+      console.error('Unexpected error:', err);
+      alert('Error inesperado al actualizar el estado.');
+    }
+  };
 
   useEffect(() => {
     fetchProducts();
@@ -1686,6 +1761,20 @@ export default function AdminCatalogPage() {
                   </select>
                 </div>
 
+                {/* Active Status Filter */}
+                <div className="flex-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Estado</label>
+                  <select
+                    value={selectedActiveStatus}
+                    onChange={(e) => setSelectedActiveStatus(e.target.value as 'all' | 'active' | 'inactive')}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black bg-white"
+                  >
+                    <option value="all" className="text-black">Todos los productos</option>
+                    <option value="active" className="text-black">Solo activos</option>
+                    <option value="inactive" className="text-black">Solo inactivos</option>
+                  </select>
+                </div>
+
                 {/* Sort */}
                 <div className="flex-1">
                   <label className="block text-sm font-medium text-gray-700 mb-1">Ordenar por</label>
@@ -1706,15 +1795,18 @@ export default function AdminCatalogPage() {
                 Mostrando {filteredProducts.length} de {products.length} productos
                 {selectedCategory !== 'all' && ` en categoría "${selectedCategory}"`}
                 {selectedCollection !== 'all' && ` de colección "${selectedCollection}"`}
+                {selectedActiveStatus === 'active' && ` (solo activos)`}
+                {selectedActiveStatus === 'inactive' && ` (solo inactivos)`}
               </div>
 
               {/* Clear Filters Button */}
-              {(selectedCategory !== 'all' || selectedCollection !== 'all' || searchTerm) && (
+              {(selectedCategory !== 'all' || selectedCollection !== 'all' || selectedActiveStatus !== 'all' || searchTerm) && (
                 <button
                   onClick={() => {
                     setSearchTerm('');
                     setSelectedCategory('all');
                     setSelectedCollection('all');
+                    setSelectedActiveStatus('all');
                   }}
                   className="self-start px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors text-sm"
                 >
@@ -1765,6 +1857,7 @@ export default function AdminCatalogPage() {
                   key={product.id}
                   product={product}
                   index={index}
+                  onToggleActive={handleToggleProductActive}
                 />
               ))}
             </motion.div>
