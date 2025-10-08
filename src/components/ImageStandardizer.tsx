@@ -36,6 +36,7 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
     return new Blob([new Uint8Array(array)], { type: mime });
   }
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string>('');
   const [selectedFabric, setSelectedFabric] = useState<string>('');
   const [selectedFrame, setSelectedFrame] = useState<string>('');
   const [additionalPrompt, setAdditionalPrompt] = useState<string>('');
@@ -47,6 +48,7 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
   const [processingStatus, setProcessingStatus] = useState<string>('');
   const [userId, setUserId] = useState<string | null>(null);
   const [showPurchaseModal, setShowPurchaseModal] = useState<boolean>(false);
+  const [isDragging, setIsDragging] = useState<boolean>(false);
   
   // Supabase options
   const [fabricOptions, setFabricOptions] = useState<GlobalProductOption[]>([]);
@@ -131,6 +133,15 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
     fetchOptions();
   }, []);
 
+  // Cleanup preview URL on unmount or when new image is selected
+  useEffect(() => {
+    return () => {
+      if (imagePreview) {
+        URL.revokeObjectURL(imagePreview);
+      }
+    };
+  }, [imagePreview]);
+
   // Helper function to validate base64 image data
   const validateBase64Image = (dataUrl: string): boolean => {
     if (!dataUrl.startsWith('data:image/')) {
@@ -173,7 +184,11 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
-      setImageFile(e.target.files[0]);
+      const file = e.target.files[0];
+      setImageFile(file);
+      // Create preview URL
+      const previewUrl = URL.createObjectURL(file);
+      setImagePreview(previewUrl);
     }
   };
 
@@ -531,10 +546,7 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
         <div className="flex-1">
           <div className="text-xs font-semibold mt-2" style={{ lineHeight: 1.2 }}>
             ProShotNow™ by{' '}
-            <a
-              href="https://interzekt.com"
-              target="_blank"
-              rel="noopener noreferrer"
+            <span
               style={{
                 fontWeight: 'bold',
                 background: 'linear-gradient(90deg, #8B5CF6, #2563EB, #EC4899)',
@@ -542,12 +554,11 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
                 WebkitTextFillColor: 'transparent',
                 backgroundClip: 'text',
                 color: 'transparent',
-                textDecoration: 'none',
                 padding: '0 2px',
               }}
             >
               Interzekt.com
-            </a>
+            </span>
           </div>
         </div>
         
@@ -576,29 +587,90 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
           />
           <label 
             htmlFor="image-upload"
-            className="w-full block border-2 border-dashed border-gray-300 hover:border-amber-400 rounded-lg py-4 px-6 cursor-pointer transition-colors duration-200 text-center"
-            style={{ borderColor: '#4B2E09', color: '#4B2E09' }}
+            className={`w-full block border-2 border-dashed rounded-lg py-4 px-6 cursor-pointer transition-colors duration-200 text-center ${
+              isDragging 
+                ? 'border-amber-500 bg-amber-50' 
+                : 'border-gray-300 hover:border-amber-400'
+            }`}
+            style={!isDragging ? { borderColor: '#4B2E09', color: '#4B2E09' } : undefined}
+            onDragOver={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setIsDragging(true);
+            }}
+            onDragEnter={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setIsDragging(true);
+            }}
+            onDragLeave={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setIsDragging(false);
+            }}
+            onDrop={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setIsDragging(false);
+              
+              const file = e.dataTransfer.files?.[0];
+              if (!file) return;
+              
+              // Check if it's an image
+              if (!file.type.startsWith('image/')) {
+                alert('Por favor, sube solo archivos de imagen.');
+                return;
+              }
+              
+              // Validate file size (max 3MB)
+              if (file.size > 3 * 1024 * 1024) {
+                alert('La imagen debe ser menor a 3MB.');
+                return;
+              }
+              
+              setImageFile(file);
+              const previewUrl = URL.createObjectURL(file);
+              setImagePreview(previewUrl);
+            }}
           >
-            <div className="flex flex-col items-center gap-2">
-              <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-              </svg>
-              <div>
-                <span className="font-medium">
-                  {imageFile ? imageFile.name : 'Seleccionar Archivo'}
-                </span>
-                {!imageFile && (
-                  <>
-                    <p className="text-sm text-gray-500 mt-1">
-                      Ningún archivo seleccionado
-                    </p>
-                    <p className="text-xs text-gray-400 mt-2">
-                      Solo JPG y PNG, máximo 3MB
-                    </p>
-                  </>
-                )}
+            {imageFile && imagePreview ? (
+              <div className="flex flex-col items-center gap-4">
+                <div className="relative w-full aspect-square max-w-xs">
+                  <Image
+                    src={imagePreview}
+                    alt="Vista previa"
+                    fill
+                    className="object-contain"
+                  />
+                </div>
+                <div className="flex items-center gap-2 text-green-600">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span className="font-medium">Imagen cargada exitosamente</span>
+                </div>
+                <p className="text-sm text-gray-600">
+                  Haz clic o arrastra otra imagen para cambiarla
+                </p>
               </div>
-            </div>
+            ) : (
+              <div className="flex flex-col items-center gap-2">
+                <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                </svg>
+                <div>
+                  <span className="font-medium">
+                    Seleccionar Archivo
+                  </span>
+                  <p className="text-sm text-gray-500 mt-1">
+                    o arrastra y suelta aquí
+                  </p>
+                  <p className="text-xs text-gray-400 mt-2">
+                    Solo JPG y PNG, máximo 3MB
+                  </p>
+                </div>
+              </div>
+            )}
           </label>
         </div>
       </div>

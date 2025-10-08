@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
         'X-Title': 'Kusam AI Furniture Editor'
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.5-flash-image-preview',
+        model: 'google/gemini-2.5-flash-image',
         messages: [
           {
             role: 'user',

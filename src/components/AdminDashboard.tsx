@@ -566,6 +566,9 @@ const MagicBento: React.FC<BentoProps> = ({
       case 'Catálogo de Productos':
         router.push('/admin/catalogo');
         break;
+      case 'ProShotNow™':
+        router.push('/admin/pro-shot-now');
+        break;
       case 'Editar Fotos con ProShotNow™':
         router.push('/admin/pro-shot-now');
         break;
@@ -1051,10 +1054,7 @@ const MagicBento: React.FC<BentoProps> = ({
         &copy; 2025
       </span>
       {' '}
-      <a
-        href="https://interzekt.com"
-        target="_blank"
-        rel="noopener noreferrer"
+      <span
         style={{
           fontWeight: 'bold',
           background: 'linear-gradient(90deg, #8B5CF6, #2563EB, #EC4899)',
@@ -1062,12 +1062,11 @@ const MagicBento: React.FC<BentoProps> = ({
           WebkitTextFillColor: 'transparent',
           backgroundClip: 'text',
           color: 'transparent',
-          textDecoration: 'none',
           padding: '0 2px',
         }}
       >
         Interzekt.com
-      </a>
+      </span>
       <span style={{ color: 'black', fontWeight: 'normal' }}>
         {' '}All rights reserved.
       </span>

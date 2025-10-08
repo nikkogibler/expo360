@@ -15,12 +15,19 @@ interface Product {
   id: string;
   name: string;
   sku: string;
+  legacy_sku?: string;
   price: number;
   image_url: string;
   description?: string;
   is_active: boolean;
   category?: string;
   colección?: string;
+  medidas?: string;
+  estructuras_disponibles?: string[];
+  available_fabric_colors?: string[];
+  available_frame_finishes?: string[];
+  has_fabric_colors?: boolean;
+  has_frame_finish?: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -264,15 +271,6 @@ const ProductCard = ({ product, index }: ProductCardProps) => {
 };
 
 export default function AdminCatalogPage() {
-  // Popup state for Editar Producto Existente
-  const [showEditProductPopup, setShowEditProductPopup] = useState(false);
-
-  // Auto-close popup after 3 seconds
-  useEffect(() => {
-    if (!showEditProductPopup) return;
-    const timeout = setTimeout(() => setShowEditProductPopup(false), 1500);
-    return () => clearTimeout(timeout);
-  }, [showEditProductPopup]);
   const [products, setProducts] = useState<Product[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -297,8 +295,17 @@ export default function AdminCatalogPage() {
     type: 'fabric_color',
     image: null as File | null
   });
+  const [variableImagePreview, setVariableImagePreview] = useState<string>('');
   const [variableUploadProgress, setVariableUploadProgress] = useState(false);
   const [variableSuccess, setVariableSuccess] = useState(false);
+
+  // Available variables from global_product_options
+  const [availableFabricColors, setAvailableFabricColors] = useState<Array<{id: string, name: string}>>([]);
+  const [availableFinishes, setAvailableFinishes] = useState<Array<{id: string, name: string}>>([]);
+
+  // Drag and drop states
+  const [isDraggingProduct, setIsDraggingProduct] = useState(false);
+  const [isDraggingVariable, setIsDraggingVariable] = useState(false);
 
   // Product creation form state
   const [newProduct, setNewProduct] = useState({
@@ -310,12 +317,40 @@ export default function AdminCatalogPage() {
     category: '',
     colección: '',
     medidas: '',
-    estructuras_disponibles: '',
+    estructuras_disponibles: [] as string[], // Legacy field for structure names
+    colores_tela_disponibles: [] as string[], // Fabric color names
     aplica_color_tela: false,
-    colores_estructura_disponibles: '',
+    colores_estructura_disponibles: [] as string[], // Frame finish names
     is_active: true,
     image_url: ''
   });
+
+  // Edit Product Modal state
+  const [showEditProductModal, setShowEditProductModal] = useState(false);
+  const [editModalStep, setEditModalStep] = useState<'select' | 'edit' | 'delete'>('select');
+  const [selectedProductToEdit, setSelectedProductToEdit] = useState<Product | null>(null);
+  const [editProduct, setEditProduct] = useState({
+    id: '',
+    name: '',
+    sku: '',
+    legacy_sku: '',
+    price: '',
+    description: '',
+    category: '',
+    colección: '',
+    medidas: '',
+    estructuras_disponibles: [] as string[],
+    colores_tela_disponibles: [] as string[],
+    aplica_color_tela: false,
+    colores_estructura_disponibles: [] as string[],
+    is_active: true,
+    image_url: ''
+  });
+  const [deletePassword, setDeletePassword] = useState('');
+  const [deleteError, setDeleteError] = useState('');
+  const [savePassword, setSavePassword] = useState('');
+  const [saveError, setSaveError] = useState('');
+  const [showSaveConfirm, setShowSaveConfirm] = useState(false);
 
   // Library Image Modal state
 
@@ -359,9 +394,10 @@ export default function AdminCatalogPage() {
       category: '',
       colección: '',
       medidas: '',
-      estructuras_disponibles: '',
+      estructuras_disponibles: [],
+      colores_tela_disponibles: [],
       aplica_color_tela: false,
-      colores_estructura_disponibles: '',
+      colores_estructura_disponibles: [],
       is_active: true,
       image_url: ''
     });
@@ -440,12 +476,13 @@ export default function AdminCatalogPage() {
       category: newProduct.category || null,
       colección: newProduct.colección || null,
       medidas: newProduct.medidas || null,
-      estructuras_disponibles: newProduct.estructuras_disponibles || null,
-      has_fabric_colors: !!newProduct.aplica_color_tela,
-      has_frame_finish: !!newProduct.colores_estructura_disponibles,
+      estructuras_disponibles: newProduct.estructuras_disponibles.length > 0 ? newProduct.estructuras_disponibles : null,
+      available_frame_finishes: newProduct.colores_estructura_disponibles.length > 0 ? newProduct.colores_estructura_disponibles : null,
+      available_fabric_colors: newProduct.colores_tela_disponibles.length > 0 ? newProduct.colores_tela_disponibles : null,
+      has_fabric_colors: !!newProduct.aplica_color_tela && newProduct.colores_tela_disponibles.length > 0,
+      has_frame_finish: newProduct.colores_estructura_disponibles.length > 0,
       is_active: !!newProduct.is_active,
-          image_url: newProduct.image_url || null,
-          // You may want to handle JSON fields separately
+      image_url: newProduct.image_url || null,
     };
 
     try {
@@ -466,6 +503,37 @@ export default function AdminCatalogPage() {
     }
   };
 
+  // Function to reload variables
+  const reloadVariables = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('global_product_options')
+        .select('id, name, type')
+        .eq('is_active', true)
+        .order('name');
+
+      if (error) {
+        console.error('Error fetching variables:', error);
+        return;
+      }
+
+      if (data) {
+        const fabrics = data
+          .filter(v => v.type === 'fabric_color')
+          .map(v => ({ id: v.id, name: v.name }));
+        
+        const finishes = data
+          .filter(v => v.type === 'finish')
+          .map(v => ({ id: v.id, name: v.name }));
+
+        setAvailableFabricColors(fabrics);
+        setAvailableFinishes(finishes);
+      }
+    } catch (err) {
+      console.error('Unexpected error fetching variables:', err);
+    }
+  };
+
   // Variable Modal handlers
   const handleCloseVariableModal = () => {
     setShowAddVariableModal(false);
@@ -475,6 +543,11 @@ export default function AdminCatalogPage() {
       type: 'fabric_color',
       image: null
     });
+    setVariableImagePreview('');
+    // Reload variables when closing modal (if product modal is still open)
+    if (showAddProductModal) {
+      reloadVariables();
+    }
   };
 
   const handleSaveVariable = async () => {
@@ -544,6 +617,213 @@ export default function AdminCatalogPage() {
     }
   };
 
+  // Edit Product Modal Functions
+  const handleSelectProductToEdit = (product: Product) => {
+    console.log('🔍 Selected product for edit:', product);
+    console.log('📦 available_fabric_colors:', product.available_fabric_colors);
+    console.log('📦 available_frame_finishes:', product.available_frame_finishes);
+    
+    // Parse JSONB fields properly
+    let fabricColors: string[] = [];
+    let frameFinishes: string[] = [];
+    
+    // Handle available_fabric_colors (JSONB)
+    if (product.available_fabric_colors) {
+      if (Array.isArray(product.available_fabric_colors)) {
+        fabricColors = product.available_fabric_colors;
+      } else if (typeof product.available_fabric_colors === 'string') {
+        try {
+          fabricColors = JSON.parse(product.available_fabric_colors);
+        } catch (e) {
+          console.error('Error parsing available_fabric_colors:', e);
+        }
+      }
+    }
+    
+    // Handle available_frame_finishes (JSONB)
+    if (product.available_frame_finishes) {
+      if (Array.isArray(product.available_frame_finishes)) {
+        frameFinishes = product.available_frame_finishes;
+      } else if (typeof product.available_frame_finishes === 'string') {
+        try {
+          frameFinishes = JSON.parse(product.available_frame_finishes);
+        } catch (e) {
+          console.error('Error parsing available_frame_finishes:', e);
+        }
+      }
+    }
+    
+    console.log('✅ Parsed fabricColors:', fabricColors);
+    console.log('✅ Parsed frameFinishes:', frameFinishes);
+    
+    setSelectedProductToEdit(product);
+    setEditProduct({
+      id: product.id,
+      name: product.name,
+      sku: product.sku,
+      legacy_sku: product.legacy_sku || '',
+      price: product.price.toString(),
+      description: product.description || '',
+      category: product.category || '',
+      colección: product.colección || '',
+      medidas: product.medidas || '',
+      estructuras_disponibles: Array.isArray(product.estructuras_disponibles) ? product.estructuras_disponibles : [],
+      colores_tela_disponibles: fabricColors,
+      aplica_color_tela: !!product.has_fabric_colors,
+      colores_estructura_disponibles: frameFinishes,
+      is_active: product.is_active,
+      image_url: product.image_url || ''
+    });
+    setEditModalStep('edit');
+  };
+
+  const handleCloseEditModal = () => {
+    setShowEditProductModal(false);
+    setEditModalStep('select');
+    setSelectedProductToEdit(null);
+    setDeletePassword('');
+    setDeleteError('');
+    setSavePassword('');
+    setSaveError('');
+    setShowSaveConfirm(false);
+  };
+
+  const handleUpdateProduct = async () => {
+    if (!editProduct.id) return;
+
+    // Verify admin password first
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        setSaveError('No se pudo verificar la sesión del administrador.');
+        return;
+      }
+
+      // Attempt to sign in with the provided password to verify
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: user.email || '',
+        password: savePassword,
+      });
+
+      if (signInError) {
+        setSaveError('Contraseña incorrecta. Por favor, intenta de nuevo.');
+        return;
+      }
+
+      // Password verified, proceed with update
+      const productToUpdate = {
+        name: editProduct.name,
+        sku: editProduct.sku,
+        legacy_sku: editProduct.legacy_sku || null,
+        price: parseFloat(editProduct.price),
+        description: editProduct.description || null,
+        category: editProduct.category || null,
+        colección: editProduct.colección || null,
+        medidas: editProduct.medidas || null,
+        estructuras_disponibles: editProduct.estructuras_disponibles.length > 0 ? editProduct.estructuras_disponibles : null,
+        available_frame_finishes: editProduct.colores_estructura_disponibles.length > 0 ? editProduct.colores_estructura_disponibles : null,
+        available_fabric_colors: editProduct.colores_tela_disponibles.length > 0 ? editProduct.colores_tela_disponibles : null,
+        has_fabric_colors: !!editProduct.aplica_color_tela && editProduct.colores_tela_disponibles.length > 0,
+        has_frame_finish: editProduct.colores_estructura_disponibles.length > 0,
+        is_active: !!editProduct.is_active,
+        image_url: editProduct.image_url || null,
+        updated_at: new Date().toISOString(),
+      };
+
+      console.log('🔄 Updating product with ID:', editProduct.id);
+      console.log('📦 Product data to update:', JSON.stringify(productToUpdate, null, 2));
+
+      const { data, error, count, status, statusText } = await supabase
+        .from('products')
+        .update(productToUpdate)
+        .eq('id', editProduct.id)
+        .select();
+
+      console.log('📡 Update response status:', status, statusText);
+      console.log('📡 Update response count:', count);
+      console.log('📡 Update response data:', data);
+
+      if (error) {
+        console.error('❌ Error updating product:', error);
+        console.error('Error details:', JSON.stringify(error, null, 2));
+        console.error('Error code:', error.code);
+        console.error('Error hint:', error.hint);
+        setSaveError('Error al actualizar el producto: ' + error.message);
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        console.warn('⚠️ No data returned from update. Update may have been blocked by RLS policy.');
+        console.warn('⚠️ This usually means the update was blocked or no rows matched.');
+      }
+
+      console.log('✅ Product update completed');
+      
+      // Show success message
+      alert('¡Producto actualizado exitosamente!');
+      
+      // Close modal
+      handleCloseEditModal();
+      
+      // Force a fresh fetch of products
+      setLoading(true);
+      await fetchProducts();
+      
+      // Small delay to ensure state updates propagate
+      setTimeout(() => {
+        console.log('🔄 Products refreshed after update');
+      }, 100);
+    } catch (err) {
+      console.error('Unexpected error:', err);
+      setSaveError('Error inesperado al actualizar el producto.');
+    }
+  };
+
+  const handleDeleteProduct = async () => {
+    if (!editProduct.id || !selectedProductToEdit) return;
+
+    // Verify admin password
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        setDeleteError('No se pudo verificar la sesión del administrador.');
+        return;
+      }
+
+      // Attempt to sign in with the provided password to verify
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: user.email || '',
+        password: deletePassword,
+      });
+
+      if (signInError) {
+        setDeleteError('Contraseña incorrecta. Por favor, intenta de nuevo.');
+        return;
+      }
+
+      // Delete the product
+      const { error: deleteError } = await supabase
+        .from('products')
+        .delete()
+        .eq('id', editProduct.id);
+
+      if (deleteError) {
+        console.error('Error deleting product:', deleteError);
+        alert('Error al eliminar el producto: ' + deleteError.message);
+        return;
+      }
+
+      alert(`Producto "${selectedProductToEdit.name}" eliminado permanentemente.`);
+      handleCloseEditModal();
+      fetchProducts(); // Refresh the product list
+    } catch (err) {
+      console.error('Unexpected error:', err);
+      setDeleteError('Error inesperado al eliminar el producto.');
+    }
+  };
+
   // Fetch products from Supabase
   const fetchProducts = useCallback(async () => {
     setLoading(true);
@@ -563,14 +843,19 @@ export default function AdminCatalogPage() {
       }
 
       console.log('📦 Raw products data sample:', productsData?.[0]);
+      console.log('📊 Total products fetched:', productsData?.length);
 
       // Filter out products that begin with "XX"
       const typedProducts = (productsData as Product[]).filter(product => 
         !product.name.startsWith('XX')
       );
       
+      console.log('✅ Products after XX filter:', typedProducts.length);
+      
       setProducts(typedProducts);
       setFilteredProducts(typedProducts);
+      
+      console.log('🔄 Products state updated');
 
       // Extract unique categories and collections
       const uniqueCategories = [...new Set(typedProducts
@@ -711,6 +996,13 @@ export default function AdminCatalogPage() {
     };
   }, [showAddProductModal]);
 
+  // Load available variables when modal opens
+  useEffect(() => {
+    if (showAddProductModal) {
+      reloadVariables();
+    }
+  }, [showAddProductModal]);
+
   // Show loading or redirect if not authenticated
   if (isAuthenticated === null) {
     return (
@@ -820,12 +1112,15 @@ export default function AdminCatalogPage() {
               </p>
             </div>
             
-            {/* Add Product Button - Placeholder for now */}
+            {/* Product Action Buttons */}
             <div className="mb-6 flex gap-4 justify-center">
               <button
-                className="text-white font-bold py-3 px-6 rounded-lg shadow-lg transition-all duration-200 flex items-center gap-2 opacity-60 cursor-not-allowed hover:opacity-80 focus:outline-none"
+                className="text-white font-bold py-3 px-6 rounded-lg shadow-lg transition-all duration-200 flex items-center gap-2 hover:opacity-90 focus:outline-none"
                 style={{ backgroundColor: '#595144' }}
-                onClick={() => setShowEditProductPopup(true)}
+                onClick={() => {
+                  setEditModalStep('select');
+                  setShowEditProductModal(true);
+                }}
                 type="button"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -833,9 +1128,9 @@ export default function AdminCatalogPage() {
                 </svg>
                 Editar Producto Existente
               </button>
-              {/* Popup for Editar Producto Existente */}
+              {/* Edit Product Modal */}
               <AnimatePresence>
-                {showEditProductPopup && (
+                {showEditProductModal && (
                   <motion.div
                     className="fixed inset-0 z-50 flex items-center justify-center"
                     initial={{ opacity: 0 }}
@@ -852,8 +1147,7 @@ export default function AdminCatalogPage() {
                       style={{ background: 'rgba(0,0,0,0.32)' }}
                     />
                     <motion.div
-                      className="relative bg-transparent flex flex-col items-center p-0"
-                      style={{ minWidth: 0, minHeight: 0, display: 'flex', justifyContent: 'center', alignItems: 'center' }}
+                      className="relative bg-white rounded-lg shadow-xl max-w-6xl w-full max-h-[90vh] overflow-y-auto"
                       initial={{ scale: 0.95, opacity: 0 }}
                       animate={{ scale: 1, opacity: 1 }}
                       exit={{ scale: 0.95, opacity: 0 }}
@@ -861,16 +1155,441 @@ export default function AdminCatalogPage() {
                         opacity: { duration: 0.5, ease: [0.4, 0, 0.2, 1] },
                         scale: { duration: 0.5, ease: [0.4, 0, 0.2, 1] }
                       }}
-                      tabIndex={-1}
+                      onClick={(e) => e.stopPropagation()}
                     >
-                      <Image
-                        src="/enconstruccion.png"
-                        alt="En construcción"
-                        width={960}
-                        height={660}
-                        style={{ maxWidth: 960, maxHeight: 660, width: '75vw', height: 'auto', objectFit: 'contain' }}
-                        priority
-                      />
+                      {/* Modal Header */}
+                      <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-white rounded-t-lg">
+                        <h2 className="text-2xl font-bold text-gray-800">
+                          {editModalStep === 'select' && 'Seleccionar Producto para Editar'}
+                          {editModalStep === 'edit' && 'Editar Producto'}
+                          {editModalStep === 'delete' && 'Confirmar Eliminación'}
+                        </h2>
+                        <button
+                          onClick={handleCloseEditModal}
+                          className="text-gray-400 hover:text-gray-600 transition-colors"
+                        >
+                          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
+
+                      {/* Modal Body */}
+                      <div className="p-6">
+                        {/* STEP 1: Product Selection */}
+                        {editModalStep === 'select' && (
+                          <div className="space-y-4">
+                            <p className="text-gray-600 mb-4">Selecciona un producto de tu catálogo para editar:</p>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-[60vh] overflow-y-auto p-2">
+                              {products.map((product) => (
+                                <div
+                                  key={product.id}
+                                  className="border border-gray-200 rounded-lg p-4 hover:border-green-500 hover:shadow-md transition-all cursor-pointer"
+                                  onClick={() => handleSelectProductToEdit(product)}
+                                >
+                                  {product.image_url && (
+                                    <div className="w-full h-40 mb-3 relative">
+                                      <Image
+                                        src={product.image_url}
+                                        alt={product.name}
+                                        fill
+                                        className="object-cover rounded"
+                                      />
+                                    </div>
+                                  )}
+                                  <h3 className="font-semibold text-gray-900 mb-1">{product.name}</h3>
+                                  <p className="text-sm text-gray-600">SKU: {product.sku}</p>
+                                  <p className="text-sm text-gray-600">Precio: ${product.price.toFixed(2)} MXN</p>
+                                  {product.category && (
+                                    <span className="inline-block mt-2 bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs">
+                                      {product.category}
+                                    </span>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* STEP 2: Edit Form */}
+                        {editModalStep === 'edit' && selectedProductToEdit && (
+                          <div className="space-y-6">
+                            <div className="flex items-center justify-between mb-4">
+                              <div className="text-sm text-gray-700">
+                                Editando: <span className="font-semibold text-gray-900">{selectedProductToEdit.name}</span>
+                              </div>
+                              <button
+                                onClick={() => setEditModalStep('delete')}
+                                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md transition-colors flex items-center gap-2"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                                Borrar Producto
+                              </button>
+                            </div>
+
+                            {/* Edit Form Fields */}
+                            <div className="space-y-4">
+                              {/* Name */}
+                              <div>
+                                <label className="block text-sm font-semibold text-gray-900 mb-1">
+                                  Nombre del Producto *
+                                </label>
+                                <input
+                                  type="text"
+                                  value={editProduct.name}
+                                  onChange={(e) => setEditProduct({ ...editProduct, name: e.target.value })}
+                                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 focus:ring-2 focus:ring-green-500 focus:border-green-500 placeholder:text-gray-600"
+                                  placeholder="Ej: Sillón Moderno"
+                                  required
+                                />
+                              </div>
+
+                              {/* Price */}
+                              <div>
+                                <label className="block text-sm font-semibold text-gray-900 mb-1">
+                                  Precio (MXN) *
+                                </label>
+                                <input
+                                  type="number"
+                                  step="0.01"
+                                  value={editProduct.price}
+                                  onChange={(e) => setEditProduct({ ...editProduct, price: e.target.value })}
+                                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 focus:ring-2 focus:ring-green-500 focus:border-green-500 placeholder:text-gray-600"
+                                  placeholder="0.00"
+                                  required
+                                />
+                              </div>
+
+                              {/* Description */}
+                              <div>
+                                <label className="block text-sm font-semibold text-gray-900 mb-1">
+                                  Descripción
+                                </label>
+                                <textarea
+                                  value={editProduct.description}
+                                  onChange={(e) => setEditProduct({ ...editProduct, description: e.target.value })}
+                                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 focus:ring-2 focus:ring-green-500 focus:border-green-500 placeholder:text-gray-600"
+                                  rows={3}
+                                  placeholder="Descripción detallada del producto..."
+                                />
+                              </div>
+
+                              {/* Category */}
+                              <div>
+                                <label className="block text-sm font-semibold text-gray-900 mb-1">
+                                  Categoría
+                                </label>
+                                <input
+                                  type="text"
+                                  value={editProduct.category}
+                                  onChange={(e) => setEditProduct({ ...editProduct, category: e.target.value })}
+                                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 focus:ring-2 focus:ring-green-500 focus:border-green-500 placeholder:text-gray-600"
+                                  placeholder="Ej: Sala, Recámara, Comedor"
+                                />
+                              </div>
+
+                              {/* Colección */}
+                              <div>
+                                <label className="block text-sm font-semibold text-gray-900 mb-1">
+                                  Colección
+                                </label>
+                                <input
+                                  type="text"
+                                  value={editProduct.colección}
+                                  onChange={(e) => setEditProduct({ ...editProduct, colección: e.target.value })}
+                                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 focus:ring-2 focus:ring-green-500 focus:border-green-500 placeholder:text-gray-600"
+                                  placeholder="Ej: Moderna 2024"
+                                />
+                              </div>
+
+                              {/* Medidas */}
+                              <div>
+                                <label className="block text-sm font-semibold text-gray-900 mb-1">
+                                  Medidas
+                                </label>
+                                <input
+                                  type="text"
+                                  value={editProduct.medidas}
+                                  onChange={(e) => setEditProduct({ ...editProduct, medidas: e.target.value })}
+                                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 focus:ring-2 focus:ring-green-500 focus:border-green-500 placeholder:text-gray-600"
+                                  placeholder="Ej: 180cm x 80cm x 90cm"
+                                />
+                              </div>
+
+                              {/* Image URL */}
+                              <div>
+                                <label className="block text-sm font-semibold text-gray-900 mb-1">
+                                  URL de Imagen
+                                </label>
+                                <input
+                                  type="url"
+                                  value={editProduct.image_url}
+                                  onChange={(e) => setEditProduct({ ...editProduct, image_url: e.target.value })}
+                                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 focus:ring-2 focus:ring-green-500 focus:border-green-500 placeholder:text-gray-600"
+                                  placeholder="https://ejemplo.com/imagen.jpg"
+                                />
+                                {editProduct.image_url && (
+                                  <div className="mt-2 relative w-full h-48">
+                                    <Image
+                                      src={editProduct.image_url}
+                                      alt="Vista previa"
+                                      fill
+                                      className="object-contain rounded border"
+                                    />
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Has Fabric Colors - Checkbox */}
+                              <div className="flex items-center gap-2">
+                                <input
+                                  type="checkbox"
+                                  id="edit-has-fabric"
+                                  checked={editProduct.aplica_color_tela}
+                                  onChange={(e) => setEditProduct({ ...editProduct, aplica_color_tela: e.target.checked })}
+                                  className="w-4 h-4 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500"
+                                />
+                                <label htmlFor="edit-has-fabric" className="text-sm font-semibold text-gray-900">
+                                  Aplica Color de Tela
+                                </label>
+                              </div>
+
+                              {/* Available Fabric Colors - Multi-select Grid */}
+                              {editProduct.aplica_color_tela && (
+                                <div>
+                                  <label className="block text-sm font-semibold text-gray-900 mb-2">
+                                    Colores de Tela Disponibles 
+                                  </label>
+                                  <div className="text-xs text-gray-600 mb-2">
+                                    Currently selected: {editProduct.colores_tela_disponibles.length > 0 ? editProduct.colores_tela_disponibles.join(', ') : 'None'}
+                                  </div>
+                                  <div className="border border-gray-300 rounded-md p-3 bg-gray-50">
+                                    {availableFabricColors.length === 0 ? (
+                                      <p className="text-sm text-gray-700 italic">
+                                        No hay colores de tela disponibles.
+                                      </p>
+                                    ) : (
+                                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                                        {availableFabricColors.map((fabric) => {
+                                          const isChecked = editProduct.colores_tela_disponibles.some(
+                                            color => color.toUpperCase().trim() === fabric.name.toUpperCase().trim()
+                                          );
+                                          return (
+                                            <label key={fabric.id} className="flex items-center gap-2 cursor-pointer hover:bg-gray-100 p-2 rounded">
+                                              <input
+                                                type="checkbox"
+                                                checked={isChecked}
+                                                onChange={(e) => {
+                                                  const checked = e.target.checked;
+                                                  setEditProduct({
+                                                    ...editProduct,
+                                                    colores_tela_disponibles: checked
+                                                      ? [...editProduct.colores_tela_disponibles, fabric.name]
+                                                      : editProduct.colores_tela_disponibles.filter(
+                                                          n => n.toUpperCase().trim() !== fabric.name.toUpperCase().trim()
+                                                        )
+                                                  });
+                                                }}
+                                                className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 flex-shrink-0"
+                                              />
+                                              <span className="text-sm text-gray-900">{fabric.name}</span>
+                                            </label>
+                                          );
+                                        })}
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Frame Finishes - Multi-select Grid */}
+                              <div>
+                                <label className="block text-sm font-semibold text-gray-900 mb-2">
+                                  Acabados de Estructura Disponibles 
+                                </label>
+                                <div className="text-xs text-gray-600 mb-2">
+                                  Currently selected: {editProduct.colores_estructura_disponibles.length > 0 ? editProduct.colores_estructura_disponibles.join(', ') : 'None'}
+                                </div>
+                                <div className="border border-gray-300 rounded-md p-3 bg-gray-50">
+                                  {availableFinishes.length === 0 ? (
+                                    <p className="text-sm text-gray-700 italic">
+                                      No hay acabados de estructura disponibles.
+                                    </p>
+                                  ) : (
+                                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                                      {availableFinishes.map((finish) => {
+                                        const isChecked = editProduct.colores_estructura_disponibles.some(
+                                          color => color.toUpperCase().trim() === finish.name.toUpperCase().trim()
+                                        );
+                                        return (
+                                          <label key={finish.id} className="flex items-center gap-2 cursor-pointer hover:bg-gray-100 p-2 rounded">
+                                            <input
+                                              type="checkbox"
+                                              checked={isChecked}
+                                              onChange={(e) => {
+                                                const checked = e.target.checked;
+                                                setEditProduct({
+                                                  ...editProduct,
+                                                  colores_estructura_disponibles: checked
+                                                    ? [...editProduct.colores_estructura_disponibles, finish.name]
+                                                    : editProduct.colores_estructura_disponibles.filter(
+                                                        n => n.toUpperCase().trim() !== finish.name.toUpperCase().trim()
+                                                      )
+                                                });
+                                              }}
+                                              className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 flex-shrink-0"
+                                            />
+                                            <span className="text-sm text-gray-900">{finish.name}</span>
+                                          </label>
+                                        );
+                                      })}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* Is Active */}
+                              <div className="flex items-center gap-2">
+                                <input
+                                  type="checkbox"
+                                  id="edit-is-active"
+                                  checked={editProduct.is_active}
+                                  onChange={(e) => setEditProduct({ ...editProduct, is_active: e.target.checked })}
+                                  className="w-4 h-4 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500"
+                                />
+                                <label htmlFor="edit-is-active" className="text-sm font-semibold text-gray-900">
+                                  Producto Activo
+                                </label>
+                              </div>
+                            </div>
+
+                            {/* Password Confirmation for Save */}
+                            {showSaveConfirm && (
+                              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                                <h4 className="text-sm font-semibold text-gray-900 mb-2">Confirmar Cambios</h4>
+                                <label className="block mb-3">
+                                  <span className="text-sm font-medium text-gray-700 mb-2 block">
+                                    Ingresa tu contraseña de administrador para guardar los cambios:
+                                  </span>
+                                  <input
+                                    type="password"
+                                    value={savePassword}
+                                    onChange={(e) => {
+                                      setSavePassword(e.target.value);
+                                      setSaveError('');
+                                    }}
+                                    className="w-full border border-gray-300 rounded-md px-4 py-2 text-gray-900 focus:ring-2 focus:ring-green-500 placeholder:text-gray-600"
+                                    placeholder="Contraseña de administrador"
+                                  />
+                                </label>
+                                {saveError && (
+                                  <p className="text-sm text-red-600 mb-3">{saveError}</p>
+                                )}
+                                <div className="flex gap-3">
+                                  <button
+                                    onClick={() => {
+                                      setShowSaveConfirm(false);
+                                      setSavePassword('');
+                                      setSaveError('');
+                                    }}
+                                    className="px-4 py-2 text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 rounded-md font-medium"
+                                  >
+                                    Cancelar
+                                  </button>
+                                  <button
+                                    onClick={handleUpdateProduct}
+                                    disabled={!savePassword}
+                                    className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                                  >
+                                    Confirmar y Guardar
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Action Buttons */}
+                            <div className="flex gap-3 justify-end pt-4 border-t">
+                              <button
+                                onClick={() => setEditModalStep('select')}
+                                className="px-6 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md font-medium"
+                              >
+                                Cancelar
+                              </button>
+                              <button
+                                onClick={() => setShowSaveConfirm(true)}
+                                className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md font-semibold"
+                              >
+                                Guardar Cambios
+                              </button>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* STEP 3: Delete Confirmation */}
+                        {editModalStep === 'delete' && selectedProductToEdit && (
+                          <div className="space-y-6">
+                            <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+                              <div className="flex items-start gap-4">
+                                <svg className="w-12 h-12 text-red-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                </svg>
+                                <div className="flex-1">
+                                  <h3 className="text-lg font-bold text-red-900 mb-2">¡ADVERTENCIA!</h3>
+                                  <p className="text-red-800 mb-4">
+                                    Estás a punto de eliminar permanentemente el producto:
+                                  </p>
+                                  <div className="bg-white rounded p-4 mb-4">
+                                    <p className="font-bold text-gray-900">{selectedProductToEdit.name}</p>
+                                    <p className="text-sm text-gray-600">SKU: {selectedProductToEdit.sku}</p>
+                                  </div>
+                                  <p className="text-red-800 font-semibold">
+                                    Esta acción NO se puede deshacer. La eliminación es permanente.
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="space-y-4">
+                              <label className="block">
+                                <span className="text-sm font-medium text-gray-700 mb-2 block">
+                                  Para confirmar, ingresa tu contraseña de administrador:
+                                </span>
+                                <input
+                                  type="password"
+                                  value={deletePassword}
+                                  onChange={(e) => {
+                                    setDeletePassword(e.target.value);
+                                    setDeleteError('');
+                                  }}
+                                  className="w-full border border-gray-300 rounded-md px-4 py-2 focus:ring-2 focus:ring-red-500"
+                                  placeholder="Contraseña de administrador"
+                                />
+                              </label>
+                              {deleteError && (
+                                <p className="text-sm text-red-600">{deleteError}</p>
+                              )}
+                            </div>
+
+                            <div className="flex gap-3 justify-end pt-4 border-t">
+                              <button
+                                onClick={() => setEditModalStep('edit')}
+                                className="px-6 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md"
+                              >
+                                Cancelar
+                              </button>
+                              <button
+                                onClick={handleDeleteProduct}
+                                disabled={!deletePassword}
+                                className="px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md font-semibold disabled:bg-gray-400 disabled:cursor-not-allowed"
+                              >
+                                Eliminar Permanentemente
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </motion.div>
                   </motion.div>
                 )}
@@ -1288,32 +2007,116 @@ export default function AdminCatalogPage() {
                             />
                           </div>
 
-                          {/* Estructuras Disponibles */}
+                          {/* Colores de Tela Disponibles - Multi-select */}
                           <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                              Estructuras Disponibles
-                            </label>
-                            <textarea 
-                              value={newProduct.estructuras_disponibles}
-                              onChange={(e) => setNewProduct({...newProduct, estructuras_disponibles: e.target.value})}
-                              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500 custom-text-input custom-placeholder"
-                              rows={2}
-                              placeholder="Ej: Aluminio, Acero, Madera Teca..."
-                            />
+                            <div className="flex items-center justify-between mb-1">
+                              <label className="block text-sm font-medium text-gray-700">
+                                Colores de Tela Disponibles
+                              </label>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setNewVariable({ ...newVariable, type: 'fabric_color' });
+                                  setShowAddVariableModal(true);
+                                }}
+                                className="text-xs px-2 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded flex items-center gap-1"
+                              >
+                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                </svg>
+                                Nueva Tela
+                              </button>
+                            </div>
+                            <div className="border border-gray-300 rounded-md p-3 bg-gray-50">
+                              {availableFabricColors.length === 0 ? (
+                                <p className="text-sm text-gray-500 italic">
+                                  No hay colores de tela disponibles. Añade variables primero.
+                                </p>
+                              ) : (
+                                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                                  {availableFabricColors.map((fabric) => (
+                                    <label key={fabric.id} className="flex items-center gap-2 cursor-pointer hover:bg-gray-100 p-2 rounded">
+                                      <input
+                                        type="checkbox"
+                                        checked={newProduct.colores_tela_disponibles.includes(fabric.name)}
+                                        onChange={(e) => {
+                                          const isChecked = e.target.checked;
+                                          setNewProduct({
+                                            ...newProduct,
+                                            colores_tela_disponibles: isChecked
+                                              ? [...newProduct.colores_tela_disponibles, fabric.name]
+                                              : newProduct.colores_tela_disponibles.filter(n => n !== fabric.name)
+                                          });
+                                        }}
+                                        className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 flex-shrink-0"
+                                      />
+                                      <span className="text-sm text-gray-700">{fabric.name}</span>
+                                    </label>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                            {newProduct.colores_tela_disponibles.length > 0 && (
+                              <p className="text-xs text-gray-500 mt-1">
+                                Seleccionadas: {newProduct.colores_tela_disponibles.join(', ')}
+                              </p>
+                            )}
                           </div>
 
-                          {/* Colores de Estructura Disponibles */}
+                          {/* Colores de Estructura Disponibles - Multi-select */}
                           <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                              Colores de Estructura Disponibles
-                            </label>
-                            <textarea 
-                              value={newProduct.colores_estructura_disponibles}
-                              onChange={(e) => setNewProduct({...newProduct, colores_estructura_disponibles: e.target.value})}
-                              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500 custom-text-input custom-placeholder"
-                              rows={2}
-                              placeholder="Ej: Negro, Blanco, Gris Tormenta, Arena..."
-                            />
+                            <div className="flex items-center justify-between mb-1">
+                              <label className="block text-sm font-medium text-gray-700">
+                                Colores de Estructura Disponibles
+                              </label>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setNewVariable({ ...newVariable, type: 'finish' });
+                                  setShowAddVariableModal(true);
+                                }}
+                                className="text-xs px-2 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded flex items-center gap-1"
+                              >
+                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                </svg>
+                                Nueva Estructura
+                              </button>
+                            </div>
+                            <div className="border border-gray-300 rounded-md p-3 bg-gray-50">
+                              {availableFinishes.length === 0 ? (
+                                <p className="text-sm text-gray-500 italic">
+                                  No hay colores disponibles. Añade variables primero.
+                                </p>
+                              ) : (
+                                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                                  {availableFinishes.map((finish) => (
+                                    <label key={finish.id} className="flex items-center gap-2 cursor-pointer hover:bg-gray-100 p-2 rounded">
+                                      <input
+                                        type="checkbox"
+                                        checked={newProduct.colores_estructura_disponibles.includes(finish.name)}
+                                        onChange={(e) => {
+                                          const isChecked = e.target.checked;
+                                          setNewProduct({
+                                            ...newProduct,
+                                            colores_estructura_disponibles: isChecked
+                                              ? [...newProduct.colores_estructura_disponibles, finish.name]
+                                              : newProduct.colores_estructura_disponibles.filter(n => n !== finish.name)
+                                          });
+                                        }}
+                                        className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 flex-shrink-0"
+                                      />
+                                      <span className="text-sm text-gray-700">{finish.name}</span>
+                                    </label>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                            {newProduct.colores_estructura_disponibles.length > 0 && (
+                              <p className="text-xs text-gray-500 mt-1">
+                                Seleccionados: {newProduct.colores_estructura_disponibles.join(', ')}
+                              </p>
+                            )}
                           </div>
 
                           {/* Aplica Color de Tela - Checkbox */}
@@ -1351,21 +2154,123 @@ export default function AdminCatalogPage() {
                         <h3 className="text-lg font-semibold text-gray-900 mb-4">Imagen del Producto</h3>
                         <div className="flex flex-col gap-3">
                           <div 
-                            className="border-2 border-dashed border-gray-300 rounded-md p-6 text-center hover:border-green-400 transition-colors cursor-pointer"
+                            className={`border-2 border-dashed rounded-md p-6 text-center transition-colors cursor-pointer ${
+                              isDraggingProduct 
+                                ? 'border-green-500 bg-green-50' 
+                                : 'border-gray-300 hover:border-green-400'
+                            }`}
                             onClick={() => document.getElementById('image-upload')?.click()}
+                            onDragOver={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setIsDraggingProduct(true);
+                            }}
+                            onDragEnter={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setIsDraggingProduct(true);
+                            }}
+                            onDragLeave={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setIsDraggingProduct(false);
+                            }}
+                            onDrop={async (e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setIsDraggingProduct(false);
+                              
+                              const file = e.dataTransfer.files?.[0];
+                              if (!file) return;
+                              
+                              // Check if it's an image
+                              if (!file.type.startsWith('image/')) {
+                                alert('Por favor, sube solo archivos de imagen.');
+                                return;
+                              }
+                              
+                              // Validate file size (max 10MB)
+                              if (file.size > 10 * 1024 * 1024) {
+                                alert('La imagen debe ser menor a 10MB.');
+                                return;
+                              }
+                              
+                              try {
+                                const ext = file.name.split('.').pop();
+                                const fileName = `${newProduct.sku || 'product'}_${Date.now()}.${ext}`;
+                                
+                                const uploadResult = await supabase.storage
+                                  .from('catalogo_new')
+                                  .upload(fileName, file, {
+                                    cacheControl: '3600',
+                                    upsert: true
+                                  });
+                                
+                                if (uploadResult.error) {
+                                  console.error('Error uploading image:', uploadResult.error);
+                                  alert('Error al subir la imagen: ' + uploadResult.error.message);
+                                  return;
+                                }
+                                
+                                const publicUrlData = supabase.storage
+                                  .from('catalogo_new')
+                                  .getPublicUrl(uploadResult.data.path);
+                                
+                                if (!publicUrlData?.data?.publicUrl) {
+                                  alert('No se pudo obtener la URL pública de la imagen.');
+                                  return;
+                                }
+                                
+                                setNewProduct((prev) => ({ ...prev, image_url: publicUrlData.data.publicUrl }));
+                                // Image preview will show success - no alert needed
+                              } catch (err) {
+                                console.error('Unexpected error uploading image:', err);
+                                alert('Error inesperado al subir la imagen.');
+                              }
+                            }}
                           >
-                            <div className="space-y-2">
-                              <svg className="w-12 h-12 text-gray-400 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                              </svg>
-                              <div className="text-sm text-gray-600">
-                                <p className="font-medium">Haz clic para subir una imagen</p>
-                                <p>o arrastra y suelta aquí</p>
+                            {newProduct.image_url ? (
+                              <div className="space-y-3">
+                                <div className="relative w-full max-w-xs mx-auto">
+                                  <Image
+                                    src={newProduct.image_url}
+                                    alt="Vista previa"
+                                    width={300}
+                                    height={300}
+                                    className="rounded-lg object-cover"
+                                  />
+                                </div>
+                                <div className="flex items-center justify-center gap-2 text-green-600">
+                                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                  </svg>
+                                  <span className="text-sm font-medium">Imagen cargada exitosamente</span>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setNewProduct((prev) => ({ ...prev, image_url: '' }));
+                                  }}
+                                  className="text-sm text-blue-600 hover:text-blue-700 underline"
+                                >
+                                  Cambiar imagen
+                                </button>
                               </div>
-                              <p className="text-xs text-gray-500">
-                                PNG, JPG, WEBP hasta 10MB
-                              </p>
-                            </div>
+                            ) : (
+                              <div className="space-y-2">
+                                <svg className="w-12 h-12 text-gray-400 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                                </svg>
+                                <div className="text-sm text-gray-600">
+                                  <p className="font-medium">Haz clic para subir una imagen</p>
+                                  <p>o arrastra y suelta aquí</p>
+                                </div>
+                                <p className="text-xs text-gray-500">
+                                  PNG, JPG, WEBP hasta 10MB
+                                </p>
+                              </div>
+                            )}
                             <input 
                               id="image-upload"
                               type="file"
@@ -1405,7 +2310,7 @@ export default function AdminCatalogPage() {
                                     return;
                                   }
                                   setNewProduct((prev) => ({ ...prev, image_url: publicUrlData.data.publicUrl }));
-                                  alert('Imagen subida exitosamente.');
+                                  // Image preview will show success - no alert needed
                                 } catch (err) {
                                   console.error('Unexpected error uploading image:', err);
                                   alert('Error inesperado al subir la imagen.');
@@ -1556,7 +2461,7 @@ export default function AdminCatalogPage() {
         {/* Add Variable Modal */}
         <AnimatePresence>
         {showAddVariableModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="fixed inset-0 z-[60] flex items-center justify-center">
             {/* Video Backdrop */}
             <motion.div 
               className="absolute inset-0"
@@ -1660,18 +2565,80 @@ export default function AdminCatalogPage() {
                       <label htmlFor="variable-image" className="block text-sm font-medium text-gray-700 mb-2">
                         Imagen <span className="text-red-500">*</span>
                       </label>
-                      <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md hover:border-gray-400 transition-colors">
+                      <div 
+                        className={`mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-dashed rounded-md transition-colors cursor-pointer ${
+                          isDraggingVariable 
+                            ? 'border-blue-500 bg-blue-50' 
+                            : 'border-gray-300 hover:border-gray-400'
+                        }`}
+                        onDragOver={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setIsDraggingVariable(true);
+                        }}
+                        onDragEnter={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setIsDraggingVariable(true);
+                        }}
+                        onDragLeave={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setIsDraggingVariable(false);
+                        }}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setIsDraggingVariable(false);
+                          
+                          const file = e.dataTransfer.files?.[0];
+                          if (!file) return;
+                          
+                          // Check if it's an image
+                          if (!file.type.startsWith('image/')) {
+                            alert('Por favor, sube solo archivos de imagen.');
+                            return;
+                          }
+                          
+                          // Validate file size (max 10MB)
+                          if (file.size > 10 * 1024 * 1024) {
+                            alert('La imagen debe ser menor a 10MB.');
+                            return;
+                          }
+                          
+                          setNewVariable({ ...newVariable, image: file });
+                          // Create preview URL
+                          const previewUrl = URL.createObjectURL(file);
+                          setVariableImagePreview(previewUrl);
+                        }}
+                        onClick={() => !newVariable.image && document.getElementById('variable-image')?.click()}
+                      >
                         <div className="space-y-1 text-center">
-                          {newVariable.image ? (
-                            <div className="flex flex-col items-center">
-                              <svg className="w-12 h-12 text-green-500 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                              </svg>
-                              <p className="text-sm text-gray-600">{newVariable.image.name}</p>
+                          {newVariable.image && variableImagePreview ? (
+                            <div className="space-y-3">
+                              <div className="relative w-full max-w-xs mx-auto">
+                                <Image
+                                  src={variableImagePreview}
+                                  alt="Vista previa"
+                                  width={200}
+                                  height={200}
+                                  className="rounded-lg object-cover"
+                                />
+                              </div>
+                              <div className="flex items-center justify-center gap-2 text-green-600">
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <span className="text-sm font-medium">Imagen cargada exitosamente</span>
+                              </div>
                               <button
                                 type="button"
-                                onClick={() => setNewVariable({ ...newVariable, image: null })}
-                                className="mt-2 text-sm text-red-600 hover:text-red-700"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setNewVariable({ ...newVariable, image: null });
+                                  setVariableImagePreview('');
+                                }}
+                                className="text-sm text-blue-600 hover:text-blue-700 underline"
                               >
                                 Cambiar imagen
                               </button>
@@ -1696,6 +2663,9 @@ export default function AdminCatalogPage() {
                                       const file = e.target.files?.[0];
                                       if (file) {
                                         setNewVariable({ ...newVariable, image: file });
+                                        // Create preview URL
+                                        const previewUrl = URL.createObjectURL(file);
+                                        setVariableImagePreview(previewUrl);
                                       }
                                     }}
                                     required
