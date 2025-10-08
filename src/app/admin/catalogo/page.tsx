@@ -193,7 +193,7 @@ const ProductCard = ({ product, index, onToggleActive }: ProductCardProps) => {
           {!imageError && product.image_url ? (
             <Image
               key={`product-${product.id}-${imageKey}`}
-              src={product.image_url}
+              src={product.image_url.trim()}
               alt={product.name}
               fill
               sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
@@ -382,6 +382,10 @@ export default function AdminCatalogPage() {
   const [saveError, setSaveError] = useState('');
   const [showSaveConfirm, setShowSaveConfirm] = useState(false);
 
+  // AI Rephrase state
+  const [isRephrasing, setIsRephrasing] = useState(false);
+  const [rephraseError, setRephraseError] = useState('');
+
   // Library Image Modal state
 
 
@@ -530,6 +534,74 @@ export default function AdminCatalogPage() {
     } catch (err) {
       console.error('Unexpected error:', err);
       alert('Error inesperado al guardar el producto.');
+    }
+  };
+
+  // AI Rephrase function for Add Product form
+  const handleRephraseNewProduct = async () => {
+    if (!newProduct.description || newProduct.description.length <= 100) {
+      return;
+    }
+
+    setIsRephrasing(true);
+    setRephraseError('');
+
+    try {
+      const response = await fetch('/api/rephrase-description', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          description: newProduct.description
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to rephrase description');
+      }
+
+      const data = await response.json();
+      setNewProduct({ ...newProduct, description: data.rephrased });
+    } catch (error) {
+      console.error('Error rephrasing:', error);
+      setRephraseError('No se pudo reformular la descripción. Intenta de nuevo.');
+    } finally {
+      setIsRephrasing(false);
+    }
+  };
+
+  // AI Rephrase function for Edit Product form
+  const handleRephraseEditProduct = async () => {
+    if (!editProduct.description || editProduct.description.length <= 100) {
+      return;
+    }
+
+    setIsRephrasing(true);
+    setRephraseError('');
+
+    try {
+      const response = await fetch('/api/rephrase-description', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          description: editProduct.description
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to rephrase description');
+      }
+
+      const data = await response.json();
+      setEditProduct({ ...editProduct, description: data.rephrased });
+    } catch (error) {
+      console.error('Error rephrasing:', error);
+      setRephraseError('No se pudo reformular la descripción. Intenta de nuevo.');
+    } finally {
+      setIsRephrasing(false);
     }
   };
 
@@ -875,10 +947,14 @@ export default function AdminCatalogPage() {
       console.log('📦 Raw products data sample:', productsData?.[0]);
       console.log('📊 Total products fetched:', productsData?.length);
 
-      // Filter out products that begin with "XX"
-      const typedProducts = (productsData as Product[]).filter(product => 
-        !product.name.startsWith('XX')
-      );
+      // Filter out products that begin with "XX" and clean image URLs
+      const typedProducts = (productsData as Product[])
+        .filter(product => !product.name.startsWith('XX'))
+        .map(product => ({
+          ...product,
+          // Trim whitespace from image_url to prevent loading errors
+          image_url: product.image_url?.trim() || product.image_url
+        }));
       
       console.log('✅ Products after XX filter:', typedProducts.length);
       
@@ -1339,16 +1415,62 @@ export default function AdminCatalogPage() {
 
                               {/* Description */}
                               <div>
-                                <label className="block text-sm font-semibold text-gray-900 mb-1">
-                                  Descripción
-                                </label>
+                                <div className="flex items-center justify-between mb-1">
+                                  <label className="block text-sm font-semibold text-gray-900">
+                                    Descripción
+                                    <span className={`ml-2 text-xs ${editProduct.description.length > 100 ? 'text-red-500 font-semibold' : 'text-gray-500'}`}>
+                                      ({editProduct.description.length}/100 caracteres)
+                                    </span>
+                                  </label>
+                                  {editProduct.description.length > 100 && (
+                                    <button
+                                      type="button"
+                                      onClick={handleRephraseEditProduct}
+                                      disabled={isRephrasing}
+                                      className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-md text-xs font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md"
+                                    >
+                                      {isRephrasing ? (
+                                        <>
+                                          <svg className="animate-spin h-3 w-3" fill="none" viewBox="0 0 24 24">
+                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                          </svg>
+                                          Reformulando...
+                                        </>
+                                      ) : (
+                                        <>
+                                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                          </svg>
+                                          Reformular con IA
+                                        </>
+                                      )}
+                                    </button>
+                                  )}
+                                </div>
                                 <textarea
                                   value={editProduct.description}
-                                  onChange={(e) => setEditProduct({ ...editProduct, description: e.target.value })}
-                                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 focus:ring-2 focus:ring-green-500 focus:border-green-500 placeholder:text-gray-600"
+                                  onChange={(e) => {
+                                    setEditProduct({ ...editProduct, description: e.target.value });
+                                    setRephraseError('');
+                                  }}
+                                  className={`w-full border rounded-md px-3 py-2 text-gray-900 focus:ring-2 focus:ring-green-500 focus:border-green-500 placeholder:text-gray-600 ${
+                                    editProduct.description.length > 100 ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                                  }`}
                                   rows={3}
-                                  placeholder="Descripción detallada del producto..."
+                                  placeholder="Descripción detallada del producto (máx. 100 caracteres)..."
                                 />
+                                {editProduct.description.length > 100 && (
+                                  <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
+                                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                      <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                                    </svg>
+                                    Excede el límite por {editProduct.description.length - 100} caracteres. Usa &quot;Reformular con IA&quot; para ajustar.
+                                  </p>
+                                )}
+                                {rephraseError && (
+                                  <p className="text-xs text-red-600 mt-1">{rephraseError}</p>
+                                )}
                               </div>
 
                               {/* Category */}
@@ -2088,16 +2210,62 @@ export default function AdminCatalogPage() {
                         <div className="space-y-4">
                           {/* Description */}
                           <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                              Descripción
-                            </label>
+                            <div className="flex items-center justify-between mb-1">
+                              <label className="block text-sm font-medium text-gray-700">
+                                Descripción
+                                <span className={`ml-2 text-xs ${newProduct.description.length > 100 ? 'text-red-500 font-semibold' : 'text-gray-500'}`}>
+                                  ({newProduct.description.length}/100 caracteres)
+                                </span>
+                              </label>
+                              {newProduct.description.length > 100 && (
+                                <button
+                                  type="button"
+                                  onClick={handleRephraseNewProduct}
+                                  disabled={isRephrasing}
+                                  className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-md text-xs font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md"
+                                >
+                                  {isRephrasing ? (
+                                    <>
+                                      <svg className="animate-spin h-3 w-3" fill="none" viewBox="0 0 24 24">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                      </svg>
+                                      Reformulando...
+                                    </>
+                                  ) : (
+                                    <>
+                                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                      </svg>
+                                      Reformular con IA
+                                    </>
+                                  )}
+                                </button>
+                              )}
+                            </div>
                             <textarea 
                               value={newProduct.description}
-                              onChange={(e) => setNewProduct({...newProduct, description: e.target.value})}
-                              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500 custom-text-input custom-placeholder"
+                              onChange={(e) => {
+                                setNewProduct({...newProduct, description: e.target.value});
+                                setRephraseError('');
+                              }}
+                              className={`w-full border rounded-md px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500 custom-text-input custom-placeholder ${
+                                newProduct.description.length > 100 ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                              }`}
                               rows={3}
-                              placeholder="Descripción detallada del producto..."
+                              placeholder="Descripción detallada del producto (máx. 100 caracteres)..."
                             />
+                            {newProduct.description.length > 100 && (
+                              <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
+                                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                                </svg>
+                                Excede el límite por {newProduct.description.length - 100} caracteres. Usa &quot;Reformular con IA&quot; para ajustar.
+                              </p>
+                            )}
+                            {rephraseError && (
+                              <p className="text-xs text-red-600 mt-1">{rephraseError}</p>
+                            )}
                           </div>
 
                           {/* Colores de Tela Disponibles - Multi-select */}
