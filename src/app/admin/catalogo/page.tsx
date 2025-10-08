@@ -290,6 +290,16 @@ export default function AdminCatalogPage() {
   const [modalStep, setModalStep] = useState<1 | 2 | 'success'>(1); // 1 for first page, 2 for second page, 'success' for completion
   const [copySuccess, setCopySuccess] = useState(false);
 
+  // Add Variable Modal state
+  const [showAddVariableModal, setShowAddVariableModal] = useState(false);
+  const [newVariable, setNewVariable] = useState({
+    name: '',
+    type: 'fabric_color',
+    image: null as File | null
+  });
+  const [variableUploadProgress, setVariableUploadProgress] = useState(false);
+  const [variableSuccess, setVariableSuccess] = useState(false);
+
   // Product creation form state
   const [newProduct, setNewProduct] = useState({
     name: '',
@@ -453,6 +463,84 @@ export default function AdminCatalogPage() {
     } catch (err) {
       console.error('Unexpected error:', err);
       alert('Error inesperado al guardar el producto.');
+    }
+  };
+
+  // Variable Modal handlers
+  const handleCloseVariableModal = () => {
+    setShowAddVariableModal(false);
+    setVariableSuccess(false);
+    setNewVariable({
+      name: '',
+      type: 'fabric_color',
+      image: null
+    });
+  };
+
+  const handleSaveVariable = async () => {
+    // Validation
+    if (!newVariable.name || !newVariable.image) {
+      alert('Por favor, completa todos los campos obligatorios');
+      return;
+    }
+
+    setVariableUploadProgress(true);
+
+    try {
+      // Upload image to product_variables bucket
+      const fileExt = newVariable.image.name.split('.').pop();
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+      const filePath = `${fileName}`;
+
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('product_variables')
+        .upload(filePath, newVariable.image, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (uploadError) {
+        console.error('Error uploading image:', uploadError);
+        alert('Error al subir la imagen: ' + uploadError.message);
+        setVariableUploadProgress(false);
+        return;
+      }
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('product_variables')
+        .getPublicUrl(filePath);
+
+      // Insert into global_product_options
+      const { error: insertError } = await supabase
+        .from('global_product_options')
+        .insert([{
+          name: newVariable.name,
+          type: newVariable.type,
+          value_data: { image_url: publicUrl },
+          is_active: true
+        }]);
+
+      if (insertError) {
+        console.error('Error inserting variable:', insertError);
+        alert('Error al guardar la variable: ' + insertError.message);
+        setVariableUploadProgress(false);
+        return;
+      }
+
+      // Success!
+      setVariableUploadProgress(false);
+      setVariableSuccess(true);
+      
+      // Auto-close after 2 seconds
+      setTimeout(() => {
+        handleCloseVariableModal();
+      }, 2000);
+
+    } catch (err) {
+      console.error('Unexpected error:', err);
+      alert('Error inesperado al guardar la variable.');
+      setVariableUploadProgress(false);
     }
   };
 
@@ -797,6 +885,17 @@ export default function AdminCatalogPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                 </svg>
                 Agregar Producto
+              </button>
+
+              <button 
+                className="text-white font-bold py-3 px-6 rounded-lg shadow-lg transition-all duration-200 flex items-center gap-2 hover:opacity-90"
+                style={{ backgroundColor: '#8b7355' }}
+                onClick={() => setShowAddVariableModal(true)}
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                Añadir Variables
               </button>
             </div>
           </header>
@@ -1449,6 +1548,200 @@ export default function AdminCatalogPage() {
                   )}
                 </div>
               </div>
+            </motion.div>
+          </div>
+        )}
+        </AnimatePresence>
+
+        {/* Add Variable Modal */}
+        <AnimatePresence>
+        {showAddVariableModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center">
+            {/* Video Backdrop */}
+            <motion.div 
+              className="absolute inset-0"
+              onClick={handleCloseVariableModal}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+            >
+              <video
+                className="absolute inset-0 w-full h-full object-cover"
+                src="/leaves1.mp4"
+                autoPlay
+                loop
+                muted
+                playsInline
+                disablePictureInPicture={true}
+                preload="auto"
+                style={{ opacity: 0.1 }}
+              />
+            </motion.div>
+            
+            {/* Modal Content */}
+            <motion.div
+              className="relative bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto"
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              transition={{ duration: 0.2 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Modal Header */}
+              <div className="flex items-center justify-between p-6 border-b border-gray-200">
+                <h2 className="text-2xl font-bold text-gray-800">
+                  Añadir Nueva Variable
+                </h2>
+                <button
+                  onClick={handleCloseVariableModal}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                  aria-label="Cerrar modal"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Modal Body */}
+              <div className="p-6">
+                {variableSuccess ? (
+                  <div className="text-center py-8">
+                    <div className="mb-4">
+                      <svg className="w-16 h-16 text-green-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                    <h3 className="text-2xl font-bold text-gray-800 mb-2">
+                      ¡Variable Creada Exitosamente!
+                    </h3>
+                    <p className="text-gray-600">
+                      La variable ha sido agregada al catálogo.
+                    </p>
+                  </div>
+                ) : (
+                  <form onSubmit={(e) => { e.preventDefault(); handleSaveVariable(); }} className="space-y-6">
+                    {/* Variable Name */}
+                    <div>
+                      <label htmlFor="variable-name" className="block text-sm font-medium text-gray-700 mb-2">
+                        Nombre de la Variable <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        id="variable-name"
+                        type="text"
+                        value={newVariable.name}
+                        onChange={(e) => setNewVariable({ ...newVariable, name: e.target.value })}
+                        placeholder="ej. Azul Marino, Negro Mate, etc."
+                        className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-800"
+                        required
+                      />
+                    </div>
+
+                    {/* Variable Type */}
+                    <div>
+                      <label htmlFor="variable-type" className="block text-sm font-medium text-gray-700 mb-2">
+                        Tipo de Variable <span className="text-red-500">*</span>
+                      </label>
+                      <select
+                        id="variable-type"
+                        value={newVariable.type}
+                        onChange={(e) => setNewVariable({ ...newVariable, type: e.target.value })}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-800"
+                        required
+                      >
+                        <option value="fabric_color">Color de Tela</option>
+                        <option value="finish">Colores de Estructura</option>
+                      </select>
+                    </div>
+
+                    {/* Image Upload */}
+                    <div>
+                      <label htmlFor="variable-image" className="block text-sm font-medium text-gray-700 mb-2">
+                        Imagen <span className="text-red-500">*</span>
+                      </label>
+                      <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md hover:border-gray-400 transition-colors">
+                        <div className="space-y-1 text-center">
+                          {newVariable.image ? (
+                            <div className="flex flex-col items-center">
+                              <svg className="w-12 h-12 text-green-500 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                              <p className="text-sm text-gray-600">{newVariable.image.name}</p>
+                              <button
+                                type="button"
+                                onClick={() => setNewVariable({ ...newVariable, image: null })}
+                                className="mt-2 text-sm text-red-600 hover:text-red-700"
+                              >
+                                Cambiar imagen
+                              </button>
+                            </div>
+                          ) : (
+                            <>
+                              <svg className="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
+                                <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+                              </svg>
+                              <div className="flex text-sm text-gray-600">
+                                <label
+                                  htmlFor="variable-image"
+                                  className="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500"
+                                >
+                                  <span>Subir una imagen</span>
+                                  <input
+                                    id="variable-image"
+                                    type="file"
+                                    accept="image/*"
+                                    className="sr-only"
+                                    onChange={(e) => {
+                                      const file = e.target.files?.[0];
+                                      if (file) {
+                                        setNewVariable({ ...newVariable, image: file });
+                                      }
+                                    }}
+                                    required
+                                  />
+                                </label>
+                                <p className="pl-1">o arrastra y suelta</p>
+                              </div>
+                              <p className="text-xs text-gray-500">PNG, JPG, GIF hasta 10MB</p>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </form>
+                )}
+              </div>
+
+              {/* Modal Footer */}
+              {!variableSuccess && (
+                <div className="flex justify-end gap-3 p-6 border-t border-gray-200">
+                  <button
+                    onClick={handleCloseVariableModal}
+                    className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
+                    disabled={variableUploadProgress}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={handleSaveVariable}
+                    disabled={!newVariable.name || !newVariable.image || variableUploadProgress}
+                    className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2"
+                  >
+                    {variableUploadProgress ? (
+                      <>
+                        <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Guardando...
+                      </>
+                    ) : (
+                      'Guardar Variable'
+                    )}
+                  </button>
+                </div>
+              )}
             </motion.div>
           </div>
         )}

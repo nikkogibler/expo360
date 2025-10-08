@@ -231,7 +231,6 @@ export default function FloatingChatbot({
                 <div>
                   <h3 className="font-semibold text-sm text-white">Asistente Kusam</h3>
                   <p className="text-xs text-gray-300">Siempre aquí para ayudar</p>
-                  <p className="text-[10px] text-gray-400">Sesión: {sessionId.substring(0, 12)}...</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
