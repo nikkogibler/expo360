@@ -5,11 +5,12 @@ import { supabase } from '../../lib/supabaseClient';
 // Define all available menu options
 const allMenuOptions = [
   { label: 'Admin Dashboard', action: 'admin-dashboard', page: 'admin' },
-  { label: 'Librería de Imágenes', action: 'image-library', page: 'image-library' },
-  { label: 'ProShotNow', action: 'pro-shot-now', page: 'pro-shot-now' },
-  { label: 'Optimizador de Imágenes', action: 'pro-shot-now-optimizer', page: 'optimizador' },
-  { label: 'Colección de Prompts', action: 'prompt-collection', page: 'prompts' },
-  { label: 'Sucursales y Expos', action: 'sucursales', page: 'sucursales' },
+  { label: 'Analítica y Reportes', action: 'analitica-reportes', page: 'reportes' },
+  { label: 'Agregar Clientes +', action: 'agregar-clientes', page: 'sucursales' },
+  { label: 'Catálogo de Productos', action: 'catalogo-productos', page: 'catalogo' },
+  { label: 'Airtable CRM', action: 'airtable-crm', page: 'airtable' },
+  { label: 'ProShotNow™', action: 'pro-shot-now', page: 'pro-shot-now' },
+  { label: 'Soporte Interzekt', action: 'soporte-interzekt', page: 'soporte' },
   { label: 'Preferencias', action: 'settings', page: 'settings' },
 ];
 
@@ -45,16 +46,18 @@ const AdminMenu: React.FC<AdminMenuProps> = ({ open, setOpen, currentPage }) => 
   async function handleMenuClick(action: string) {
     if (action === 'admin-dashboard') {
       router.push('/admin');
-    } else if (action === 'image-library') {
-      router.push('/admin/image-library');
+    } else if (action === 'analitica-reportes') {
+      router.push('/admin/reportes');
+    } else if (action === 'agregar-clientes') {
+      router.push('/admin/sucursales');
+    } else if (action === 'catalogo-productos') {
+      router.push('/admin/catalogo');
+    } else if (action === 'airtable-crm') {
+      router.push('/admin/airtable');
     } else if (action === 'pro-shot-now') {
       router.push('/admin/pro-shot-now');
-    } else if (action === 'pro-shot-now-optimizer') {
-      router.push('/admin/pro-shot-now/optimizador');
-    } else if (action === 'prompt-collection') {
-      router.push('/admin/pro-shot-now/prompts');
-    } else if (action === 'sucursales') {
-      router.push('/admin/sucursales');
+    } else if (action === 'soporte-interzekt') {
+      router.push('/admin/soporte');
     } else if (action === 'settings') {
       router.push('/admin/settings');
     } else if (action === 'signout') {

@@ -93,13 +93,22 @@ export default function FloatingChatbot({
     setIsLoading(true);
 
     try {
-      // Enhanced payload for webhook with session management
+      // Get recent conversation history (last 5 messages) for context
+      const recentHistory = messages
+        .slice(-5)
+        .map(msg => ({
+          role: msg.type === 'user' ? 'user' : 'assistant',
+          content: msg.content
+        }));
+
+      // Enhanced payload for webhook with session management and conversation history
       const payload = {
         message: content.trim(),
         session_id: sessionId,
         user_email: userEmail,
         timestamp: new Date().toISOString(),
         context: 'kusam-admin-dashboard-chat',
+        conversation_history: recentHistory, // Helps AI understand conversation flow
       };
 
       console.log('FloatingChatbot sending to webhook:', payload);
