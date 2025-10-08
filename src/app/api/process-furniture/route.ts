@@ -1,33 +1,87 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseService } from '@/utils/supabaseServiceRole';
 
+// Helper function for retrying API calls with exponential backoff
+async function fetchWithRetry(url: string, options: RequestInit, maxRetries = 3): Promise<Response> {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      console.log(`API call attempt ${attempt}/${maxRetries}...`);
+      const response = await fetch(url, options);
+      
+      // If it's a 503/502 (Cloudflare transient error), retry
+      if ((response.status === 503 || response.status === 502) && attempt < maxRetries) {
+        const waitTime = Math.min(1000 * Math.pow(2, attempt - 1), 10000); // 1s, 2s, 4s (capped at 10s)
+        console.log(`⚠️ Attempt ${attempt} failed with ${response.status}, retrying in ${waitTime}ms...`);
+        await new Promise(resolve => setTimeout(resolve, waitTime));
+        continue;
+      }
+      
+      // Success or non-retryable error - return response
+      console.log(`✓ API call completed with status ${response.status}`);
+      return response;
+      
+    } catch (error) {
+      // Network error - retry if we have attempts left
+      if (attempt < maxRetries) {
+        const waitTime = Math.min(1000 * Math.pow(2, attempt - 1), 10000);
+        console.log(`⚠️ Attempt ${attempt} failed with network error, retrying in ${waitTime}ms...`);
+        await new Promise(resolve => setTimeout(resolve, waitTime));
+        continue;
+      }
+      throw error;
+    }
+  }
+  throw new Error('Max retries exceeded');
+}
+
+interface ReferenceImageData {
+  contextType: 'fabric' | 'structure' | 'person' | 'place' | 'style' | 'custom';
+  contextLabel: string;
+  customDescription?: string;
+  order: number;
+}
+
+interface ImageContent {
+  type: string;
+  image_url: {
+    url: string;
+  };
+}
+
+interface ContentItem {
+  type: string;
+  text?: string;
+  image_url?: {
+    url: string;
+  };
+}
+
 export async function POST(request: NextRequest) {
   try {
   const body = await request.json();
-  const { content, modifications, userId, tela, estructura, fileName } = body;
+  const { content, modifications, referenceImages = [], userId, tela, estructura, fileName } = body;
 
     // Validate content array
-    if (!Array.isArray(content) || content.length < 2) {
+    if (!Array.isArray(content) || content.length < 1) {
       return NextResponse.json({ error: 'No images provided or content array malformed' }, { status: 400 });
     }
 
     // Extract images from content array
+    // First is main product, rest are references
     const userImageObj = content[0];
-    const blankImageObj = content[content.length - 1];
     const userImage = userImageObj?.image_url?.url;
-    const blankImage = blankImageObj?.image_url?.url;
 
-    if (!userImage || !blankImage) {
+    if (!userImage) {
       return NextResponse.json({ error: 'Image data missing in content array' }, { status: 400 });
     }
 
     console.log('Processing furniture image request...');
     console.log('User image received:', userImage.substring(0, 50) + '...');
-    console.log('Blank image received:', blankImage.substring(0, 50) + '...');
+    console.log('Reference images count:', content.length - 1);
     console.log('Modifications requested:', modifications);
 
-    // Validate that images are base64 encoded
-    if (!userImage.startsWith('data:image/') || !blankImage.startsWith('data:image/')) {
+    // Validate that main image is base64 encoded
+    if (!userImage.startsWith('data:image/')) {
       return NextResponse.json({ error: 'Invalid image format. Expected base64 data URL.' }, { status: 400 });
     }
 
@@ -37,24 +91,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'API configuration error' }, { status: 500 });
     }
 
-    // Make request to OpenRouter with Google Gemini 2.5 Flash Image Preview
-    const openrouterResponse = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openrouterApiKey}`,
-        'Content-Type': 'application/json',
-        'HTTP-Referer': 'http://localhost:3001',
-        'X-Title': 'Kusam AI Furniture Editor'
-      },
-      body: JSON.stringify({
-        model: 'google/gemini-2.5-flash-image',
-        messages: [
-          {
-            role: 'user',
-            content: [
-              {
-                type: 'text',
-                text: `IMPORTANT: The output must be a vertical, tall, 9:16 portrait image. Use the second (blank) image as the aspect ratio reference.
+    // Build prompt with reference image context
+    let promptText = `IMPORTANT: The output must be a vertical, tall, 9:16 portrait image.
 
 NOTE: The uploaded image may be of any kind of product, not just furniture. Apply the following steps to any product image provided.
 
@@ -68,34 +106,154 @@ You are a professional furniture photographer and image standardization expert. 
 
 **Background**: Apply a pure white studio background, seamless with no shadows, floors, or texture
 
-**Cushions**: Change all cushion fabric to canvas color (#F5F5DC or close neutral beige)
-
 **Lighting**: Use soft, diffused lighting with minimal shadows to emphasize form and texture
 
 **Cleanliness**: Remove visual noise, props, logos, or reflections. Ensure a polished and consistent presentation across images
 
-**Proportions**: Keep true-to-life scale and realistic materials without distortion
-Additional modifications requested: ${modifications}
+**Proportions**: Keep true-to-life scale and realistic materials without distortion`;
+
+    // Check if fabric or structure references are provided
+    const hasFabricReference = referenceImages?.some((ref: ReferenceImageData) => ref.contextType === 'fabric');
+    const hasStructureReference = referenceImages?.some((ref: ReferenceImageData) => ref.contextType === 'structure');
+
+    // Add default cushion/structure instructions only if NO references provided
+    if (!hasFabricReference) {
+      promptText += `\n\n**Cushions**: Change all cushion fabric to canvas color (#F5F5DC or close neutral beige)`;
+    }
+    if (!hasStructureReference) {
+      promptText += `\n\n**Frame/Structure**: Keep original wood/metal finish or standardize to natural wood tone`;
+    }
+
+    // Add reference images context if provided
+    if (referenceImages && referenceImages.length > 0) {
+      promptText += `\n\n**REFERENCE IMAGES PROVIDED (PRIORITY INSTRUCTIONS):**\n`;
+      promptText += `- Image 1: Main product to standardize\n`;
+      
+      (referenceImages as ReferenceImageData[]).forEach((ref, index) => {
+        const imageNum = index + 2;
+        promptText += `- Image ${imageNum}: ${ref.contextLabel}`;
+        
+        switch(ref.contextType) {
+          case 'fabric':
+            promptText += ` - **IMPORTANT: Apply this exact fabric color and texture to ALL cushions, pillows, and upholstered surfaces on the furniture. Match the color precisely.**\n`;
+            break;
+          case 'structure':
+            promptText += ` - **IMPORTANT: Apply this exact finish, color, and material texture to the frame, legs, and structural elements of the furniture. Match the finish precisely.**\n`;
+            break;
+          case 'person':
+            promptText += ` - Reference for scale, lifestyle context\n`;
+            break;
+          case 'place':
+            promptText += ` - Reference for background/environment setting\n`;
+            break;
+          case 'style':
+            promptText += ` - Reference for overall aesthetic/mood\n`;
+            break;
+          case 'custom':
+            promptText += ` - ${ref.customDescription || 'Additional reference context'}\n`;
+            break;
+          default:
+            promptText += ` - Additional reference\n`;
+        }
+      });
+    }
+
+    promptText += `\nAdditional modifications requested: ${modifications}
 
 Please generate a standardized product image following these exact specifications. Return the processed image as your response.
 
-Again, ensure the output is a vertical, tall, 9:16 portrait image matching the aspect ratio of the blank reference image.`
-              },
-              // User image first, blank image last
-              { type: 'image_url', image_url: { url: userImage } },
-              { type: 'image_url', image_url: { url: blankImage } }
-            ]
-          }
-        ],
-        max_tokens: 4096,
-        temperature: 0.7
-      })
-    });
+Again, ensure the output is a vertical, tall, 9:16 portrait image matching the aspect ratio of the blank reference image.`;
+
+    // Build content array with all images
+    const contentArray: ContentItem[] = [
+      { type: 'text', text: promptText },
+      { type: 'image_url', image_url: { url: userImage } },
+      // Add reference images
+      ...content.slice(1).map((img: ImageContent) => ({
+        type: 'image_url',
+        image_url: { url: img.image_url.url }
+      }))
+    ];
+
+    console.log('Content array length:', contentArray.length);
+    console.log('Total images being sent:', contentArray.filter((c) => c.type === 'image_url').length);
+    
+    // Log content array structure (without full base64 to avoid spam)
+    console.log('Content array structure:', contentArray.map((item, i) => ({
+      index: i,
+      type: item.type,
+      hasText: !!item.text,
+      hasImageUrl: !!item.image_url,
+      imageUrlLength: item.image_url?.url ? item.image_url.url.substring(0, 50) + '...' : 'none'
+    })));
+    
+    // Calculate approximate payload size
+    const payloadSize = JSON.stringify({
+      model: 'google/gemini-2.5-flash-image',
+      messages: [{ role: 'user', content: contentArray }],
+      max_tokens: 4096,
+      temperature: 0.7
+    }).length;
+    console.log('Approximate payload size:', (payloadSize / 1024 / 1024).toFixed(2), 'MB');
+    
+    if (payloadSize > 20 * 1024 * 1024) {
+      console.warn('⚠️ WARNING: Payload exceeds 20MB, may be rejected by API');
+    }
+
+    // Make request to OpenRouter with Google Gemini 2.5 Flash Image (with retry logic)
+    const openrouterResponse = await fetchWithRetry(
+      'https://openrouter.ai/api/v1/chat/completions',
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${openrouterApiKey}`,
+          'Content-Type': 'application/json',
+          'HTTP-Referer': 'http://localhost:3001',
+          'X-Title': 'Kusam AI Furniture Editor'
+        },
+        body: JSON.stringify({
+          model: 'google/gemini-2.5-flash-image',
+          messages: [
+            {
+              role: 'user',
+              content: contentArray
+            }
+          ],
+          max_tokens: 4096,
+          temperature: 0.7
+        })
+      },
+      3 // Max 3 attempts
+    );
 
     if (!openrouterResponse.ok) {
       const errorData = await openrouterResponse.text();
-      console.error('OpenRouter API error:', errorData);
-      throw new Error(`OpenRouter API error: ${openrouterResponse.status} ${errorData}`);
+      console.error('OpenRouter API error status:', openrouterResponse.status);
+      console.error('OpenRouter API error response:', errorData.substring(0, 500)); // Log first 500 chars
+      
+      // Check if it's a Cloudflare error (service unavailable)
+      if (errorData.includes('Cloudflare') || openrouterResponse.status === 503) {
+        console.error('Cloudflare/503 error detected');
+        throw new Error('El servicio de procesamiento de imágenes está temporalmente no disponible. Por favor, intenta de nuevo en unos minutos.');
+      }
+      
+      // Check if payload might be too large
+      if (openrouterResponse.status === 413 || openrouterResponse.status === 400) {
+        console.error('Payload too large or bad request detected');
+        // Try to parse error for more details
+        try {
+          const errorJson = JSON.parse(errorData);
+          console.error('Error details:', errorJson);
+          if (errorJson.error && errorJson.error.message) {
+            throw new Error(`Error: ${errorJson.error.message}`);
+          }
+        } catch {
+          // Not JSON, use generic message
+        }
+        throw new Error('La solicitud es demasiado grande. Intenta reducir el número de imágenes de referencia o el tamaño de las imágenes.');
+      }
+      
+      throw new Error(`Error del servicio AI: ${openrouterResponse.status}. Intenta de nuevo más tarde.`);
     }
 
     const data = await openrouterResponse.json();
@@ -106,9 +264,30 @@ Again, ensure the output is a vertical, tall, 9:16 portrait image matching the a
     let description = '';
     let hasGeneratedImage = false;
 
-    // First, check if the response has an 'id' field containing base64 data
+    // NEW: Check for image generation response format (message.images)
+    if (data.choices && data.choices.length > 0) {
+      const message = data.choices[0].message;
+      
+      // Check for generated images in the new format
+      if (message.images && message.images.length > 0) {
+        console.log('Found generated images in message.images array, count:', message.images.length);
+        const firstImage = message.images[0];
+        if (firstImage.image_url && firstImage.image_url.url) {
+          editedImageUrl = firstImage.image_url.url;
+          hasGeneratedImage = true;
+          console.log('Successfully extracted image from message.images format');
+        }
+      }
+      
+      // Extract text description if available
+      if (message.content && typeof message.content === 'string') {
+        description = message.content;
+      }
+    }
+
+    // OLD FALLBACK: Check if the response has an 'id' field containing base64 data
     // Based on user feedback: rawResponse comes as {"id": "gen-1xxxxxxx...base64data"}
-    if (data.id && typeof data.id === 'string' && data.id.length > 100) {
+    if (!hasGeneratedImage && data.id && typeof data.id === 'string' && data.id.length > 100) {
       console.log('Found id field with potential base64 data, length:', data.id.length);
       
       // Check if the id field contains base64-like data
@@ -286,6 +465,7 @@ Again, ensure the output is a vertical, tall, 9:16 portrait image matching the a
         editedImageUrl,
         description,
         hasGeneratedImage: true,
+        promptText, // Include the full prompt for AI naming
         rawResponse: JSON.stringify(data, null, 2) // For debugging
       });
     } else {
@@ -295,6 +475,7 @@ Again, ensure the output is a vertical, tall, 9:16 portrait image matching the a
         error: 'No image was generated by the AI model',
         description: description || 'The AI model was unable to generate a modified image.',
         hasGeneratedImage: false,
+        promptText, // Include prompt even on failure
         rawResponse: JSON.stringify(data, null, 2) // For debugging
       });
     }

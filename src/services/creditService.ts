@@ -138,13 +138,20 @@ export class CreditService {
       // If successful, get the usage record ID for potential refund
       let usageRecordId: string | undefined;
       if (result.success) {
-        const { data: usageData } = await supabase
+        console.log('🔍 Fetching usage record for userId:', userId);
+        const { data: usageData, error: usageError } = await supabase
           .from('admin_credit_usage')
           .select('id')
           .eq('user_id', userId)
           .order('timestamp', { ascending: false })
           .limit(1)
           .single();
+        
+        if (usageError) {
+          console.error('❌ Error fetching usage record:', usageError);
+        } else {
+          console.log('✅ Usage record found:', usageData?.id);
+        }
         
         usageRecordId = usageData?.id;
       }
