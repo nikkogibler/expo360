@@ -62,6 +62,7 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
   const [userId, setUserId] = useState<string | null>(null);
   const [showPurchaseModal, setShowPurchaseModal] = useState<boolean>(false);
   const [isDragging, setIsDragging] = useState<boolean>(false);
+  const [isEnhancingPrompt, setIsEnhancingPrompt] = useState<boolean>(false);
   
   // Reference images state
   const [referenceImages, setReferenceImages] = useState<ReferenceImage[]>([]);
@@ -574,6 +575,52 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
       // Create preview URL
       const previewUrl = URL.createObjectURL(file);
       setImagePreview(previewUrl);
+    }
+  };
+
+  // Enhance prompt using AI
+  const handleEnhancePrompt = async () => {
+    if (!additionalPrompt || additionalPrompt.trim().length === 0) {
+      setError('Por favor, escribe un prompt primero antes de mejorarlo.');
+      return;
+    }
+
+    setIsEnhancingPrompt(true);
+    setError(null);
+
+    try {
+      console.log('[ImageStandardizer] 🎨 Enhancing prompt...');
+      console.log('[ImageStandardizer] Current additionalPrompt:', additionalPrompt);
+      console.log('[ImageStandardizer] Prompt length:', additionalPrompt.length);
+      
+      const payload = { prompt: additionalPrompt };
+      console.log('[ImageStandardizer] Sending payload:', JSON.stringify(payload));
+      
+      const response = await fetch('/api/enhance-prompt', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      console.log('[ImageStandardizer] Response status:', response.status);
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('[ImageStandardizer] ❌ API error response:', errorData);
+        throw new Error(errorData.error || 'Failed to enhance prompt');
+      }
+
+      const data = await response.json();
+      console.log('[ImageStandardizer] ✅ Enhanced prompt received:', data.enhancedPrompt);
+      
+      // Replace the text in the field
+      setAdditionalPrompt(data.enhancedPrompt);
+      
+    } catch (err) {
+      console.error('[ImageStandardizer] Error enhancing prompt:', err);
+      setError('Error al mejorar el prompt. Intenta de nuevo.');
+    } finally {
+      setIsEnhancingPrompt(false);
     }
   };
 
@@ -1334,16 +1381,95 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
       </div>
 
       <div className="mb-6">
-        <label className="block text-gray-700 font-semibold mb-2">
-          Instrucciones Adicionales 
-          <span className="text-gray-500 font-normal text-sm">(Opcional)</span>
-        </label>
+        <div className="flex items-center justify-between mb-2">
+          <label className="block text-gray-700 font-semibold">
+            Instrucciones Adicionales 
+            <span className="text-gray-500 font-normal text-sm">(Opcional)</span>
+          </label>
+          <button
+            type="button"
+            onClick={handleEnhancePrompt}
+            disabled={isEnhancingPrompt || !additionalPrompt || additionalPrompt.trim().length === 0}
+            className="flex items-center gap-2 px-3 py-1.5 text-sm font-bold rounded-lg transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed hover:scale-105"
+            style={{
+              background: 'transparent',
+              border: '2px solid transparent',
+              backgroundImage: isEnhancingPrompt
+                ? 'linear-gradient(white, white), linear-gradient(90deg, #F59E0B, #F97316, #EF4444)'
+                : 'linear-gradient(white, white), linear-gradient(90deg, #8B5CF6, #2563EB, #EC4899)',
+              backgroundOrigin: 'border-box',
+              backgroundClip: 'padding-box, border-box',
+              cursor: 'pointer',
+            }}
+            title="Mejorar prompt con IA"
+          >
+            {isEnhancingPrompt ? (
+              <>
+                <svg 
+                  className="animate-spin h-4 w-4" 
+                  xmlns="http://www.w3.org/2000/svg" 
+                  fill="none" 
+                  viewBox="0 0 24 24"
+                  style={{ stroke: 'url(#gradient-loading)' }}
+                >
+                  <defs>
+                    <linearGradient id="gradient-loading" x1="0%" y1="0%" x2="100%" y2="0%">
+                      <stop offset="0%" stopColor="#F59E0B" />
+                      <stop offset="50%" stopColor="#F97316" />
+                      <stop offset="100%" stopColor="#EF4444" />
+                    </linearGradient>
+                  </defs>
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="url(#gradient-loading)" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="url(#gradient-loading)" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span
+                  style={{
+                    background: 'linear-gradient(90deg, #F59E0B, #F97316, #EF4444)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    backgroundClip: 'text',
+                  }}
+                >
+                  Mejorando...
+                </span>
+              </>
+            ) : (
+              <>
+                <svg 
+                  className="h-4 w-4" 
+                  fill="none" 
+                  viewBox="0 0 24 24"
+                  style={{ stroke: 'url(#gradient-normal)' }}
+                >
+                  <defs>
+                    <linearGradient id="gradient-normal" x1="0%" y1="0%" x2="100%" y2="0%">
+                      <stop offset="0%" stopColor="#8B5CF6" />
+                      <stop offset="50%" stopColor="#2563EB" />
+                      <stop offset="100%" stopColor="#EC4899" />
+                    </linearGradient>
+                  </defs>
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" stroke="url(#gradient-normal)" />
+                </svg>
+                <span
+                  style={{
+                    background: 'linear-gradient(90deg, #8B5CF6, #2563EB, #EC4899)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    backgroundClip: 'text',
+                  }}
+                >
+                  ✨ Mejorar con IA
+                </span>
+              </>
+            )}
+          </button>
+        </div>
         <textarea
           value={additionalPrompt}
           onChange={(e) => setAdditionalPrompt(e.target.value)}
           placeholder="Describe cualquier modificación específica adicional que desees para la imagen..."
-          className="w-full border rounded py-2 px-3 resize-y min-h-[80px]"
-          style={{ borderColor: '#4B2E09', color: '#4B2E09' }}
+          className="w-full border rounded py-2 px-3 resize-y min-h-[80px] max-h-[200px] overflow-y-auto text-sm"
+          style={{ borderColor: '#4B2E09', color: '#4B2E09', fontSize: '0.875rem', lineHeight: '1.4' }}
           rows={3}
         />
         <p className="text-xs text-gray-500 mt-1">
