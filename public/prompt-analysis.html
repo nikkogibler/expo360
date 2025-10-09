@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Prompt Analysis</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .section { margin: 20px 0; }
+        .word-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+        .word-item { background: #f5f5f5; padding: 10px; border-radius: 5px; }
+        .phrase-list { margin: 10px 0; }
+        .phrase-item { background: #e8f4f8; padding: 8px; margin: 5px 0; border-radius: 3px; }
+        pre { background: #f8f8f8; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        button { background: #4CAF50; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #45a049; }
+        .loading { text-align: center; padding: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Prompt Analysis Results</h1>
+        <button onclick="fetchAnalysis()">Analyze Prompts</button>
+        <button onclick="updateTags()" style="margin-left: 10px; background: #FF9800;">Update All Tags</button>
+        <a href="/admin/pro-shot-now/prompts" style="margin-left: 10px; background: #4CAF50; color: white; padding: 10px 20px; border: none; border-radius: 5px; text-decoration: none; display: inline-block;">View Prompts Page</a>
+        
+        <div id="loading" class="loading" style="display: none;">
+            <p>Analyzing prompts... This may take a moment.</p>
+        </div>
+        
+        <div id="results" style="display: none;">
+            <div class="section">
+                <h2>Summary</h2>
+                <div id="summary"></div>
+            </div>
+            
+            <div class="section">
+                <h2>Top Words</h2>
+                <div id="topWords" class="word-list"></div>
+            </div>
+            
+            <div class="section">
+                <h2>Top Phrases</h2>
+                <div id="topPhrases" class="phrase-list"></div>
+            </div>
+            
+            <div class="section">
+                <h2>Sample Prompts with Tags</h2>
+                <div id="samplePrompts"></div>
+            </div>
+            
+            <div class="section">
+                <h2>Tag Statistics</h2>
+                <div id="tagStats" class="word-list"></div>
+            </div>
+            
+            <div class="section">
+                <h2>Raw Data</h2>
+                <pre id="rawData"></pre>
+            </div>
+        </div>
+        
+        <div id="error" style="display: none; color: red;">
+            <h2>Error</h2>
+            <p id="errorMessage"></p>
+        </div>
+    </div>
+
+    <script>
+        async function fetchAnalysis() {
+            const loadingDiv = document.getElementById('loading');
+            const resultsDiv = document.getElementById('results');
+            const errorDiv = document.getElementById('error');
+            
+            // Show loading, hide others
+            loadingDiv.style.display = 'block';
+            resultsDiv.style.display = 'none';
+            errorDiv.style.display = 'none';
+            
+            try {
+                const response = await fetch('/api/analyze-prompts');
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to fetch analysis');
+                }
+                
+                // Hide loading, show results
+                loadingDiv.style.display = 'none';
+                resultsDiv.style.display = 'block';
+                
+                // Populate summary
+                document.getElementById('summary').innerHTML = `
+                    <p><strong>Total Prompts:</strong> ${data.totalPrompts}</p>
+                    <p><strong>Non-empty Prompts:</strong> ${data.nonEmptyPrompts}</p>
+                    <p><strong>Unique Users:</strong> ${data.uniqueUsers.length}</p>
+                    <p><strong>Unique Fabrics:</strong> ${data.uniqueTelas.length}</p>
+                    <p><strong>Unique Structures:</strong> ${data.uniqueEstructuras.length}</p>
+                `;
+                
+                // Populate top words
+                const topWordsHtml = data.topWords.slice(0, 30).map(([word, count]) => 
+                    `<div class="word-item">${word} (${count})</div>`
+                ).join('');
+                document.getElementById('topWords').innerHTML = topWordsHtml;
+                
+                // Populate top phrases
+                const topPhrasesHtml = data.topPhrases.slice(0, 20).map(([phrase, count]) => 
+                    `<div class="phrase-item">"${phrase}" (${count})</div>`
+                ).join('');
+                document.getElementById('topPhrases').innerHTML = topPhrasesHtml;
+                
+                // Populate sample prompts with tags
+                const samplePromptsHtml = (data.promptsWithTags || data.samplePrompts.slice(0, 5)).map((prompt, i) => {
+                    const tags = prompt.assignedTags || [];
+                    const tagHtml = tags.length > 0 ? 
+                        `<div style="margin-top: 8px;">${tags.map(tag => `<span style="background: #e8f4f8; padding: 2px 6px; border-radius: 3px; font-size: 0.8em; margin-right: 4px;">${tag}</span>`).join('')}</div>` : 
+                        '<div style="margin-top: 8px; color: #999; font-size: 0.8em;">No tags</div>';
+                    return `<div style="margin-bottom: 15px; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                        <p><strong>${i + 1}.</strong> ${(prompt.prompt_text || prompt).substring(0, 200)}...</p>
+                        ${tagHtml}
+                    </div>`;
+                }).join('');
+                document.getElementById('samplePrompts').innerHTML = samplePromptsHtml;
+                
+                // Populate tag statistics
+                if (data.tagStats) {
+                    const tagStatsHtml = data.tagStats.slice(0, 20).map(({tag, count}) => 
+                        `<div class="word-item">${tag} (${count})</div>`
+                    ).join('');
+                    document.getElementById('tagStats').innerHTML = tagStatsHtml;
+                }
+                
+                // Show raw data
+                document.getElementById('rawData').textContent = JSON.stringify(data, null, 2);
+                
+            } catch (error) {
+                console.error('Error:', error);
+                loadingDiv.style.display = 'none';
+                errorDiv.style.display = 'block';
+                document.getElementById('errorMessage').textContent = error.message;
+            }
+        }
+        
+        async function updateTags() {
+            try {
+                const response = await fetch('/api/update-prompt-tags', {
+                    method: 'POST'
+                });
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to update tags');
+                }
+                
+                alert(`Tags updated successfully! Updated: ${data.updated}, Errors: ${data.errors}`);
+                
+                // Refresh the analysis after updating tags
+                fetchAnalysis();
+                
+            } catch (error) {
+                console.error('Error updating tags:', error);
+                alert('Error updating tags: ' + error.message);
+            }
+        }
+    </script>
+</body>
+</html>
