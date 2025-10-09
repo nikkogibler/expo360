@@ -281,7 +281,7 @@ function DomeGallery({ images = DEFAULT_IMAGES }: DomeGalleryProps) {
                   objectFit: 'contain',
                   marginBottom: '1rem',
                 }}
-                onError={(e) => {
+                onError={() => {
                   console.error('Failed to load image in modal:', selectedImage.src);
                 }}
               />
