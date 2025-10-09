@@ -3,6 +3,13 @@ import Image from 'next/image';
 
 type ImageItem = string | { src: string; alt?: string };
 
+// Utility function to detect if a file is a video based on its extension
+const isVideoFile = (src: string): boolean => {
+  const videoExtensions = ['.mp4', '.webm', '.mov', '.avi', '.mkv'];
+  const lowerSrc = src.toLowerCase();
+  return videoExtensions.some(ext => lowerSrc.includes(ext));
+};
+
 type DomeGalleryProps = {
   images?: ImageItem[];
   fit?: number;
@@ -106,13 +113,20 @@ function DomeGallery({ images = DEFAULT_IMAGES }: DomeGalleryProps) {
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = selectedImage.alt || 'image.jpg';
+      
+      // Get appropriate file extension based on content type
+      const isVideo = isVideoFile(selectedImage.src);
+      const defaultExtension = isVideo ? '.mp4' : '.jpg';
+      const fileName = selectedImage.alt || (isVideo ? 'video' : 'image');
+      const hasExtension = fileName.includes('.');
+      
+      link.download = hasExtension ? fileName : fileName + defaultExtension;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
     } catch {
-      alert('Failed to download image.');
+      alert('Failed to download file.');
     }
   };
 
@@ -121,12 +135,13 @@ function DomeGallery({ images = DEFAULT_IMAGES }: DomeGalleryProps) {
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-          gap: '2mm',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+          gap: '1.5rem',
           width: '100%',
-          padding: '2rem 0',
+          padding: '3rem 2rem',
           justifyItems: 'center',
           alignItems: 'center',
+          overflow: 'visible',
         }}
       >
         {images.map((img, idx) => {
@@ -140,7 +155,7 @@ function DomeGallery({ images = DEFAULT_IMAGES }: DomeGalleryProps) {
                 borderRadius: '20px',
                 overflow: 'hidden',
                 background: '#fff',
-                transition: 'transform 0.25s cubic-bezier(.25,1,.5,1)',
+                transition: 'transform 0.25s cubic-bezier(.25,1,.5,1), z-index 0s',
                 cursor: 'pointer',
                 width: '220px',
                 height: '220px',
@@ -148,32 +163,60 @@ function DomeGallery({ images = DEFAULT_IMAGES }: DomeGalleryProps) {
                 alignItems: 'center',
                 justifyContent: 'center',
                 position: 'relative',
+                transformOrigin: 'center center',
+                zIndex: 1,
               }}
               className="gallery-card"
               onClick={() => openModal(img)}
               onMouseEnter={e => {
                 (e.currentTarget as HTMLDivElement).style.transform = 'scale(1.06)';
-                (e.currentTarget as HTMLDivElement).style.zIndex = '2';
+                (e.currentTarget as HTMLDivElement).style.zIndex = '10';
               }}
               onMouseLeave={e => {
                 (e.currentTarget as HTMLDivElement).style.transform = 'scale(1)';
                 (e.currentTarget as HTMLDivElement).style.zIndex = '1';
               }}
             >
-              <Image
-                src={src}
-                alt={alt}
-                width={220}
-                height={220}
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'cover',
-                  borderRadius: '20px',
-                  boxShadow: '0 2px 8px 0 rgba(0,0,0,0.08)',
-                  transition: 'box-shadow 0.2s',
-                }}
-              />
+              {isVideoFile(src) ? (
+                <video
+                  src={src}
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                    borderRadius: '20px',
+                    boxShadow: '0 2px 8px 0 rgba(0,0,0,0.08)',
+                    transition: 'box-shadow 0.2s',
+                  }}
+                />
+              ) : (
+                <Image
+                  src={src}
+                  alt={alt}
+                  width={220}
+                  height={220}
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                    borderRadius: '20px',
+                    boxShadow: '0 2px 8px 0 rgba(0,0,0,0.08)',
+                    transition: 'box-shadow 0.2s',
+                  }}
+                  onError={(e) => {
+                    // Hide broken images gracefully
+                    (e.currentTarget as HTMLImageElement).style.display = 'none';
+                    const parent = e.currentTarget.parentElement;
+                    if (parent) {
+                      parent.style.display = 'none';
+                    }
+                  }}
+                />
+              )}
             </div>
           );
         })}
@@ -209,19 +252,40 @@ function DomeGallery({ images = DEFAULT_IMAGES }: DomeGalleryProps) {
             }}
             onClick={e => e.stopPropagation()}
           >
-            <Image
-              src={selectedImage.src}
-              alt={selectedImage.alt || ''}
-              width={810}
-              height={810}
-              style={{
-                maxWidth: '85vw',
-                maxHeight: '81vh',
-                borderRadius: '16px',
-                objectFit: 'contain',
-                marginBottom: '1rem',
-              }}
-            />
+            {isVideoFile(selectedImage.src) ? (
+              <video
+                src={selectedImage.src}
+                controls
+                autoPlay
+                loop
+                muted
+                playsInline
+                style={{
+                  maxWidth: '85vw',
+                  maxHeight: '81vh',
+                  borderRadius: '16px',
+                  objectFit: 'contain',
+                  marginBottom: '1rem',
+                }}
+              />
+            ) : (
+              <Image
+                src={selectedImage.src}
+                alt={selectedImage.alt || ''}
+                width={810}
+                height={810}
+                style={{
+                  maxWidth: '85vw',
+                  maxHeight: '81vh',
+                  borderRadius: '16px',
+                  objectFit: 'contain',
+                  marginBottom: '1rem',
+                }}
+                onError={(e) => {
+                  console.error('Failed to load image in modal:', selectedImage.src);
+                }}
+              />
+            )}
             <button
               onClick={handleDownload}
               style={{

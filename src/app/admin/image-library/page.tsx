@@ -7,8 +7,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 type ImageItem = string | { src: string; alt?: string };
 import DomeGallery from '../../../components/DomeGallery';
-import Dock, { DockItemData } from '../../../components/Dock';
-import { FaHome, FaImages, FaUserShield } from 'react-icons/fa';
+import { LoaderOne } from '../../../components/ui/loader';
 import { supabase } from '@/utils/supabase';
 
 const ImageLibraryPage = () => {
@@ -28,41 +27,32 @@ const ImageLibraryPage = () => {
         return;
       }
       console.log('[ImageLibraryPage] Supabase list data:', data);
-      const imageItems = (data || [])
-        .filter(item => item.name.match(/\.png$|\.jpg$|\.jpeg$/i))
+      const mediaItems = (data || [])
+        .filter(item => item.name.match(/\.(png|jpg|jpeg|mp4|webm|mov)$/i))
         .map(item => {
           const publicUrl = supabase.storage.from('product-images').getPublicUrl(item.name).data.publicUrl;
-          console.log('[ImageLibraryPage] Found image:', item.name, 'URL:', publicUrl);
+          console.log('[ImageLibraryPage] Found media:', item.name, 'URL:', publicUrl);
           return {
             src: publicUrl,
             alt: item.name
           };
+        })
+        .filter(item => {
+          // Filter out items with invalid URLs or names
+          if (!item.src || !item.alt) return false;
+          // Filter out items with suspicious naming patterns that might indicate corruption
+          if (item.alt.includes('---') && item.alt.split('---').length > 2) {
+            console.warn('[ImageLibraryPage] Skipping potentially corrupted file:', item.alt);
+            return false;
+          }
+          return true;
         });
-      console.log('[ImageLibraryPage] Total images found:', imageItems.length);
-      setImages(imageItems);
+      console.log('[ImageLibraryPage] Total valid media items found:', mediaItems.length);
+      setImages(mediaItems);
       setLoading(false);
     }
     fetchImages();
   }, []);
-
-  // Dock items for navigation
-  const dockItems: DockItemData[] = [
-    {
-      icon: <FaHome size={28} />,
-      label: 'Dashboard',
-      onClick: () => window.location.href = '/admin',
-    },
-    {
-      icon: <FaImages size={28} />,
-      label: 'Librería de Imágenes',
-      onClick: () => window.location.href = '/admin/image-library',
-    },
-    {
-      icon: <FaUserShield size={28} />,
-      label: 'Admin',
-      onClick: () => window.location.href = '/admin/user-management',
-    },
-  ];
 
   return (
     <div
@@ -127,16 +117,12 @@ const ImageLibraryPage = () => {
           <AdminMenu open={burgerOpen} setOpen={setBurgerOpen} currentPage="image-library" />
         </div>
       </div>
-      <div style={{ width: '100%', maxWidth: 1200, height: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ width: '100%', maxWidth: 1600, minHeight: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'visible', paddingBottom: '2rem' }}>
         {loading ? (
-          <div className="text-xl text-gray-600">Cargando galería...</div>
+          <LoaderOne />
         ) : (
           <DomeGallery images={images} fit={0.5} minRadius={520} padFactor={0.18} overlayBlurColor="#f8f5f0" openedImageWidth="480px" openedImageHeight="480px" imageBorderRadius="32px" openedImageBorderRadius="32px" grayscale={false} />
         )}
-      </div>
-      {/* Dock at the bottom */}
-      <div style={{ position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 50 }}>
-        <Dock items={dockItems} />
       </div>
     </div>
   );

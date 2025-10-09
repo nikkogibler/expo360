@@ -5,8 +5,10 @@ import { motion, Variants } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
 import Head from 'next/head';
+
 import { supabase } from '@/utils/supabase';
 import { PostgrestError } from '@supabase/supabase-js';
+
 
 // Interface matching your existing product structure
 interface Product {
@@ -274,6 +276,8 @@ export default function KusamCatalogPage() {
   const [sortBy, setSortBy] = useState<'name' | 'price' | 'newest'>('name');
   const [categories, setCategories] = useState<string[]>([]);
   const [collections, setCollections] = useState<string[]>([]); // ← ADD THIS
+  
+
 
   // Fetch products from Supabase
   const fetchProducts = useCallback(async () => {
@@ -426,6 +430,8 @@ export default function KusamCatalogPage() {
   useEffect(() => {
     filterAndSortProducts();
   }, [filterAndSortProducts]);
+
+
 
   return (
     <>
