@@ -7,6 +7,7 @@ import { supabase } from '@/utils/supabase';
 import { CreditDisplay, CreditUpgradeMessage } from './admin/CreditDisplay';
 import { useCreditAwareProcessing } from '../hooks/useCredits';
 import CreditPurchaseModal from './CreditPurchaseModal';
+import { MultiStepLoader } from '../ui/multi-step-loader';
 
 // Interface for Supabase global product options
 interface GlobalProductOption {
@@ -35,6 +36,18 @@ interface ReferenceImage {
 interface ImageStandardizerProps {
   onBack: () => void;
 }
+
+// Loading states for the multi-step loader
+const imageStandardizationSteps = [
+  { text: "Verificando créditos disponibles" },
+  { text: "Comprimiendo tu imagen" },
+  { text: "Analizando tu prompt" },
+  { text: "Configurando variables seleccionadas" },
+  { text: "Llamando al agente de imágenes" },
+  { text: "Generando imagen estandarizada" },
+  { text: "Guardando en Supabase" },
+  { text: "¡Listo! Tu imagen está lista 🎉" },
+];
 
 export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
   // Utility: Convert base64 string to Blob
@@ -585,6 +598,11 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
       return;
     }
 
+    if (!imageFile) {
+      setError('Por favor, sube una imagen del producto primero.');
+      return;
+    }
+
     setIsEnhancingPrompt(true);
     setError(null);
 
@@ -592,9 +610,21 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
       console.log('[ImageStandardizer] 🎨 Enhancing prompt...');
       console.log('[ImageStandardizer] Current additionalPrompt:', additionalPrompt);
       console.log('[ImageStandardizer] Prompt length:', additionalPrompt.length);
+      console.log('[ImageStandardizer] Has product image file:', !!imageFile);
+      console.log('[ImageStandardizer] Selected fabric:', selectedFabric);
+      console.log('[ImageStandardizer] Selected frame:', selectedFrame);
       
-      const payload = { prompt: additionalPrompt };
-      console.log('[ImageStandardizer] Sending payload:', JSON.stringify(payload));
+      // Convert file to base64
+      const base64Image = await fileToBase64(imageFile);
+      console.log('[ImageStandardizer] Converted image to base64, length:', base64Image.length);
+      
+      const payload = { 
+        prompt: additionalPrompt,
+        productImage: base64Image, // Pass the base64 image
+        fabricColor: selectedFabric, // Pass selected fabric variable
+        frameFinish: selectedFrame   // Pass selected frame/structure variable
+      };
+      console.log('[ImageStandardizer] Sending payload with product image and variables');
       
       const response = await fetch('/api/enhance-prompt', {
         method: 'POST',
@@ -1381,103 +1411,6 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
       </div>
 
       <div className="mb-6">
-        <div className="flex items-center justify-between mb-2">
-          <label className="block text-gray-700 font-semibold">
-            Instrucciones Adicionales 
-            <span className="text-gray-500 font-normal text-sm">(Opcional)</span>
-          </label>
-          <button
-            type="button"
-            onClick={handleEnhancePrompt}
-            disabled={isEnhancingPrompt || !additionalPrompt || additionalPrompt.trim().length === 0}
-            className="flex items-center gap-2 px-3 py-1.5 text-sm font-bold rounded-lg transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed hover:scale-105"
-            style={{
-              background: 'transparent',
-              border: '2px solid transparent',
-              backgroundImage: isEnhancingPrompt
-                ? 'linear-gradient(white, white), linear-gradient(90deg, #F59E0B, #F97316, #EF4444)'
-                : 'linear-gradient(white, white), linear-gradient(90deg, #8B5CF6, #2563EB, #EC4899)',
-              backgroundOrigin: 'border-box',
-              backgroundClip: 'padding-box, border-box',
-              cursor: 'pointer',
-            }}
-            title="Mejorar prompt con IA"
-          >
-            {isEnhancingPrompt ? (
-              <>
-                <svg 
-                  className="animate-spin h-4 w-4" 
-                  xmlns="http://www.w3.org/2000/svg" 
-                  fill="none" 
-                  viewBox="0 0 24 24"
-                  style={{ stroke: 'url(#gradient-loading)' }}
-                >
-                  <defs>
-                    <linearGradient id="gradient-loading" x1="0%" y1="0%" x2="100%" y2="0%">
-                      <stop offset="0%" stopColor="#F59E0B" />
-                      <stop offset="50%" stopColor="#F97316" />
-                      <stop offset="100%" stopColor="#EF4444" />
-                    </linearGradient>
-                  </defs>
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="url(#gradient-loading)" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="url(#gradient-loading)" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                <span
-                  style={{
-                    background: 'linear-gradient(90deg, #F59E0B, #F97316, #EF4444)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    backgroundClip: 'text',
-                  }}
-                >
-                  Mejorando...
-                </span>
-              </>
-            ) : (
-              <>
-                <svg 
-                  className="h-4 w-4" 
-                  fill="none" 
-                  viewBox="0 0 24 24"
-                  style={{ stroke: 'url(#gradient-normal)' }}
-                >
-                  <defs>
-                    <linearGradient id="gradient-normal" x1="0%" y1="0%" x2="100%" y2="0%">
-                      <stop offset="0%" stopColor="#8B5CF6" />
-                      <stop offset="50%" stopColor="#2563EB" />
-                      <stop offset="100%" stopColor="#EC4899" />
-                    </linearGradient>
-                  </defs>
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" stroke="url(#gradient-normal)" />
-                </svg>
-                <span
-                  style={{
-                    background: 'linear-gradient(90deg, #8B5CF6, #2563EB, #EC4899)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    backgroundClip: 'text',
-                  }}
-                >
-                  ✨ Mejorar con IA
-                </span>
-              </>
-            )}
-          </button>
-        </div>
-        <textarea
-          value={additionalPrompt}
-          onChange={(e) => setAdditionalPrompt(e.target.value)}
-          placeholder="Describe cualquier modificación específica adicional que desees para la imagen..."
-          className="w-full border rounded py-2 px-3 resize-y min-h-[80px] max-h-[200px] overflow-y-auto text-sm"
-          style={{ borderColor: '#4B2E09', color: '#4B2E09', fontSize: '0.875rem', lineHeight: '1.4' }}
-          rows={3}
-        />
-        <p className="text-xs text-gray-500 mt-1">
-          Ejemplo: &ldquo;Cambiar el ambiente de fondo a una terraza con vista al mar&rdquo; o &ldquo;Añadir plantas decorativas alrededor del mueble&rdquo;
-        </p>
-      </div>
-
-      <div className="mb-6">
         <label className="block text-gray-700 font-semibold mb-3">
           Perspectiva de la Imagen 
           <span className="text-gray-500 font-normal text-sm">(Opcional)</span>
@@ -1510,6 +1443,83 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
         </div>
         <p className="text-xs text-gray-500 mt-2">
           Selecciona una perspectiva específica para la imagen generada. Puedes hacer clic nuevamente para deseleccionar.
+        </p>
+      </div>
+
+      <div className="mb-6">
+        <div className="flex items-center justify-between mb-2">
+          <label className="block text-gray-700 font-semibold">
+            Instrucciones Adicionales 
+            <span className="text-gray-500 font-normal text-sm">(Opcional)</span>
+          </label>
+          <button
+            type="button"
+            onClick={handleEnhancePrompt}
+            disabled={isEnhancingPrompt || !additionalPrompt || additionalPrompt.trim().length === 0}
+            className="group relative flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-lg transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed"
+            style={{
+              background: isEnhancingPrompt
+                ? 'linear-gradient(135deg, #F59E0B, #F97316, #EF4444)'
+                : 'linear-gradient(135deg, #8B5CF6, #2563EB, #EC4899)',
+              color: 'white',
+              boxShadow: isEnhancingPrompt 
+                ? '0 4px 15px rgba(245, 158, 11, 0.4)' 
+                : '0 4px 15px rgba(139, 92, 246, 0.4)',
+              transform: isEnhancingPrompt ? 'scale(0.98)' : 'scale(1)',
+            }}
+            title="Mejorar prompt con IA"
+          >
+            {isEnhancingPrompt ? (
+              <>
+                <svg 
+                  className="animate-spin h-3.5 w-3.5" 
+                  xmlns="http://www.w3.org/2000/svg" 
+                  fill="none" 
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <circle className="opacity-25" cx="12" cy="12" r="10" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span>Mejorando...
+                </span>
+              </>
+            ) : (
+              <>
+                <svg 
+                  xmlns="http://www.w3.org/2000/svg" 
+                  className="h-3.5 w-3.5 transition-transform duration-300 group-hover:rotate-12" 
+                  fill="none" 
+                  viewBox="0 0 24 24" 
+                  strokeWidth={2.5}
+                  stroke="currentColor"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+                <span className="whitespace-nowrap">
+                  ✨ Mejorar con IA
+                </span>
+              </>
+            )}
+            <div 
+              className="absolute inset-0 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+              style={{
+                background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0))',
+                pointerEvents: 'none',
+              }}
+            />
+          </button>
+        </div>
+        <textarea
+          value={additionalPrompt}
+          onChange={(e) => setAdditionalPrompt(e.target.value)}
+          placeholder="Describe cualquier modificación específica adicional que desees para la imagen..."
+          className="w-full border rounded py-2 px-3 resize-y min-h-[80px] max-h-[200px] overflow-y-auto text-sm"
+          style={{ borderColor: '#4B2E09', color: '#4B2E09', fontSize: '0.875rem', lineHeight: '1.4' }}
+          rows={3}
+        />
+        <p className="text-xs text-gray-500 mt-1">
+          Ejemplo: &ldquo;Cambiar el ambiente de fondo a una terraza con vista al mar&rdquo; o &ldquo;Añadir plantas decorativas alrededor del mueble&rdquo;
         </p>
       </div>
 
@@ -1620,6 +1630,14 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
       <CreditPurchaseModal
         isOpen={showPurchaseModal}
         onClose={() => setShowPurchaseModal(false)}
+      />
+
+      {/* Multi-step loader for image standardization */}
+      <MultiStepLoader
+        loadingStates={imageStandardizationSteps}
+        loading={isLoading && !error}
+        duration={2000}
+        loop={false}
       />
     </motion.div>
   );
