@@ -47,7 +47,12 @@ const imageStandardizationSteps = [
   { text: "Llamando al agente de imágenes" },
   { text: "Generando imagen estandarizada" },
   { text: "Guardando en Supabase" },
-  { text: "¡Listo! Tu imagen está lista 🎉" },
+  { text: "¡Listo! Tu imagen estará lista en..." },
+  { text: "5" },
+  { text: "4" },
+  { text: "3" },
+  { text: "2" },
+  { text: "1" }
 ];
 
 export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
@@ -90,6 +95,7 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
   const [aiDescription, setAiDescription] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [showInitialLoader, setShowInitialLoader] = useState<boolean>(false);
+  const [showImageSpotlight, setShowImageSpotlight] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [processingStatus, setProcessingStatus] = useState<string>('');
   const [userId, setUserId] = useState<string | null>(null);
@@ -117,6 +123,8 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
   const perspectiveRef = React.useRef<HTMLDivElement>(null);
   const promptRef = React.useRef<HTMLDivElement>(null);
   const submitRef = React.useRef<HTMLDivElement>(null);
+  const textareaRef = React.useRef<HTMLTextAreaElement>(null);
+  const resultsRef = React.useRef<HTMLDivElement>(null);
 
   // Credit management
   const { 
@@ -222,21 +230,26 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
         setActiveStep(2);
       }
     }
-  }, [imageFile, activeStep, completedSteps]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [imageFile, activeStep]);
 
   // Step 3: Perspective selected (optional)
   useEffect(() => {
     if (activeStep === 3 && selectedPerspective && !completedSteps.has(3)) {
       setCompletedSteps(prev => new Set([...prev, 3]));
     }
-  }, [activeStep, selectedPerspective, completedSteps]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeStep, selectedPerspective]);
   
-  // Step 4: Prompt entered (optional)
+  // Step 4: Prompt entered (optional) - REMOVED to prevent scroll jumps
+  // The step will be marked complete when user moves to next step instead
   useEffect(() => {
-    if (activeStep === 4 && additionalPrompt && !completedSteps.has(4)) {
+    // Only mark complete if we've moved past this step
+    if (activeStep > 4 && additionalPrompt && !completedSteps.has(4)) {
       setCompletedSteps(prev => new Set([...prev, 4]));
     }
-  }, [activeStep, additionalPrompt, completedSteps]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeStep]);
 
   // Helper function to skip to next step
   const skipToNextStep = (currentStep: number) => {
@@ -657,7 +670,10 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
 
   // Enhance prompt using AI
   const handleEnhancePrompt = async () => {
-    if (!additionalPrompt || additionalPrompt.trim().length === 0) {
+    // Get the current value from the textarea (since it's uncontrolled)
+    const currentPrompt = textareaRef.current?.value || '';
+    
+    if (!currentPrompt || currentPrompt.trim().length === 0) {
       setError('Por favor, escribe un prompt primero antes de mejorarlo.');
       return;
     }
@@ -672,8 +688,8 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
 
     try {
       console.log('[ImageStandardizer] 🎨 Enhancing prompt...');
-      console.log('[ImageStandardizer] Current additionalPrompt:', additionalPrompt);
-      console.log('[ImageStandardizer] Prompt length:', additionalPrompt.length);
+      console.log('[ImageStandardizer] Current additionalPrompt:', currentPrompt);
+      console.log('[ImageStandardizer] Prompt length:', currentPrompt.length);
       console.log('[ImageStandardizer] Has product image file:', !!imageFile);
       console.log('[ImageStandardizer] Selected fabric:', selectedFabric);
       console.log('[ImageStandardizer] Selected frame:', selectedFrame);
@@ -683,7 +699,7 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
       console.log('[ImageStandardizer] Converted image to base64, length:', base64Image.length);
       
       const payload = { 
-        prompt: additionalPrompt,
+        prompt: currentPrompt,
         productImage: base64Image, // Pass the base64 image
         fabricColor: selectedFabric, // Pass selected fabric variable
         frameFinish: selectedFrame   // Pass selected frame/structure variable
@@ -707,8 +723,11 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
       const data = await response.json();
       console.log('[ImageStandardizer] ✅ Enhanced prompt received:', data.enhancedPrompt);
       
-      // Replace the text in the field
+      // Replace the text in the field (both state and textarea)
       setAdditionalPrompt(data.enhancedPrompt);
+      if (textareaRef.current) {
+        textareaRef.current.value = data.enhancedPrompt;
+      }
       
     } catch (err) {
       console.error('[ImageStandardizer] Error enhancing prompt:', err);
@@ -716,6 +735,15 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
     } finally {
       setIsEnhancingPrompt(false);
     }
+  };
+
+  // Helper function to close spotlight and scroll to results
+  const closeSpotlightAndShowResults = () => {
+    setShowImageSpotlight(false);
+    // Scroll to results after modal closes
+    setTimeout(() => {
+      resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 300); // Wait for modal close animation
   };
 
   const handleSubmit = async () => {
@@ -1026,6 +1054,11 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
       refreshCredits();
       const data = result.result;
       console.log('API Response:', data); // Debug log
+      
+      // Show spotlight modal when image is ready
+      if (data.editedImageUrl) {
+        setShowImageSpotlight(true);
+      }
       console.log('Generated Image URL:', data.editedImageUrl?.substring(0, 50) + '...'); // Debug log
       console.log('Has Generated Image:', data.hasGeneratedImage); // Debug log
       console.log('Raw Response Available:', !!data.rawResponse); // Debug log
@@ -1125,7 +1158,8 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
     children: React.ReactNode; 
     stepRef?: React.RefObject<HTMLDivElement | null>;
   }) => {
-    const isActive = activeStep >= stepNumber;
+    // Step 5 (submit) should be active when we reach step 4
+    const isActive = stepNumber === 5 ? activeStep >= 4 : activeStep >= stepNumber;
     const isCompleted = completedSteps.has(stepNumber);
     
     return (
@@ -1344,11 +1378,31 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
 
       <StepContainer stepNumber={2} stepRef={variablesRef}>
         <div className="mb-4">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="flex items-center justify-center w-7 h-7 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 text-white text-sm font-bold">
-              2
-            </span>
-            <label className="block text-gray-700 font-semibold">Seleccionar Variables</label>
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <span className="flex items-center justify-center w-7 h-7 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 text-white text-sm font-bold">
+                2
+              </span>
+              <label className="block text-gray-700 font-semibold">
+                Seleccionar Variables
+                <span className="text-gray-500 font-normal text-sm ml-1">(Opcional)</span>
+              </label>
+            </div>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const scrollPos = window.scrollY;
+                skipToNextStep(2);
+                requestAnimationFrame(() => {
+                  window.scrollTo(0, scrollPos);
+                });
+              }}
+              className="text-xs text-blue-600 hover:text-blue-800 font-medium underline whitespace-nowrap"
+            >
+              Omitir →
+            </button>
           </div>
         </div>
 
@@ -1627,7 +1681,7 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
             e.preventDefault();
             e.stopPropagation();
             const scrollPos = window.scrollY;
-            if (selectedFabric && selectedFrame) {
+            if (selectedFabric || selectedFrame) {
               const newCompleted = new Set(completedSteps);
               newCompleted.add(2);
               setCompletedSteps(newCompleted);
@@ -1637,10 +1691,10 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
               window.scrollTo(0, scrollPos);
             });
           }}
-          disabled={!selectedFabric || !selectedFrame}
+          disabled={!selectedFabric && !selectedFrame}
           className="text-sm font-medium transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-1"
           style={{
-            color: selectedFabric && selectedFrame ? '#2563EB' : '#9CA3AF',
+            color: (selectedFabric || selectedFrame) ? '#2563EB' : '#9CA3AF',
           }}
         >
           Continuar 
@@ -1745,7 +1799,7 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
                 window.scrollTo(0, scrollPos);
               });
             }}
-            disabled={isEnhancingPrompt || !additionalPrompt || additionalPrompt.trim().length === 0}
+            disabled={isEnhancingPrompt}
             className="group relative flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-lg transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed"
             style={{
               background: isEnhancingPrompt
@@ -1801,8 +1855,12 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
           </button>
         </div>
         <textarea
-          value={additionalPrompt}
-          onChange={(e) => setAdditionalPrompt(e.target.value)}
+          ref={textareaRef}
+          defaultValue={additionalPrompt}
+          onBlur={(e) => {
+            // Only update state when user leaves the field
+            setAdditionalPrompt(e.target.value);
+          }}
           placeholder="Describe cualquier modificación específica adicional que desees para la imagen..."
           className="w-full border rounded py-2 px-3 resize-y min-h-[80px] max-h-[200px] overflow-y-auto text-sm"
           style={{ borderColor: '#4B2E09', color: '#4B2E09', fontSize: '0.875rem', lineHeight: '1.4' }}
@@ -1823,9 +1881,14 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
                 window.scrollTo(0, scrollPos);
               });
             }}
-            className="text-xs text-blue-600 hover:text-blue-800 font-medium underline whitespace-nowrap ml-4"
+            className="text-xs font-bold px-3 py-1 rounded transition-all duration-200"
+            style={{
+              background: 'linear-gradient(135deg, #10B981, #059669)',
+              color: 'white',
+              boxShadow: '0 2px 8px rgba(16, 185, 129, 0.3)',
+            }}
           >
-            Omitir →
+            ¡Listo! ✓
           </button>
         </div>
         </div>
@@ -1877,6 +1940,7 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
       
       {(editedImageUrl || aiDescription) && (
         <motion.div 
+          ref={resultsRef}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
@@ -1899,12 +1963,24 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
                 <h3 className="text-lg font-semibold">Imagen Estandarizada:</h3>
                 <button
                   onClick={handleDownload}
-                  className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center gap-2"
+                  className="group relative px-3 py-1.5 text-xs font-bold rounded-lg transition-all duration-300 flex items-center gap-1.5 hover:scale-105 active:scale-95"
+                  style={{
+                    background: 'linear-gradient(135deg, #10B981, #059669, #047857)',
+                    color: 'white',
+                    boxShadow: '0 4px 12px rgba(16, 185, 129, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2)',
+                  }}
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  <svg className="w-3.5 h-3.5 group-hover:animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                   </svg>
-                  Descargar Imagen
+                  Descargar
+                  <div 
+                    className="absolute inset-0 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                    style={{
+                      background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0))',
+                      pointerEvents: 'none',
+                    }}
+                  />
                 </button>
               </div>
               <div className="w-full max-w-xl mx-auto border rounded-lg overflow-hidden">
@@ -1952,6 +2028,57 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
         duration={2000}
         loop={false}
       />
+
+      {/* Image Spotlight Modal */}
+      {showImageSpotlight && editedImageUrl && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-[200] flex items-center justify-center"
+          style={{
+            backgroundColor: 'rgba(0, 0, 0, 0.85)',
+            backdropFilter: 'blur(8px)',
+          }}
+        >
+          {/* Click anywhere to close */}
+          <div
+            className="absolute inset-0"
+            onClick={closeSpotlightAndShowResults}
+          />
+          
+          {/* Image container */}
+          <motion.div
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ delay: 0.2, duration: 0.4 }}
+            className="relative z-10 max-w-5xl w-[75vw] max-h-[75vh] cursor-pointer"
+            onClick={() => {
+              handleDownload();
+              closeSpotlightAndShowResults();
+            }}
+          >
+            {/* Glow effect */}
+            <div className="absolute -inset-4 bg-gradient-to-r from-purple-500 via-blue-500 to-pink-500 rounded-lg opacity-30 blur-2xl" />
+            
+            {/* Image */}
+            <div className="relative bg-white rounded-lg overflow-hidden shadow-2xl">
+              <img
+                src={editedImageUrl}
+                alt="Generated Image"
+                className="w-full h-full object-contain"
+                style={{ maxHeight: '75vh' }}
+              />
+              
+              {/* Download hint */}
+              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-6 text-white text-center">
+                <p className="text-lg font-medium">✨ ¡Tu imagen está lista! ✨</p>
+                <p className="text-sm opacity-90 mt-1">Haz clic para descargar</p>
+              </div>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
     </div>
   );
 }

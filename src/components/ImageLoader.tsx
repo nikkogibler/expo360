@@ -26,7 +26,7 @@ const loadingStates = [
     text: "Shutting down the AI",
   },
   {
-    text: "Success. Your image is ready! 🎉",
+    text: "Success. Your image is ready!",
   },
 ];
 
