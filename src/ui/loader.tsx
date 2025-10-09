@@ -2,6 +2,39 @@
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 
+export const LoaderOne = ({ className }: { className?: string }) => {
+  return (
+    <div
+      className={cn(
+        "flex items-center justify-center",
+        className
+      )}
+    >
+      <div className="flex space-x-2">
+        {[0, 1, 2].map((index) => (
+          <motion.div
+            key={index}
+            className="w-3 h-3 rounded-full"
+            style={{
+              background: "linear-gradient(135deg, #8B5CF6, #2563EB, #EC4899)",
+            }}
+            animate={{
+              scale: [1, 1.5, 1],
+              opacity: [0.5, 1, 0.5],
+            }}
+            transition={{
+              duration: 1,
+              repeat: Infinity,
+              delay: index * 0.15,
+              ease: "easeInOut",
+            }}
+          />
+        ))}
+      </div>
+    </div>
+  );
+};
+
 export const LoaderThree = ({ className }: { className?: string }) => {
   return (
     <div
