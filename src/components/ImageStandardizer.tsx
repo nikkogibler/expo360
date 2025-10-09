@@ -61,6 +61,24 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
     }
     return new Blob([new Uint8Array(array)], { type: mime });
   }
+  
+  // Prevent default drag behavior on the entire component
+  useEffect(() => {
+    const preventDefaults = (e: DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+    };
+
+    // Prevent browser from opening files
+    window.addEventListener('dragover', preventDefaults);
+    window.addEventListener('drop', preventDefaults);
+
+    return () => {
+      window.removeEventListener('dragover', preventDefaults);
+      window.removeEventListener('drop', preventDefaults);
+    };
+  }, []);
+  
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>('');
   const [selectedFabric, setSelectedFabric] = useState<string>('');
@@ -86,6 +104,17 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
   const [fabricOptions, setFabricOptions] = useState<GlobalProductOption[]>([]);
   const [frameOptions, setFrameOptions] = useState<GlobalProductOption[]>([]);
   const [optionsLoading, setOptionsLoading] = useState<boolean>(true);
+
+  // Step-by-step flow state
+  const [activeStep, setActiveStep] = useState<number>(1);
+  const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set([0]));
+  
+  // Refs for smooth scrolling
+  const imageUploadRef = React.useRef<HTMLDivElement>(null);
+  const variablesRef = React.useRef<HTMLDivElement>(null);
+  const perspectiveRef = React.useRef<HTMLDivElement>(null);
+  const promptRef = React.useRef<HTMLDivElement>(null);
+  const submitRef = React.useRef<HTMLDivElement>(null);
 
   // Credit management
   const { 
@@ -181,6 +210,39 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
       }
     };
   }, [imagePreview]);
+
+  // Step validation and progression logic
+  useEffect(() => {
+    // Step 1: Image uploaded - unlock step 2 but don't auto-scroll
+    if (imageFile && !completedSteps.has(1)) {
+      setCompletedSteps(prev => new Set([...prev, 1]));
+      if (activeStep === 1) {
+        setActiveStep(2);
+      }
+    }
+  }, [imageFile, activeStep, completedSteps]);
+
+  // Step 3: Perspective selected (optional)
+  useEffect(() => {
+    if (activeStep === 3 && selectedPerspective && !completedSteps.has(3)) {
+      setCompletedSteps(prev => new Set([...prev, 3]));
+    }
+  }, [activeStep, selectedPerspective, completedSteps]);
+  
+  // Step 4: Prompt entered (optional)
+  useEffect(() => {
+    if (activeStep === 4 && additionalPrompt && !completedSteps.has(4)) {
+      setCompletedSteps(prev => new Set([...prev, 4]));
+    }
+  }, [activeStep, additionalPrompt, completedSteps]);
+
+  // Helper function to skip to next step
+  const skipToNextStep = (currentStep: number) => {
+    const newCompleted = new Set(completedSteps);
+    newCompleted.add(currentStep);
+    setCompletedSteps(newCompleted);
+    setActiveStep(currentStep + 1);
+  };
 
   // Helper function to validate base64 image data
   const validateBase64Image = (dataUrl: string): boolean => {
@@ -673,11 +735,14 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
       return;
     }
 
-  setIsLoading(true);
   setError(null);
   setEditedImageUrl(null);
   setAiDescription(null);
   console.log('[ImageStandardizer] Starting image processing...');
+  
+  // Wait 5 seconds before showing loader
+  await new Promise(resolve => setTimeout(resolve, 5000));
+  setIsLoading(true);
 
     // At this point, imageFile is guaranteed to be non-null due to validation
     const mainImageFile = imageFile!;
@@ -1044,11 +1109,51 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
     }
   };
 
+  // Helper component for step containers
+  const StepContainer = ({ 
+    stepNumber, 
+    children, 
+    stepRef 
+  }: { 
+    stepNumber: number; 
+    children: React.ReactNode; 
+    stepRef?: React.RefObject<HTMLDivElement | null>;
+  }) => {
+    const isActive = activeStep >= stepNumber;
+    const isCompleted = completedSteps.has(stepNumber);
+    
+    return (
+      <div 
+        ref={stepRef}
+        className="relative mb-6 p-4 rounded-lg"
+        style={{
+          opacity: isActive ? 1 : 0.4,
+          filter: isActive ? 'none' : 'grayscale(1) blur(2px)',
+          backgroundColor: isActive ? 'transparent' : 'rgba(0,0,0,0.02)',
+          border: isActive ? '2px solid transparent' : '2px solid rgba(0,0,0,0.1)',
+          borderImage: isActive && activeStep === stepNumber 
+            ? 'linear-gradient(90deg, #8B5CF6, #2563EB, #EC4899) 1' 
+            : 'none',
+          pointerEvents: isActive ? 'auto' : 'none',
+          transition: 'none',
+        }}
+      >
+        <div style={{ position: 'relative', zIndex: isActive ? 1 : 0 }}>
+          {children}
+        </div>
+        {isCompleted && stepNumber < activeStep && (
+          <div className="absolute top-2 right-2 flex items-center justify-center w-6 h-6 rounded-full bg-green-500 text-white" style={{ zIndex: 2 }}>
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
-    <motion.div 
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
+    <div 
       className="p-6 rounded-lg shadow-lg"
       style={{
         backgroundColor: '#F8F5F0',
@@ -1084,7 +1189,14 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
         
         <div className="flex items-center space-x-4">
           <button 
-            onClick={() => setShowPurchaseModal(true)}
+            onClick={(e) => {
+              e.preventDefault();
+              const scrollPos = window.scrollY;
+              setShowPurchaseModal(true);
+              requestAnimationFrame(() => {
+                window.scrollTo(0, scrollPos);
+              });
+            }}
             className="transition-all duration-200 hover:scale-105"
           >
             <CreditDisplay size="compact" showIcon={true} />
@@ -1095,8 +1207,14 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
         </div>
       </div>
 
-      <div className="mb-4">
-        <label className="block text-gray-700 font-semibold mb-2">Subir Imagen de Producto</label>
+      <StepContainer stepNumber={1} stepRef={imageUploadRef}>
+        <div className="mb-4">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="flex items-center justify-center w-7 h-7 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 text-white text-sm font-bold">
+              1
+            </span>
+            <label className="block text-gray-700 font-semibold">Subir Imagen de Producto</label>
+          </div>
         <div className="relative">
           <input 
             type="file" 
@@ -1104,9 +1222,24 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
             onChange={handleFileChange} 
             className="hidden"
             id="image-upload"
+            ref={(input) => {
+              if (input) {
+                (window as any).imageUploadInput = input;
+              }
+            }}
           />
-          <label 
-            htmlFor="image-upload"
+          <div 
+            onClick={(e) => {
+              console.log('Upload area clicked');
+              e.preventDefault();
+              const input = document.getElementById('image-upload') as HTMLInputElement;
+              if (input) {
+                console.log('Triggering file input click');
+                input.click();
+              } else {
+                console.log('File input not found');
+              }
+            }}
             className={`w-full block border-2 border-dashed rounded-lg py-4 px-6 cursor-pointer transition-colors duration-200 text-center ${
               isDragging 
                 ? 'border-amber-500 bg-amber-50' 
@@ -1133,8 +1266,14 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
               e.stopPropagation();
               setIsDragging(false);
               
+              console.log('Drop event triggered', e.dataTransfer.files);
               const file = e.dataTransfer.files?.[0];
-              if (!file) return;
+              if (!file) {
+                console.log('No file found in drop');
+                return;
+              }
+              
+              console.log('File dropped:', file.name, file.type, file.size);
               
               // Check if it's an image
               if (!file.type.startsWith('image/')) {
@@ -1151,6 +1290,7 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
               setImageFile(file);
               const previewUrl = URL.createObjectURL(file);
               setImagePreview(previewUrl);
+              console.log('Image file set successfully');
             }}
           >
             {imageFile && imagePreview ? (
@@ -1191,13 +1331,24 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
                 </div>
               </div>
             )}
-          </label>
+          </div>
         </div>
-      </div>
+        </div>
+      </StepContainer>
 
-      <div className="mb-4">
-        <div className="flex justify-between items-center mb-2">
-          <label className="block text-gray-700 font-semibold">Color de Tela</label>
+      <StepContainer stepNumber={2} stepRef={variablesRef}>
+        <div className="mb-4">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="flex items-center justify-center w-7 h-7 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 text-white text-sm font-bold">
+              2
+            </span>
+            <label className="block text-gray-700 font-semibold">Seleccionar Variables</label>
+          </div>
+        </div>
+
+        <div className="mb-4">
+          <div className="flex justify-between items-center mb-2">
+            <label className="block text-gray-700 font-medium text-sm">Color de Tela</label>
           {selectedFabric && fabricOptions.find(f => f.name === selectedFabric)?.value_data?.image_url && (
             <button
               onClick={handleAddFabricReference}
@@ -1215,9 +1366,15 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
         ) : (
           <select 
             value={selectedFabric} 
-            onChange={(e) => setSelectedFabric(e.target.value)} 
+            onChange={(e) => {
+              const scrollPos = window.scrollY;
+              setSelectedFabric(e.target.value);
+              requestAnimationFrame(() => {
+                window.scrollTo(0, scrollPos);
+              });
+            }} 
             className="w-full border rounded py-2 px-3"
-            style={{ borderColor: '#4B2E09', color: '#4B2E09' }}
+            style={{ borderColor: '#4B2E09', color: '#4B2E09', scrollMarginTop: '0px' }}
           >
             <option value="">Seleccionar color de tela...</option>
             {fabricOptions.map(fabric => (
@@ -1247,9 +1404,15 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
         ) : (
           <select 
             value={selectedFrame} 
-            onChange={(e) => setSelectedFrame(e.target.value)} 
+            onChange={(e) => {
+              const scrollPos = window.scrollY;
+              setSelectedFrame(e.target.value);
+              requestAnimationFrame(() => {
+                window.scrollTo(0, scrollPos);
+              });
+            }} 
             className="w-full border rounded py-2 px-3"
-            style={{ borderColor: '#4B2E09', color: '#4B2E09' }}
+            style={{ borderColor: '#4B2E09', color: '#4B2E09', scrollMarginTop: '0px' }}
           >
             <option value="">Seleccionar acabado de estructura...</option>
             {frameOptions.map(frame => (
@@ -1278,7 +1441,14 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
           </div>
           {referenceImages.length > 0 && (
             <button
-              onClick={handleClearAllReferences}
+              onClick={(e) => {
+                e.preventDefault();
+                const scrollPos = window.scrollY;
+                handleClearAllReferences();
+                requestAnimationFrame(() => {
+                  window.scrollTo(0, scrollPos);
+                });
+              }}
               className="text-xs text-red-600 hover:text-red-800 underline"
             >
               Borrar todas
@@ -1304,7 +1474,14 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
                 </div>
                 {/* Remove Button */}
                 <button
-                  onClick={() => handleRemoveReferenceImage(refImg.id)}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    const scrollPos = window.scrollY;
+                    handleRemoveReferenceImage(refImg.id);
+                    requestAnimationFrame(() => {
+                      window.scrollTo(0, scrollPos);
+                    });
+                  }}
                   className="absolute top-1 right-1 bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold"
                 >
                   ×
@@ -1314,7 +1491,13 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
               {/* Context Type Selector */}
               <select
                 value={refImg.contextType}
-                onChange={(e) => handleUpdateReferenceContext(refImg.id, e.target.value as ReferenceImage['contextType'])}
+                onChange={(e) => {
+                  const scrollPos = window.scrollY;
+                  handleUpdateReferenceContext(refImg.id, e.target.value as ReferenceImage['contextType']);
+                  requestAnimationFrame(() => {
+                    window.scrollTo(0, scrollPos);
+                  });
+                }}
                 className="w-full text-xs border rounded py-1 px-2 mb-1"
                 style={{ borderColor: '#4B2E09', color: '#4B2E09' }}
               >
@@ -1330,7 +1513,13 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
               <input
                 type="text"
                 value={refImg.contextLabel}
-                onChange={(e) => handleUpdateReferenceContext(refImg.id, refImg.contextType, e.target.value)}
+                onChange={(e) => {
+                  const scrollPos = window.scrollY;
+                  handleUpdateReferenceContext(refImg.id, refImg.contextType, e.target.value);
+                  requestAnimationFrame(() => {
+                    window.scrollTo(0, scrollPos);
+                  });
+                }}
                 placeholder="Descripción..."
                 className="w-full text-xs border rounded py-1 px-2"
                 style={{ borderColor: '#4B2E09', color: '#4B2E09' }}
@@ -1345,7 +1534,13 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
                 type="file"
                 accept="image/*"
                 multiple
-                onChange={(e) => handleAddReferenceImage(e.target.files)}
+                onChange={(e) => {
+                  const scrollPos = window.scrollY;
+                  handleAddReferenceImage(e.target.files);
+                  requestAnimationFrame(() => {
+                    window.scrollTo(0, scrollPos);
+                  });
+                }}
                 className="hidden"
               />
               <svg className="w-8 h-8 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1373,7 +1568,14 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
                 <span className="text-gray-700">
                   Tienes una tela seleccionada. 
                   <button 
-                    onClick={handleAddFabricReference}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      const scrollPos = window.scrollY;
+                      handleAddFabricReference();
+                      requestAnimationFrame(() => {
+                        window.scrollTo(0, scrollPos);
+                      });
+                    }}
                     className="ml-1 text-blue-600 hover:text-blue-800 font-medium underline"
                   >
                     ¿Agregar imagen de referencia de tela?
@@ -1389,7 +1591,14 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
                 <span className="text-gray-700">
                   Tienes una estructura seleccionada. 
                   <button 
-                    onClick={handleAddStructureReference}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      const scrollPos = window.scrollY;
+                      handleAddStructureReference();
+                      requestAnimationFrame(() => {
+                        window.scrollTo(0, scrollPos);
+                      });
+                    }}
                     className="ml-1 text-blue-600 hover:text-blue-800 font-medium underline"
                   >
                     ¿Agregar imagen de referencia de estructura?
@@ -1410,11 +1619,54 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
         )}
       </div>
 
-      <div className="mb-6">
-        <label className="block text-gray-700 font-semibold mb-3">
-          Perspectiva de la Imagen 
-          <span className="text-gray-500 font-normal text-sm">(Opcional)</span>
-        </label>
+      {/* Continue button for variables section - minimal style */}
+      <div className="flex justify-end mt-4">
+        <button
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const scrollPos = window.scrollY;
+            if (selectedFabric && selectedFrame) {
+              const newCompleted = new Set(completedSteps);
+              newCompleted.add(2);
+              setCompletedSteps(newCompleted);
+              setActiveStep(3);
+            }
+            requestAnimationFrame(() => {
+              window.scrollTo(0, scrollPos);
+            });
+          }}
+          disabled={!selectedFabric || !selectedFrame}
+          className="text-sm font-medium transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-1"
+          style={{
+            color: selectedFabric && selectedFrame ? '#2563EB' : '#9CA3AF',
+          }}
+        >
+          Continuar 
+          <svg 
+            className="w-4 h-4" 
+            fill="none" 
+            stroke="currentColor" 
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
+      </div>
+      </StepContainer>
+
+      <StepContainer stepNumber={3} stepRef={perspectiveRef}>
+        <div className="mb-6">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="flex items-center justify-center w-7 h-7 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 text-white text-sm font-bold">
+              3
+            </span>
+            <label className="block text-gray-700 font-semibold">
+              Perspectiva de la Imagen 
+              <span className="text-gray-500 font-normal text-sm">(Opcional)</span>
+            </label>
+          </div>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
           {[
             { id: 'frontal', label: 'Vista Frontal', value: 'full frontal view' },
@@ -1427,7 +1679,14 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
             <button
               key={perspective.id}
               type="button"
-              onClick={() => setSelectedPerspective(selectedPerspective === perspective.value ? '' : perspective.value)}
+              onClick={(e) => {
+                e.preventDefault();
+                const scrollPos = window.scrollY;
+                setSelectedPerspective(selectedPerspective === perspective.value ? '' : perspective.value);
+                requestAnimationFrame(() => {
+                  window.scrollTo(0, scrollPos);
+                });
+              }}
               className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 border-2 ${
                 selectedPerspective === perspective.value
                   ? 'bg-amber-100 border-amber-500 text-amber-800 shadow-md transform scale-105'
@@ -1441,20 +1700,51 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
             </button>
           ))}
         </div>
-        <p className="text-xs text-gray-500 mt-2">
-          Selecciona una perspectiva específica para la imagen generada. Puedes hacer clic nuevamente para deseleccionar.
-        </p>
-      </div>
-
-      <div className="mb-6">
-        <div className="flex items-center justify-between mb-2">
-          <label className="block text-gray-700 font-semibold">
-            Instrucciones Adicionales 
-            <span className="text-gray-500 font-normal text-sm">(Opcional)</span>
-          </label>
+        <div className="flex justify-between items-center mt-3">
+          <p className="text-xs text-gray-500">
+            Selecciona una perspectiva específica para la imagen generada. Puedes hacer clic nuevamente para deseleccionar.
+          </p>
           <button
             type="button"
-            onClick={handleEnhancePrompt}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              const scrollPos = window.scrollY;
+              skipToNextStep(3);
+              requestAnimationFrame(() => {
+                window.scrollTo(0, scrollPos);
+              });
+            }}
+            className="text-xs text-blue-600 hover:text-blue-800 font-medium underline whitespace-nowrap ml-4"
+          >
+            Omitir →
+          </button>
+        </div>
+        </div>
+      </StepContainer>
+
+      <StepContainer stepNumber={4} stepRef={promptRef}>
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <span className="flex items-center justify-center w-7 h-7 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 text-white text-sm font-bold">
+                4
+              </span>
+              <label className="block text-gray-700 font-semibold">
+                Instrucciones Adicionales 
+                <span className="text-gray-500 font-normal text-sm">(Opcional)</span>
+              </label>
+            </div>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              const scrollPos = window.scrollY;
+              handleEnhancePrompt();
+              requestAnimationFrame(() => {
+                window.scrollTo(0, scrollPos);
+              });
+            }}
             disabled={isEnhancingPrompt || !additionalPrompt || additionalPrompt.trim().length === 0}
             className="group relative flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-lg transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed"
             style={{
@@ -1512,18 +1802,43 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
         </div>
         <textarea
           value={additionalPrompt}
-          onChange={(e) => setAdditionalPrompt(e.target.value)}
+          onChange={(e) => {
+            const scrollPos = window.scrollY;
+            setAdditionalPrompt(e.target.value);
+            requestAnimationFrame(() => {
+              window.scrollTo(0, scrollPos);
+            });
+          }}
           placeholder="Describe cualquier modificación específica adicional que desees para la imagen..."
           className="w-full border rounded py-2 px-3 resize-y min-h-[80px] max-h-[200px] overflow-y-auto text-sm"
           style={{ borderColor: '#4B2E09', color: '#4B2E09', fontSize: '0.875rem', lineHeight: '1.4' }}
           rows={3}
         />
-        <p className="text-xs text-gray-500 mt-1">
-          Ejemplo: &ldquo;Cambiar el ambiente de fondo a una terraza con vista al mar&rdquo; o &ldquo;Añadir plantas decorativas alrededor del mueble&rdquo;
-        </p>
-      </div>
+        <div className="flex justify-between items-center mt-1">
+          <p className="text-xs text-gray-500">
+            Ejemplo: &ldquo;Cambiar el ambiente de fondo a una terraza con vista al mar&rdquo; o &ldquo;Añadir plantas decorativas alrededor del mueble&rdquo;
+          </p>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              const scrollPos = window.scrollY;
+              skipToNextStep(4);
+              requestAnimationFrame(() => {
+                window.scrollTo(0, scrollPos);
+              });
+            }}
+            className="text-xs text-blue-600 hover:text-blue-800 font-medium underline whitespace-nowrap ml-4"
+          >
+            Omitir →
+          </button>
+        </div>
+        </div>
+      </StepContainer>
 
-      <button 
+      <StepContainer stepNumber={5} stepRef={submitRef}>
+        <button 
         onClick={handleSubmit} 
         disabled={!imageFile || !canProcess || isLoading || optionsLoading || creditProcessing}
         className={`w-full py-3 rounded text-white font-bold transition-colors ${
@@ -1540,7 +1855,8 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
               ? (processingStatus || 'Estandarizando...') 
               : 'Estandarizar Imagen de Producto (1 crédito)'
         }
-      </button>
+        </button>
+      </StepContainer>
 
       {error && (
         <div className="text-red-500 mt-4 p-3 bg-red-50 rounded-lg border border-red-200">
@@ -1639,6 +1955,6 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
         duration={2000}
         loop={false}
       />
-    </motion.div>
+    </div>
   );
 }
