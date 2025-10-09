@@ -163,7 +163,7 @@ Return only the enhanced prompt text.`;
     console.log('[enhance-prompt API] Reasoning:', data.choices?.[0]?.message?.reasoning);
     
     // Try to get content from either 'content' or 'reasoning' field (reasoning models use 'reasoning')
-    let enhancedPrompt = data.choices?.[0]?.message?.content?.trim() || 
+    const enhancedPrompt = data.choices?.[0]?.message?.content?.trim() || 
                         data.choices?.[0]?.message?.reasoning?.trim();
 
     if (!enhancedPrompt) {

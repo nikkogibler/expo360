@@ -8,6 +8,7 @@ import { CreditDisplay, CreditUpgradeMessage } from './admin/CreditDisplay';
 import { useCreditAwareProcessing } from '../hooks/useCredits';
 import CreditPurchaseModal from './CreditPurchaseModal';
 import { MultiStepLoader } from '../ui/multi-step-loader';
+import { LoaderThree } from '../ui/loader';
 
 // Interface for Supabase global product options
 interface GlobalProductOption {
@@ -88,6 +89,7 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
   const [editedImageUrl, setEditedImageUrl] = useState<string | null>(null);
   const [aiDescription, setAiDescription] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [showInitialLoader, setShowInitialLoader] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [processingStatus, setProcessingStatus] = useState<string>('');
   const [userId, setUserId] = useState<string | null>(null);
@@ -740,8 +742,12 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
   setAiDescription(null);
   console.log('[ImageStandardizer] Starting image processing...');
   
-  // Wait 5 seconds before showing loader
-  await new Promise(resolve => setTimeout(resolve, 5000));
+  // Show initial loader (LoaderThree) for 6.5 seconds
+  setShowInitialLoader(true);
+  await new Promise(resolve => setTimeout(resolve, 6500));
+  setShowInitialLoader(false);
+  
+  // Then show the multi-step loader
   setIsLoading(true);
 
     // At this point, imageFile is guaranteed to be non-null due to validation
@@ -1224,7 +1230,7 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
             id="image-upload"
             ref={(input) => {
               if (input) {
-                (window as any).imageUploadInput = input;
+                (window as Window & { imageUploadInput?: HTMLInputElement }).imageUploadInput = input;
               }
             }}
           />
@@ -1513,13 +1519,7 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
               <input
                 type="text"
                 value={refImg.contextLabel}
-                onChange={(e) => {
-                  const scrollPos = window.scrollY;
-                  handleUpdateReferenceContext(refImg.id, refImg.contextType, e.target.value);
-                  requestAnimationFrame(() => {
-                    window.scrollTo(0, scrollPos);
-                  });
-                }}
+                onChange={(e) => handleUpdateReferenceContext(refImg.id, refImg.contextType, e.target.value)}
                 placeholder="Descripción..."
                 className="w-full text-xs border rounded py-1 px-2"
                 style={{ borderColor: '#4B2E09', color: '#4B2E09' }}
@@ -1802,13 +1802,7 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
         </div>
         <textarea
           value={additionalPrompt}
-          onChange={(e) => {
-            const scrollPos = window.scrollY;
-            setAdditionalPrompt(e.target.value);
-            requestAnimationFrame(() => {
-              window.scrollTo(0, scrollPos);
-            });
-          }}
+          onChange={(e) => setAdditionalPrompt(e.target.value)}
           placeholder="Describe cualquier modificación específica adicional que desees para la imagen..."
           className="w-full border rounded py-2 px-3 resize-y min-h-[80px] max-h-[200px] overflow-y-auto text-sm"
           style={{ borderColor: '#4B2E09', color: '#4B2E09', fontSize: '0.875rem', lineHeight: '1.4' }}
@@ -1947,6 +1941,9 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
         isOpen={showPurchaseModal}
         onClose={() => setShowPurchaseModal(false)}
       />
+
+      {/* Initial loader (LoaderThree) - shows for 6.5 seconds */}
+      {showInitialLoader && <LoaderThree />}
 
       {/* Multi-step loader for image standardization */}
       <MultiStepLoader
