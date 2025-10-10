@@ -277,12 +277,24 @@ const ProductDetailPage = ({ params }: ProductDetailPageProps) => {
 
     if (!existingCustomer) {
       console.log("Cliente no encontrado, intentando insertar nuevo cliente.");
+      
+      // Determine anonymous customer name based on URL params
+      const fromParam = currentSearchParams.get('from');
+      let anonymousName = 'Visitante Anónimo de la Expo'; // Default
+      let landingSource = 'Expo Mueble Internacional'; // Default
+      
+      if (fromParam === 'evento-especial') {
+        anonymousName = 'Visitante Anónimo Evento Especial';
+        landingSource = 'Evento Especial';
+      }
+      
       const { data: newCustomer, error: insertError } = await supabase
         .from('customers')
         .insert({ 
           customer_id: cId, 
           email: `${cId}@temp.com`, 
-          name: 'Visitante Anónimo de la Expo' 
+          name: anonymousName,
+          landing_source: landingSource
         })
         .select()
         .single();

@@ -63,7 +63,6 @@ interface Product {
   price: number;
 }
 const RFC = 'KUS2103258E2'; // Kusam Decor RFC
-const IVA_RATE = 0.16;
 
 export default function QuotePage() {
   const router = useRouter();
@@ -139,19 +138,24 @@ export default function QuotePage() {
               customerNameValue = customerData.name;
             }
             setCustomerLandingSource(customerData.landing_source || null);
-            // Fetch landing page image URL by exact match
+            // Fetch landing page image URL (case-insensitive match)
             if (customerData.landing_source) {
+              console.log('[Quote] Fetching image for landing_source:', customerData.landing_source);
               const { data: landingPage, error: landingErr } = await supabase
                 .from('landing_pages')
                 .select('image_url')
-                .eq('name', customerData.landing_source)
+                .ilike('name', customerData.landing_source.trim())
                 .maybeSingle();
               if (!landingErr && landingPage && typeof landingPage.image_url === 'string' && landingPage.image_url.length > 0) {
-                setLandingPageImageUrl(landingPage.image_url.replace(/^\/public/, ''));
+                const imageUrl = landingPage.image_url.replace(/^\/public/, '');
+                console.log('[Quote] Setting landing page image:', imageUrl);
+                setLandingPageImageUrl(imageUrl);
               } else {
+                console.warn('[Quote] No image found for landing page, using fallback. Error:', landingErr);
                 setLandingPageImageUrl('/expo_mueble.png'); // fallback image
               }
             } else {
+              console.log('[Quote] No landing_source, using fallback image');
               setLandingPageImageUrl('/expo_mueble.png'); // fallback image
             }
           }
@@ -202,17 +206,28 @@ export default function QuotePage() {
         setCustomerHasDiscount(false);
         return;
       }
-      // Query landing_pages for discount_applied
+      // Query landing_pages for discount_applied and image_url (case-insensitive)
       const { data: landingPage, error: landingErr } = await supabase
         .from('landing_pages')
-        .select('discount_applied')
-        .eq('name', customerLandingSource)
+        .select('discount_applied, image_url')
+        .ilike('name', customerLandingSource.trim())
         .maybeSingle();
-      if (!landingErr && landingPage && typeof landingPage.discount_applied === 'number' && landingPage.discount_applied > 0) {
-        // Convert percentage to decimal (e.g., 5 -> 0.05)
-        setDiscountRate(landingPage.discount_applied / 100);
-        setCustomerHasDiscount(true);
+      
+      if (!landingErr && landingPage) {
+        // Set discount if available
+        if (typeof landingPage.discount_applied === 'number' && landingPage.discount_applied > 0) {
+          // Convert percentage to decimal (e.g., 5 -> 0.05)
+          setDiscountRate(landingPage.discount_applied / 100);
+          setCustomerHasDiscount(true);
+        } else {
+          setDiscountRate(0);
+          setCustomerHasDiscount(false);
+        }
+        
+        // Set image URL if available (keep existing image if already set in earlier fetch)
+        // This is a secondary fetch for discount, the main image was already set during customer data fetch
       } else {
+        console.warn('[Quote] Landing page not found for:', customerLandingSource, landingErr);
         setDiscountRate(0);
         setCustomerHasDiscount(false);
       }
@@ -222,10 +237,8 @@ export default function QuotePage() {
 
   const discount = customerHasDiscount ? subtotal * discountRate : 0;
   const subtotalAfterDiscount = subtotal - discount;
-  const iva = subtotalAfterDiscount * IVA_RATE;
-  const totalConDescuento = subtotalAfterDiscount + iva;
-  const ivaSinDescuento = subtotal * IVA_RATE;
-  const totalSinDescuento = subtotal + ivaSinDescuento;
+  const totalConDescuento = subtotalAfterDiscount; // IVA already included in prices
+  const totalSinDescuento = subtotal; // IVA already included in prices
 
   // Format currency
   const formatCurrency = useCallback(
@@ -285,6 +298,9 @@ export default function QuotePage() {
               </div>
             </div>
             <h1 className="text-2xl font-bold mb-4 text-center text-black">Cotización de Productos</h1>
+            <div className="text-center text-xs text-gray-600 mb-4 italic">
+              * Todos los precios mostrados incluyen IVA (16%)
+            </div>
             {loading ? (
               <div className="text-center text-black/60">Cargando cotización...</div>
             ) : error ? (
@@ -395,9 +411,6 @@ export default function QuotePage() {
                           </div>
                         </>
                       )}
-                      <div>
-                        <span className="font-semibold">IVA 16%:</span> {formatCurrency(iva)}
-                      </div>
                       <div className="text-[18px] font-extrabold mt-[8px] text-green-700 drop-shadow">
                         <span className="font-semibold">TOTAL CON DESCUENTO:</span> {formatCurrency(totalConDescuento)}
                       </div>
@@ -425,9 +438,6 @@ export default function QuotePage() {
                     <div className="flex flex-col items-end gap-[5px] text-[13px] text-gray-900">
                       <div>
                         <span className="font-semibold">Subtotal:</span> {formatCurrency(subtotal)}
-                      </div>
-                      <div>
-                        <span className="font-semibold">IVA 16%:</span> {formatCurrency(ivaSinDescuento)}
                       </div>
                       <div className="text-[18px] font-extrabold mt-[8px] text-red-600 drop-shadow">
                         <span className="font-semibold">TOTAL SIN DESCUENTO:</span> {formatCurrency(totalSinDescuento)}

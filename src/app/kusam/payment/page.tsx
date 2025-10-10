@@ -121,7 +121,9 @@ export default function KusamPaymentPage() {
           }
         }
         if (localDiscountRate === null) {
-          localDiscountRate = getDiscountForLandingSource(landingSource);
+          // Config returns decimal (0.15), convert to percentage (15)
+          const configDiscount = getDiscountForLandingSource(landingSource);
+          localDiscountRate = configDiscount * 100;
         }
   // Removed: setLandingPageBanner(localLandingPageBanner);
         setDiscountRate(localDiscountRate || 0);

@@ -255,18 +255,20 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({ onClose, onSubmit
         <p className="text-gray-700 text-lg mb-6">
           Tu lista ha sido enviada a nuestros asesores.
         </p>
-          <p className="text-gray-800 text-lg font-semibold mb-6">
-            Completa tu orden <b>HOY</b>
-            <span> y recibe un 
-              <b
-                className="text-green-600 animate-pulse-slow"
-                style={{ fontSize: '2.5em', fontWeight: 'bold', verticalAlign: 'middle', margin: '0 0.2em' }}
-              >
-                {discountRate}% de descuento
-              </b>
-              hacia el total de tu compra.
-            </span>
-          </p>
+          {discountRate > 0 && (
+            <p className="text-gray-800 text-base mb-6">
+              Completa tu orden <span className="font-bold">HOY</span> y recibe un{' '}
+              <span className="inline-flex items-center">
+                <span
+                  className="text-green-600 font-extrabold animate-pulse-slow"
+                  style={{ fontSize: '1.75em', verticalAlign: 'middle' }}
+                >
+                  {discountRate}%
+                </span>
+              </span>
+              {' '}de descuento hacia el total de tu compra.
+            </p>
+          )}
           <button
             onClick={handleOrderClick}
             className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-xl font-bold text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-stone-600 transition duration-150 ease-in-out"
@@ -277,7 +279,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({ onClose, onSubmit
               backgroundColor: '#6b7280',
             }}
           >
-            QUIERO MI DESCUENTO
+            {discountRate > 0 ? 'QUIERO MI DESCUENTO' : 'VER MI COTIZACIÓN'}
           </button>
         <p className="text-sm text-gray-500 mt-4 cursor-pointer hover:underline" onClick={onClose}>
         </p>
@@ -327,10 +329,11 @@ export default function KusamCartPage() {
         const landingSource = customerData.landing_source || customerData.name || null;
   // Removed: setCustomerLandingSource(landingSource);
         if (landingSource) {
+          // Use ilike for case-insensitive matching and trim whitespace
           const { data: landingPage, error: landingPageError } = await supabase
             .from('landing_pages')
             .select('discount_applied, image_url')
-            .eq('name', landingSource)
+            .ilike('name', landingSource.trim())
             .maybeSingle();
           if (!landingPageError && landingPage) {
             setDiscountRate(typeof landingPage.discount_applied === 'number' ? landingPage.discount_applied : 0);

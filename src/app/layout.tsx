@@ -10,8 +10,31 @@ import { Suspense } from 'react'; // <--- NEW: Import Suspense
 import { Analytics } from "@vercel/analytics/next";
 
 export const metadata: Metadata = {
-  title: "Kusam Expo App",
-  description: "Official Kusam Expo Mobile Web Application",
+  title: "Kusam Outdoor Solutions",
+  description: "The Official Kusam Outdoor Solutions Interactive Catalog",
+  metadataBase: new URL('https://kusam.com'),
+  openGraph: {
+    title: "Kusam Outdoor Solutions",
+    description: "The Official Kusam Outdoor Solutions Interactive Catalog",
+    url: "https://kusam.com",
+    siteName: "Kusam Outdoor Solutions",
+    images: [
+      {
+        url: "/kusam_opengraph.jpg",
+        width: 1200,
+        height: 630,
+        alt: "Kusam Outdoor Solutions",
+      },
+    ],
+    locale: "es_MX",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Kusam Outdoor Solutions",
+    description: "The Official Kusam Outdoor Solutions Interactive Catalog",
+    images: ["/kusam_opengraph.jpg"],
+  },
 };
 
 const geistSans = Geist({

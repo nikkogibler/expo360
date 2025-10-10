@@ -9,6 +9,9 @@ export const DISCOUNT_CONFIG: DiscountConfig = {
   // Original Expo gets 15% discount
   'Expo Mueble Internacional': 0.15,
   
+  // Special events
+  'Evento Especial': 0.05,              // 5% discount for special events
+  
   // Store locations get no discount by default
   'Tienda Saltillo': 0.0,
   'Tienda Vasconcelos': 0.0,

@@ -136,8 +136,14 @@ const KusamLeadForm = ({ variant = 'kusam', hideEmail = false }: KusamLeadFormPr
 				if (fetchError) throw new Error(`Error fetching customer data: ${fetchError.message}`);
 				console.log('[KusamLeadForm] Existing customer:', existingCustomer);
 				if (existingCustomer) {
+					// Helper function to check if customer name is anonymous
+					const isAnonymousName = (name: string | null | undefined): boolean => {
+						if (!name) return true;
+						return name.startsWith('Visitante Anónimo');
+					};
+					
 					const isFullyRegistered = existingCustomer.name &&
-						existingCustomer.name !== 'Visitante Anónimo' &&
+						!isAnonymousName(existingCustomer.name) &&
 						(existingCustomer.email !== undefined && existingCustomer.email !== null && !existingCustomer.email.endsWith('@temp.com')) &&
 						existingCustomer.whatsapp &&
 						existingCustomer.customer_type;
@@ -161,10 +167,10 @@ const KusamLeadForm = ({ variant = 'kusam', hideEmail = false }: KusamLeadFormPr
 							   return;
 						   }
 					} else {
-						if (existingCustomer.name === 'Visitante Anónimo') {
+						if (isAnonymousName(existingCustomer.name)) {
 							console.log('[KusamLeadForm] Customer is anonymous, showing form.');
 						}
-						setName(existingCustomer.name === 'Visitante Anónimo' ? '' : existingCustomer.name || '');
+						setName(isAnonymousName(existingCustomer.name) ? '' : existingCustomer.name || '');
 						setEmail(existingCustomer.email?.endsWith('@temp.com') ? '' : existingCustomer.email || '');
 						setCustomerType(existingCustomer.customer_type || '');
 						const existingWhatsapp = existingCustomer.whatsapp || '';

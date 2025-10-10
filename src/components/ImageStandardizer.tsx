@@ -966,6 +966,26 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
                   .from(bucket)
                   .getPublicUrl(fileName);
                 console.log('[ImageStandardizer] 🌐 Public URL:', publicUrl);
+                
+                // --- Generate Thumbnail Immediately ---
+                console.log('[ImageStandardizer] 📸 Generating thumbnail...');
+                try {
+                  const thumbnailResponse = await fetch('/api/generate-thumbnail', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ fileName, bucket })
+                  });
+                  
+                  if (thumbnailResponse.ok) {
+                    const thumbnailData = await thumbnailResponse.json();
+                    console.log('[ImageStandardizer] ✅ Thumbnail generated:', thumbnailData.thumbnailPath);
+                  } else {
+                    console.error('[ImageStandardizer] ⚠️ Thumbnail generation failed (non-critical)');
+                  }
+                } catch (thumbnailErr) {
+                  console.error('[ImageStandardizer] ⚠️ Thumbnail generation error (non-critical):', thumbnailErr);
+                }
+                // --- End thumbnail generation ---
               }
             } catch (err) {
               console.error('[ImageStandardizer] Error uploading image to Supabase:', err);
