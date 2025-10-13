@@ -37,17 +37,78 @@ export default function PaymentSuccessPage() {
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
   const orderId = orderIdRaw && uuidRegex.test(orderIdRaw) ? orderIdRaw : '';
 
-  // Notify webhook on page load
+  // Notify webhook on page load with complete customer data
   useEffect(() => {
-    const customerId = typeof window !== 'undefined' ? localStorage.getItem('kusam_customer_id') : null;
-    if (customerId && SUCCESS_WEBHOOK_URL) {
-      fetch(SUCCESS_WEBHOOK_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ customer_id: customerId })
-      }).catch(() => {}); // Fail silently
-    }
-  }, []);
+    const sendWebhookNotification = async () => {
+      const customerId = typeof window !== 'undefined' ? localStorage.getItem('kusam_customer_id') : null;
+      
+      if (!customerId || !SUCCESS_WEBHOOK_URL) return;
+      
+      try {
+        // Import supabase dynamically to avoid server-side issues
+        const { supabase } = await import('@/utils/supabase');
+        
+        // Fetch complete customer data including shipping/billing addresses
+        const { data: customer, error } = await supabase
+          .from('customers')
+          .select('*')
+          .eq('customer_id', customerId)
+          .single();
+        
+        if (error) {
+          console.error('Error fetching customer data for webhook:', error);
+          // Fall back to just sending customer_id
+          fetch(SUCCESS_WEBHOOK_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ customer_id: customerId })
+          }).catch(() => {});
+          return;
+        }
+        
+        // Send complete customer information to webhook
+        fetch(SUCCESS_WEBHOOK_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            customer_id: customerId,
+            order_id: orderId || undefined,
+            customer_info: {
+              name: `${customer.first_name || ''} ${customer.last_name || ''}`.trim() || customer.name || '',
+              first_name: customer.first_name || '',
+              last_name: customer.last_name || '',
+              email: customer.email || '',
+              whatsapp: customer.whatsapp || '',
+              industry: customer.customer_type || '',
+              landing_source: customer.landing_source || '',
+              shipping_address: {
+                street: customer.shipping_street || '',
+                colonia: customer.shipping_colonia || '',
+                city: customer.shipping_city || '',
+                state: customer.shipping_state || '',
+                postal_code: customer.shipping_postal_code || '',
+                country: customer.shipping_country || 'México',
+              },
+              billing_address: customer.billing_same_as_shipping 
+                ? 'Same as shipping' 
+                : {
+                    street: customer.billing_street || '',
+                    colonia: customer.billing_colonia || '',
+                    city: customer.billing_city || '',
+                    state: customer.billing_state || '',
+                    postal_code: customer.billing_postal_code || '',
+                    country: customer.billing_country || 'México',
+                  }
+            }
+          })
+        }).catch(err => console.error('Webhook error:', err));
+      } catch (err) {
+        console.error('Error sending webhook notification:', err);
+      }
+    };
+    
+    sendWebhookNotification();
+  }, [orderId]);
 
   useEffect(() => {
     // Extract payment information from URL parameters (typical MercadoPago response)

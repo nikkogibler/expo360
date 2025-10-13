@@ -13,6 +13,10 @@ import { getDiscountForLandingSource } from '../../../config/discountConfig';
 // --- NEW: Import initMercadoPago and Wallet components from Mercado Pago SDK for React ---
 import { initMercadoPago, Wallet } from '@mercadopago/sdk-react';
 
+// --- NEW: Import CustomerInfoForm and utilities ---
+import CustomerInfoForm from '@/components/CustomerInfoForm';
+import { isCustomerInfoComplete, Customer } from '@/utils/nameParser';
+
 // Interface for Product (needs price, id, and name for Mercado Pago title)
 interface Product {
   id: string;
@@ -45,6 +49,11 @@ export default function KusamPaymentPage() {
   const [preferenceId, setPreferenceId] = useState<string | null>(null);
   const [customerEmail, setCustomerEmail] = useState<string>('');
 
+  // --- NEW: Customer info form state ---
+  const [customerInfoComplete, setCustomerInfoComplete] = useState(false);
+  const [showCustomerInfoForm, setShowCustomerInfoForm] = useState(false);
+  const [customerData, setCustomerData] = useState<Customer | null>(null);
+
   // --- ADD MISSING formatCurrency FUNCTION ---
   const formatCurrency = useCallback((amount: number): string => {
     return new Intl.NumberFormat('es-MX', {
@@ -59,6 +68,43 @@ export default function KusamPaymentPage() {
   useEffect(() => {
     // REPLACE 'YOUR_MERCADO_PAGO_PUBLIC_KEY' with your actual Mercado Pago Public Key
     initMercadoPago('TEST-7ff29468-76a2-44c3-93ee-33c64819c4d6', { locale: 'es-MX' });
+  }, []);
+
+  // --- NEW: Check customer info completeness ---
+  useEffect(() => {
+    async function checkCustomerInfo() {
+      const customerId = localStorage.getItem('kusam_customer_id');
+      
+      if (!customerId) {
+        setPaymentError('No se encontró el ID de cliente. Por favor, inicie sesión o regrese al carrito.');
+        setLoadingTotal(false);
+        return;
+      }
+      
+      try {
+        const { data: customer, error } = await supabase
+          .from('customers')
+          .select('*')
+          .eq('customer_id', customerId)
+          .single();
+        
+        if (error) throw error;
+        
+        setCustomerData(customer);
+        
+        // Check if info is complete using utility function
+        const isComplete = isCustomerInfoComplete(customer);
+        
+        setCustomerInfoComplete(isComplete);
+        setShowCustomerInfoForm(!isComplete);
+        
+        console.log('[Payment Page] Customer info complete:', isComplete);
+      } catch (error) {
+        console.error('[Payment Page] Error checking customer info:', error);
+      }
+    }
+    
+    checkCustomerInfo();
   }, []);
 
   useEffect(() => {
@@ -190,6 +236,27 @@ export default function KusamPaymentPage() {
         delay: 0.2
       }
     },
+  };
+
+  // --- NEW: Handler when customer info form is completed ---
+  const handleCustomerInfoComplete = async () => {
+    // Refresh customer data
+    const customerId = localStorage.getItem('kusam_customer_id');
+    
+    if (customerId) {
+      const { data: customer } = await supabase
+        .from('customers')
+        .select('*')
+        .eq('customer_id', customerId)
+        .single();
+      
+      setCustomerData(customer);
+    }
+    
+    setCustomerInfoComplete(true);
+    setShowCustomerInfoForm(false);
+    
+    console.log('[Payment Page] Customer info form completed, showing payment methods');
   };
 
   const handlePaymentSubmit = (e: React.FormEvent) => {
@@ -363,12 +430,9 @@ export default function KusamPaymentPage() {
           Confirmar Compra
         </h1>
 
-        {loadingTotal ? (
-          <p className="text-center text-gray-600 text-lg mb-4">Calculando total...</p>
-        ) : paymentError ? (
-          <p className="text-center text-red-600 text-lg mb-4">{paymentError}</p>
-        ) : (
-          <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-green-50 rounded-lg border border-blue-200">
+        {/* ALWAYS show total at top if calculated */}
+        {!loadingTotal && !paymentError && calculatedTotal > 0 && (
+          <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-green-50 rounded-lg border border-blue-200 sticky top-0 z-10">
             {/* Pricing display with discount */}
             <div className="flex justify-between items-center mb-2">
               <span className="text-gray-600">Subtotal:</span>
@@ -394,9 +458,23 @@ export default function KusamPaymentPage() {
           </div>
         )}
 
-
-        {/* Payment Method Tabs - Remove credit_card option */}
-        <div className="flex justify-center flex-wrap gap-2 mb-6 border-b border-gray-200 pb-2">
+        {/* CONDITIONAL RENDERING: Show loading, error, customer form, or payment methods */}
+        {loadingTotal ? (
+          <p className="text-center text-gray-600 text-lg mb-4">Calculando total...</p>
+        ) : paymentError ? (
+          <p className="text-center text-red-600 text-lg mb-4">{paymentError}</p>
+        ) : showCustomerInfoForm && !customerInfoComplete ? (
+          /* SHOW CUSTOMER INFO FORM */
+          <CustomerInfoForm 
+            customer={customerData}
+            totalAmount={calculatedTotal}
+            onComplete={handleCustomerInfoComplete}
+          />
+        ) : (
+          /* SHOW PAYMENT METHODS */
+          <>
+            {/* Payment Method Tabs - Remove credit_card option */}
+            <div className="flex justify-center flex-wrap gap-2 mb-6 border-b border-gray-200 pb-2">
           <button
             onClick={() => setSelectedMethod('mercadopago')}
             className={`px-3 py-2 text-base font-medium rounded-md ${selectedMethod === 'mercadopago' ? 'text-blue-600 bg-blue-50' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'}`}
@@ -472,12 +550,14 @@ export default function KusamPaymentPage() {
           </div>
         )}
 
-        <Link href="/kusam/quote" passHref>
-            <p className="text-center text-sm text-red-600 hover:underline mt-6 cursor-pointer">
-                <b className="text-red-600">No quiero descuento. </b>
-                <b className="text-black">Dame mi cotización desglozada.</b>
-            </p>
-        </Link>
+            <Link href="/kusam/quote" passHref>
+                <p className="text-center text-sm text-red-600 hover:underline mt-6 cursor-pointer">
+                    <b className="text-red-600">No quiero descuento. </b>
+                    <b className="text-black">Dame mi cotización desglozada.</b>
+                </p>
+            </Link>
+          </>
+        )}
       </motion.div>
     </div>
   );
