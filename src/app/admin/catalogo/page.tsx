@@ -1154,6 +1154,13 @@ export default function AdminCatalogPage() {
     }
   }, [showAddProductModal]);
 
+  // Load available variables when edit modal opens
+  useEffect(() => {
+    if (showEditProductModal) {
+      reloadVariables();
+    }
+  }, [showEditProductModal]);
+
   // Show loading or redirect if not authenticated
   if (isAuthenticated === null) {
     return (
