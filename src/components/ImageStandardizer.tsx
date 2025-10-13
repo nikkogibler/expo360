@@ -1757,7 +1757,14 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
               onClick={(e) => {
                 e.preventDefault();
                 const scrollPos = window.scrollY;
-                setSelectedPerspective(selectedPerspective === perspective.value ? '' : perspective.value);
+                const isCurrentlySelected = selectedPerspective === perspective.value;
+                setSelectedPerspective(isCurrentlySelected ? '' : perspective.value);
+                
+                // Auto-advance to next step when a perspective is selected
+                if (!isCurrentlySelected) {
+                  skipToNextStep(3);
+                }
+                
                 requestAnimationFrame(() => {
                   window.scrollTo(0, scrollPos);
                 });
