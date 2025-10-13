@@ -286,6 +286,9 @@ const ProductDetailPage = ({ params }: ProductDetailPageProps) => {
       if (fromParam === 'evento-especial') {
         anonymousName = 'Visitante Anónimo Evento Especial';
         landingSource = 'Evento Especial';
+      } else if (fromParam === 'saltillo') {
+        anonymousName = 'Visitante Anónimo Saltillo';
+        landingSource = 'Saltillo';
       }
       
       const { data: newCustomer, error: insertError } = await supabase

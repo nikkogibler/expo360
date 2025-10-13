@@ -42,6 +42,54 @@ export default function EventoEspecialLanding() {
         }
       } else {
         console.log('[EventoEspecial] Using existing customer ID:', customerId);
+        
+        // Check if customer exists in database
+        const { data: existingCustomer } = await supabase
+          .from('customers')
+          .select('customer_id')
+          .eq('customer_id', customerId)
+          .maybeSingle();
+        
+        if (existingCustomer) {
+          // Update existing customer's landing source to Evento Especial
+          try {
+            const { error } = await supabase
+              .from('customers')
+              .update({
+                landing_source: 'Evento Especial'
+              })
+              .eq('customer_id', customerId);
+            
+            if (error) {
+              console.error('[EventoEspecial] Error updating existing customer landing source:', error);
+            } else {
+              console.log('[EventoEspecial] Updated existing customer to Evento Especial attribution');
+            }
+          } catch (err) {
+            console.error('[EventoEspecial] Exception updating customer:', err);
+          }
+        } else {
+          // Customer ID in localStorage but not in database - create it now
+          console.log('[EventoEspecial] Customer ID exists in localStorage but not in database, creating now');
+          try {
+            const { error } = await supabase
+              .from('customers')
+              .insert({
+                customer_id: customerId,
+                email: `${customerId}@temp.com`,
+                name: 'Visitante Anónimo Evento Especial',
+                landing_source: 'Evento Especial'
+              });
+            
+            if (error) {
+              console.error('[EventoEspecial] Error creating customer:', error);
+            } else {
+              console.log('[EventoEspecial] Created customer with Evento Especial attribution');
+            }
+          } catch (err) {
+            console.error('[EventoEspecial] Exception creating customer:', err);
+          }
+        }
       }
     };
     

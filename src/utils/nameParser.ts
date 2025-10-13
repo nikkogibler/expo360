@@ -75,6 +75,7 @@ export interface Customer {
   email?: string | null;
   whatsapp?: string | null;
   customer_type?: string | null;
+  landing_source?: string | null;
   shipping_street?: string | null;
   shipping_colonia?: string | null;
   shipping_city?: string | null;

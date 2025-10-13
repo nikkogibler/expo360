@@ -101,7 +101,7 @@ export default function CustomerInfoForm({ customer, totalAmount, onComplete }: 
       }
 
       // Prepare update object
-      const updateData: any = {
+      const updateData: Record<string, string | boolean> = {
         first_name: formData.firstName.trim(),
         last_name: formData.lastName.trim(),
         name: `${formData.firstName.trim()} ${formData.lastName.trim()}`,
@@ -143,12 +143,66 @@ export default function CustomerInfoForm({ customer, totalAmount, onComplete }: 
 
       if (updateError) throw updateError;
 
+      // Send webhook notification immediately after successful save
+      const CUSTOMER_INFO_WEBHOOK_URL = process.env.NEXT_PUBLIC_CUSTOMER_INFO_WEBHOOK_URL;
+      if (CUSTOMER_INFO_WEBHOOK_URL) {
+        try {
+          // Fetch fresh customer data to get updated landing_source
+          const { data: freshCustomer } = await supabase
+            .from('customers')
+            .select('landing_source')
+            .eq('customer_id', customerId)
+            .single();
+          
+          await fetch(CUSTOMER_INFO_WEBHOOK_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              event: 'customer_info_captured',
+              timestamp: new Date().toISOString(),
+              customer_id: customerId,
+              customer_info: {
+                name: `${formData.firstName.trim()} ${formData.lastName.trim()}`,
+                first_name: formData.firstName.trim(),
+                last_name: formData.lastName.trim(),
+                email: formData.email.trim(),
+                whatsapp: formData.whatsapp.trim(),
+                industry: formData.customerType,
+                landing_source: freshCustomer?.landing_source || customer?.landing_source || '',
+                shipping_address: {
+                  street: formData.shippingStreet.trim(),
+                  colonia: formData.shippingColonia.trim(),
+                  city: formData.shippingCity.trim(),
+                  state: formData.shippingState,
+                  postal_code: formData.shippingPostalCode.trim(),
+                  country: 'México',
+                },
+                billing_address: formData.billingSameAsShipping 
+                  ? 'Same as shipping' 
+                  : {
+                      street: formData.billingStreet.trim(),
+                      colonia: formData.billingColonia.trim(),
+                      city: formData.billingCity.trim(),
+                      state: formData.billingState,
+                      postal_code: formData.billingPostalCode.trim(),
+                      country: 'México',
+                    }
+              }
+            })
+          });
+          console.log('[CustomerInfoForm] Customer info webhook sent successfully');
+        } catch (webhookError) {
+          console.error('[CustomerInfoForm] Webhook error (non-blocking):', webhookError);
+          // Don't throw - webhook failure shouldn't block the user
+        }
+      }
+
       // Success! Call parent callback to show payment methods
       onComplete();
 
-    } catch (err: any) {
+    } catch (err) {
       console.error('Error saving customer info:', err);
-      setError(err.message || 'Error al guardar tu información. Por favor intenta de nuevo.');
+      setError(err instanceof Error ? err.message : 'Error al guardar tu información. Por favor intenta de nuevo.');
     } finally {
       setSaving(false);
     }
