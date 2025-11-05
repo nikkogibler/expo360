@@ -92,7 +92,7 @@ export default function AdminSignIn() {
     }}>
       <div style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: '1.5rem', marginBottom: '1.5rem' }}>
         <Image
-          src="/kusam_main.webp"
+          src="/logo.png"
           alt="Kusam Logo"
           width={200}
           height={60}

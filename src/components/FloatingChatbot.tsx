@@ -5,7 +5,7 @@
     {
       id: '1',
       type: 'bot',
-      content: '¡Hola! Soy Sammy 👋, tu asistente del Dashboard de Kusam. Estoy aquí para ayudarte a usar todas las herramientas del panel: catálogo de productos, gestión de clientes, ProShotNow™, reportes, Airtable y más. ¿Qué función del Dashboard te gustaría explorar?',
+      content: '¡Hola! Soy Sammy 👋, tu asistente del Dashboard de YOUR COMPANY. Estoy aquí para ayudarte a usar todas las herramientas del panel: catálogo de productos, gestión de clientes, ProShotNow™, reportes, Airtable y más. ¿Qué función del Dashboard te gustaría explorar?',
       timestamp: new Date(),
     }
   ]);nent for the admin dashboard.
@@ -43,11 +43,12 @@ export default function FloatingChatbot({
   userEmail = 'anonymous'
 }: FloatingChatbotProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [hasNewMessages, setHasNewMessages] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
       type: 'bot',
-      content: '¡Hola! Soy Sammy 👋, tu asistente del Dashboard Administrativo Kusam. Estoy aquí para ayudarte a usar todas las herramientas del panel: catálogo de productos, gestión de clientes, ProShotNow™, reportes, Airtable y más. ¿Qué función del Dashboard te gustaría explorar?',
+      content: '¡Hola! Soy Sammy 👋, tu asistente del Dashboard Administrativo YOUR COMPANY. Estoy aquí para ayudarte a usar todas las herramientas del panel: catálogo de productos, gestión de clientes, ProShotNow™, reportes, Airtable y más. ¿Qué función del Dashboard te gustaría explorar?',
       timestamp: new Date(),
     }
   ]);
@@ -107,7 +108,7 @@ export default function FloatingChatbot({
         session_id: sessionId,
         user_email: userEmail,
         timestamp: new Date().toISOString(),
-        context: 'kusam-admin-dashboard-chat',
+        context: 'admin-dashboard-chat',
         conversation_history: recentHistory, // Helps AI understand conversation flow
       };
 
@@ -173,7 +174,7 @@ export default function FloatingChatbot({
     setMessages([{
       id: '1',
       type: 'bot',
-      content: '¡Hola! Soy Sammy, tu asistente administrativo de Kusam 👋. ¿Cómo puedo ayudarte hoy?',
+      content: '¡Hola! Soy Sammy, tu asistente administrativo de YOUR COMPANY 👋. ¿Cómo puedo ayudarte hoy?',
       timestamp: new Date(),
     }]);
     console.log('FloatingChatbot: New conversation started:', newSessionId);
@@ -200,7 +201,13 @@ export default function FloatingChatbot({
             aria-label="Abrir chat"
           >
             <MessageCircle className="w-7 h-7 relative z-10" />
-            <span className="absolute -top-1 -right-1 w-4 h-4 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-full border-2 border-white shadow-md z-20" />
+            <AnimatePresence>
+              {hasNewMessages && (
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-linear-to-br from-emerald-400 to-emerald-600 rounded-full border-2 border-white shadow-md z-20" />
+                </motion.div>
+              )}
+            </AnimatePresence>
           </motion.button>
         )}
       </AnimatePresence>
@@ -229,7 +236,7 @@ export default function FloatingChatbot({
                   <Sparkles className="w-5 h-5 text-gray-300" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-sm text-white">Asistente Kusam</h3>
+                  <h3 className="font-semibold text-sm text-white">Asistente YOUR COMPANY</h3>
                   <p className="text-xs text-gray-300">Siempre aquí para ayudar</p>
                 </div>
               </div>

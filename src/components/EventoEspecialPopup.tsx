@@ -62,11 +62,11 @@ export default function EventoEspecialPopup({ isOpen, onClose }: EventoEspecialP
               </button>
 
               {/* Header Image */}
-              <div className="relative h-48 bg-gradient-to-br from-amber-50 to-amber-100">
+              <div className="relative h-48 bg-linear-to-br from-amber-50 to-amber-100">
                 <div className="absolute inset-0 flex items-center justify-center">
                   <Image
-                    src="/kusam_main.webp"
-                    alt="Kusam Furniture"
+                    src="/logo.png"
+                    alt="YOUR COMPANY Furniture"
                     width={120}
                     height={120}
                     className="object-contain drop-shadow-lg"
@@ -86,7 +86,7 @@ export default function EventoEspecialPopup({ isOpen, onClose }: EventoEspecialP
 
                 <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
                   <div className="flex items-start space-x-3">
-                    <div className="flex-shrink-0">
+                    <div className="shrink-0">
                       <span className="text-2xl">✨</span>
                     </div>
                     <div>
@@ -100,7 +100,7 @@ export default function EventoEspecialPopup({ isOpen, onClose }: EventoEspecialP
 
                 <button
                   onClick={handleClose}
-                  className="w-full bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg"
+                  className="w-full bg-linear-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200 transform hover:scale-105"
                 >
                   Explorar Catálogo
                 </button>

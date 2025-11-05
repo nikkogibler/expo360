@@ -55,14 +55,14 @@ const cardData: BentoCardProps[] = [
     color: '#F8F5F0',
     backgroundImage: 'url(/admin/productos.png)',
     // title: 'Catálogo de Productos',
-    description: 'Explorar y gestionar el catálogo completo de Kusam.',
+    description: 'Explorar y gestionar el catálogo completo de YOUR COMPANY.',
     label: 'Catálogo de Productos'
   },
   {
     color: '#F8F5F0',
     backgroundImage: 'url(/admin/airtable.png)',
     // title: 'Base de Datos Airtable',
-    description: 'Acceder y actualizar la base de datos de Kusam en Airtable.',
+    description: 'Acceder y actualizar la base de datos de YOUR COMPANY en Airtable.',
     label: 'Base de Datos Airtable'
   },
   {
@@ -510,7 +510,7 @@ const BentoCardGrid: React.FC<{
   gridRef?: React.RefObject<HTMLDivElement | null>;
 }> = ({ children, gridRef }) => (
   <div
-    className="bento-section grid gap-2 p-3 max-w-[54rem] select-none relative"
+    className="bento-section grid gap-2 p-3 max-w-216 select-none relative"
     style={{ fontSize: 'clamp(1rem, 0.9rem + 0.5vw, 1.5rem)' }}
     ref={gridRef}
   >
@@ -573,7 +573,7 @@ const MagicBento: React.FC<BentoProps> = ({
         router.push('/admin/pro-shot-now');
         break;
       case 'Base de Datos Airtable':
-        window.open('https://airtable.com/appRBsiKS1NXvQycF/tblD5ZvT8tj9Jw9LD/viwwYkpy2F9d1pgGJ?blocks=hide', '_blank');
+        router.push('/admin/airtable');
         break;
       case 'Soporte Interzekt':
         window.open('https://wa.me/528186931122', '_blank');
@@ -731,8 +731,8 @@ const MagicBento: React.FC<BentoProps> = ({
         <div style={{ height: '80px', width: '100%', position: 'relative', marginTop: '2.5rem', marginBottom: '2rem' }}>
           <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
             <Image
-              src="/kusam_main.webp"
-              alt="Kusam Logo"
+              src="/logo.png"
+              alt="Company Logo"
               width={200}
               height={60}
               style={{ objectFit: 'contain', display: 'block', margin: '0 auto', maxWidth: '100%', maxHeight: '100%' }}

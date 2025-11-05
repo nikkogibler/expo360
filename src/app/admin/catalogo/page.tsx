@@ -215,7 +215,7 @@ const ProductCard = ({ product, index, onToggleActive }: ProductCardProps) => {
             // Fallback - use placeholder image instead of error state
             <div className="absolute inset-0 flex items-center justify-center bg-white">
               <Image
-                src="/expo_mueble.png"
+                src="/expo1.png"
                 alt={`${product.name} - Imagen de muestra`}
                 fill
                 sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
@@ -266,7 +266,7 @@ const ProductCard = ({ product, index, onToggleActive }: ProductCardProps) => {
 
         {/* Product Info */}
         <div className="space-y-2">
-          <h3 className="text-lg font-semibold text-gray-800 line-clamp-2 min-h-[3rem]">
+          <h3 className="text-lg font-semibold text-gray-800 line-clamp-2 min-h-12">
             {product.name}
           </h3>
           
@@ -352,7 +352,8 @@ export default function AdminCatalogPage() {
     aplica_color_tela: false,
     colores_estructura_disponibles: [] as string[], // Frame finish names
     is_active: true,
-    image_url: ''
+    image_url: '',
+    image: null as File | null,
   });
 
   // Edit Product Modal state
@@ -431,9 +432,10 @@ export default function AdminCatalogPage() {
       estructuras_disponibles: [],
       colores_tela_disponibles: [],
       aplica_color_tela: false,
-      colores_estructura_disponibles: [],
+      colores_estructura_disponibles: [] as string[], // Frame finish names
       is_active: true,
-      image_url: ''
+      image_url: '',
+      image: null,
     });
   };
 
@@ -1248,7 +1250,7 @@ export default function AdminCatalogPage() {
           <header className="text-center mb-8">
             <div className="mb-6">
               <Image
-                src="/kusam_main.webp"
+                src="/logo.png"
                 alt="Kusam Outdoor Solutions - Panel de administración"
                 width={200}
                 height={50}
@@ -1273,7 +1275,7 @@ export default function AdminCatalogPage() {
             {/* Product Action Buttons */}
             <div className="mb-6 flex gap-4 justify-center">
               <button
-                className="text-white font-bold py-3 px-6 rounded-lg shadow-lg transition-all duration-200 flex items-center gap-2 hover:opacity-90 focus:outline-none"
+                className="text-white font-bold py-3 px-6 rounded-lg shadow-lg transition-all duration-200 flex items-center gap-2 hover:opacity-90"
                 style={{ backgroundColor: '#595144' }}
                 onClick={() => {
                   setEditModalStep('select');
@@ -1434,7 +1436,7 @@ export default function AdminCatalogPage() {
                                       type="button"
                                       onClick={handleRephraseEditProduct}
                                       disabled={isRephrasing}
-                                      className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-md text-xs font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md"
+                                      className="flex items-center gap-2 px-3 py-1.5 bg-linear-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-md text-xs font-semibold shadow-md hover:shadow-lg transition-all"
                                     >
                                       {isRephrasing ? (
                                         <>
@@ -1596,7 +1598,7 @@ export default function AdminCatalogPage() {
                                                         )
                                                   });
                                                 }}
-                                                className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 flex-shrink-0"
+                                                className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 shrink-0"
                                               />
                                               <span className="text-sm text-gray-900">{fabric.name}</span>
                                             </label>
@@ -1643,7 +1645,7 @@ export default function AdminCatalogPage() {
                                                       )
                                                 });
                                               }}
-                                              className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 flex-shrink-0"
+                                              className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 shrink-0"
                                             />
                                             <span className="text-sm text-gray-900">{finish.name}</span>
                                           </label>
@@ -1736,8 +1738,8 @@ export default function AdminCatalogPage() {
                           <div className="space-y-6">
                             <div className="bg-red-50 border border-red-200 rounded-lg p-6">
                               <div className="flex items-start gap-4">
-                                <svg className="w-12 h-12 text-red-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                <svg className="w-12 h-12 text-red-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                                 </svg>
                                 <div className="flex-1">
                                   <h3 className="text-lg font-bold text-red-900 mb-2">¡ADVERTENCIA!</h3>
@@ -2015,7 +2017,7 @@ export default function AdminCatalogPage() {
                 aria-label="Ver reportes"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                 </svg>
                 <span>Reportes</span>
               </button>
@@ -2229,7 +2231,7 @@ export default function AdminCatalogPage() {
                                   type="button"
                                   onClick={handleRephraseNewProduct}
                                   disabled={isRephrasing}
-                                  className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-md text-xs font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md"
+                                  className="flex items-center gap-2 px-3 py-1.5 bg-linear-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-md text-xs font-semibold shadow-md hover:shadow-lg transition-all"
                                 >
                                   {isRephrasing ? (
                                     <>
@@ -2308,15 +2310,15 @@ export default function AdminCatalogPage() {
                                         type="checkbox"
                                         checked={newProduct.colores_tela_disponibles.includes(fabric.name)}
                                         onChange={(e) => {
-                                          const isChecked = e.target.checked;
+                                          const checked = e.target.checked;
                                           setNewProduct({
                                             ...newProduct,
-                                            colores_tela_disponibles: isChecked
+                                            colores_tela_disponibles: checked
                                               ? [...newProduct.colores_tela_disponibles, fabric.name]
                                               : newProduct.colores_tela_disponibles.filter(n => n !== fabric.name)
                                           });
                                         }}
-                                        className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 flex-shrink-0"
+                                        className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 shrink-0"
                                       />
                                       <span className="text-sm text-gray-700">{fabric.name}</span>
                                     </label>
@@ -2364,17 +2366,17 @@ export default function AdminCatalogPage() {
                                         type="checkbox"
                                         checked={newProduct.colores_estructura_disponibles.includes(finish.name)}
                                         onChange={(e) => {
-                                          const isChecked = e.target.checked;
+                                          const checked = e.target.checked;
                                           setNewProduct({
                                             ...newProduct,
-                                            colores_estructura_disponibles: isChecked
+                                            colores_estructura_disponibles: checked
                                               ? [...newProduct.colores_estructura_disponibles, finish.name]
                                               : newProduct.colores_estructura_disponibles.filter(n => n !== finish.name)
                                           });
                                         }}
-                                        className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 flex-shrink-0"
+                                        className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 shrink-0"
                                       />
-                                      <span className="text-sm text-gray-700">{finish.name}</span>
+                                      <span className="text-sm text-gray-900">{finish.name}</span>
                                     </label>
                                   ))}
                                 </div>
@@ -2402,7 +2404,7 @@ export default function AdminCatalogPage() {
                           </div>
 
                           {/* Active Status */}
-                          <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-2">
                             <input 
                               type="checkbox"
                               id="is_active"
@@ -2528,15 +2530,34 @@ export default function AdminCatalogPage() {
                             ) : (
                               <div className="space-y-2">
                                 <svg className="w-12 h-12 text-gray-400 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                                  <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
                                 </svg>
-                                <div className="text-sm text-gray-600">
-                                  <p className="font-medium">Haz clic para subir una imagen</p>
-                                  <p>o arrastra y suelta aquí</p>
+                                <div className="flex text-sm text-gray-600">
+                                  <label
+                                    htmlFor="image-upload"
+                                    className="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500"
+                                  >
+                                    <span>Subir una imagen</span>
+                                    <input
+                                      id="image-upload"
+                                      type="file"
+                                      accept="image/*"
+                                      className="sr-only"
+                                      onChange={async (e) => {
+                                        const file = e.target.files?.[0];
+                                        if (file) {
+                                          setNewProduct({ ...newProduct, image: file });
+                                          // Create preview URL
+                                          const previewUrl = URL.createObjectURL(file);
+                                          setVariableImagePreview(previewUrl);
+                                        }
+                                      }}
+                                      required
+                                    />
+                                  </label>
+                                  <p className="pl-1">o arrastra y suelta</p>
                                 </div>
-                                <p className="text-xs text-gray-500">
-                                  PNG, JPG, WEBP hasta 10MB
-                                </p>
+                                <p className="text-xs text-gray-500">PNG, JPG, GIF hasta 10MB</p>
                               </div>
                             )}
                             <input 
@@ -2620,7 +2641,7 @@ export default function AdminCatalogPage() {
                             <span className="text-sm text-gray-700 truncate pr-2">
                               {`${typeof window !== 'undefined' ? window.location.origin : ''}/kusam/catalogo/${newProduct.sku}`}
                             </span>
-                            <div className="flex items-center gap-2 flex-shrink-0">
+                            <div className="flex items-center gap-2 shrink-0">
                               {copySuccess ? (
                                 <>
                                   <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2631,8 +2652,8 @@ export default function AdminCatalogPage() {
                               ) : (
                                 <>
                                   <svg className="w-4 h-4 text-gray-500 group-hover:text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                                  </svg>
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 001 1m-6 0h6" />
+                                </svg>
                                   <span className="text-sm text-gray-500 group-hover:text-gray-700 font-medium">Copiar</span>
                                 </>
                               )}
@@ -2644,8 +2665,8 @@ export default function AdminCatalogPage() {
                       {/* Disclaimer */}
                       <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
                         <div className="flex items-start gap-3">
-                          <svg className="w-5 h-5 text-blue-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          <svg className="w-5 h-5 text-blue-500 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m-1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                           </svg>
                           <p className="text-sm text-blue-700">
                             Tu página estará lista en unos segundos. En casos excepcionales, puede tardar hasta 5 minutos.
@@ -2729,7 +2750,7 @@ export default function AdminCatalogPage() {
         {/* Add Variable Modal */}
         <AnimatePresence>
         {showAddVariableModal && (
-          <div className="fixed inset-0 z-[60] flex items-center justify-center">
+          <div className="fixed inset-0 z-60 flex items-center justify-center">
             {/* Video Backdrop */}
             <motion.div 
               className="absolute inset-0"
@@ -2912,10 +2933,10 @@ export default function AdminCatalogPage() {
                               </button>
                             </div>
                           ) : (
-                            <>
+                            <div className="space-y-2">
                               <svg className="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
                                 <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-                              </svg>
+                            </svg>
                               <div className="flex text-sm text-gray-600">
                                 <label
                                   htmlFor="variable-image"
@@ -2942,7 +2963,7 @@ export default function AdminCatalogPage() {
                                 <p className="pl-1">o arrastra y suelta</p>
                               </div>
                               <p className="text-xs text-gray-500">PNG, JPG, GIF hasta 10MB</p>
-                            </>
+                            </div>
                           )}
                         </div>
                       </div>

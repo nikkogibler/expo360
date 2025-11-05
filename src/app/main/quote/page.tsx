@@ -1,0 +1,473 @@
+'use client';
+
+import { useEffect, useState, useCallback } from 'react';
+import Image from 'next/image';
+import { useRouter } from 'next/navigation';
+import { supabase } from '../../../utils/supabase';
+import { } from '../../../config/discountConfig';
+
+// Log quote event to Supabase
+async function logQuoteEvent({
+  eventType,
+  customerId,
+  quoteId = null,
+  metadata = null,
+}: {
+  eventType: string;
+  customerId: string | null;
+  quoteId?: string | null;
+  metadata?: unknown;
+}) {
+  if (!customerId) return;
+  // Only allow one view_quote or print_or_download_quote event per customer
+  if (eventType === 'view_quote' || eventType === 'print_or_download_quote') {
+    const { data: existing } = await supabase
+      .from('quote_events')
+      .select('id')
+      .eq('event_type', eventType)
+      .eq('customer_id', customerId)
+      .limit(1)
+      .maybeSingle();
+    if (existing) {
+      console.log(`[logQuoteEvent] ${eventType} already logged for customer`, customerId);
+      return; // Already logged
+    }
+  }
+  console.log('[logQuoteEvent] Logging event', { eventType, customerId, quoteId, metadata });
+  await supabase.from('quote_events').insert([
+    {
+      event_type: eventType,
+      customer_id: customerId,
+      quote_id: quoteId,
+      metadata,
+    },
+  ]);
+}
+
+interface FavoriteItem {
+  id: string;
+  product_id: string;
+  quantity: number;
+  fabric_color?: string;
+  frame_color?: string;
+  is_liked?: boolean;
+  fabric_color_id?: string;
+  frame_color_id?: string;
+}
+
+interface Product {
+  id: string;
+  sku: string;
+  name: string;
+  image_url: string;
+  price: number;
+}
+const RFC = 'KUS2103258E2'; // Kusam Decor RFC
+
+export default function QuotePage() {
+  const router = useRouter();
+  const [favorites, setFavorites] = useState<FavoriteItem[]>([]);
+  const [products, setProducts] = useState<Record<string, Product>>({});
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [customerName, setCustomerName] = useState<string>('');
+  const [quoteDate, setQuoteDate] = useState<string>('');
+  const [customerLandingSource, setCustomerLandingSource] = useState<string | null>(null);
+  const [landingPageImageUrl, setLandingPageImageUrl] = useState<string | null>(null);
+
+  // Fetch favorites and products
+  useEffect(() => {
+    async function fetchData() {
+      setLoading(true);
+      setError('');
+      try {
+        const customerId = typeof window !== 'undefined' ? localStorage.getItem('kusam_customer_id') : null;
+        if (!customerId) {
+          setError('No se encontró el cliente.');
+          setLoading(false);
+          return;
+        }
+        // Only log view_quote once per session
+        if (typeof window !== 'undefined') {
+          const sessionKey = `kusam_view_quote_logged_${customerId}`;
+          if (!sessionStorage.getItem(sessionKey)) {
+            await logQuoteEvent({ eventType: 'view_quote', customerId });
+            sessionStorage.setItem(sessionKey, '1');
+          } else {
+            console.log('[QuotePage] view_quote already logged this session for', customerId);
+          }
+        }
+
+        // Fetch liked favorites
+        const { data: favs, error: favErr } = await supabase
+          .from('customer_favorites')
+          .select('*')
+          .eq('customer_id', customerId)
+          .eq('is_liked', true);
+        if (favErr) throw favErr;
+        if (!favs || favs.length === 0) {
+          setFavorites([]);
+          setLoading(false);
+          return;
+        }
+        const likedFavs = favs.filter((f: FavoriteItem) => f.is_liked === true);
+        setFavorites(likedFavs);
+        // Fetch product details
+        const productIds = likedFavs.map((f: FavoriteItem) => f.product_id);
+        const { data: prodData, error: prodErr } = await supabase
+          .from('products')
+          .select('id, sku, name, image_url, price')
+          .in('id', productIds);
+        if (prodErr) throw prodErr;
+        const prodMap: Record<string, Product> = {};
+        (prodData || []).forEach((p: Product) => {
+          prodMap[p.id] = p;
+        });
+        setProducts(prodMap);
+
+        // Fetch customer name and landing source using customer_id from localStorage
+        let customerNameValue = '';
+        if (customerId) {
+          const { data: customerData, error: customerErr } = await supabase
+            .from('customers')
+            .select('name, landing_source')
+            .eq('customer_id', customerId)
+            .maybeSingle();
+          if (!customerErr && customerData) {
+            if (customerData.name) {
+              customerNameValue = customerData.name;
+            }
+            setCustomerLandingSource(customerData.landing_source || null);
+            // Fetch landing page image URL (case-insensitive match)
+            if (customerData.landing_source) {
+              console.log('[Quote] Fetching image for landing_source:', customerData.landing_source);
+              const { data: landingPage, error: landingErr } = await supabase
+                .from('landing_pages')
+                .select('image_url')
+                .ilike('name', customerData.landing_source.trim())
+                .maybeSingle();
+              if (!landingErr && landingPage && typeof landingPage.image_url === 'string' && landingPage.image_url.length > 0) {
+                const imageUrl = landingPage.image_url.replace(/^\/public/, '');
+                console.log('[Quote] Setting landing page image:', imageUrl);
+                setLandingPageImageUrl(imageUrl);
+              } else {
+                console.warn('[Quote] No image found for landing page, using fallback. Error:', landingErr);
+                setLandingPageImageUrl('/expo1.png'); // fallback image
+              }
+            } else {
+              console.log('[Quote] No landing_source, using fallback image');
+              setLandingPageImageUrl('/expo1.png'); // fallback image
+            }
+          }
+        }
+        setCustomerName(customerNameValue);
+
+        // Fetch today's date from Supabase (server time)
+        const { data: dateData, error: dateErr } = await supabase.rpc('get_today_date');
+        let dateObj;
+        if (!dateErr && dateData) {
+          dateObj = new Date(dateData);
+        } else {
+          dateObj = new Date();
+        }
+        // Format as 'Fecha: 5 de Agosto 2025'
+        const meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+        const dia = dateObj.getDate();
+        const mes = meses[dateObj.getMonth()];
+        const anio = dateObj.getFullYear();
+        const fechaFormateada = `Fecha: ${dia} de ${mes.charAt(0).toUpperCase() + mes.slice(1)} ${anio}`;
+        setQuoteDate(fechaFormateada);
+      } catch (err) {
+        if (err instanceof Error) {
+          setError(err.message);
+        } else {
+          setError('Error al cargar la cotización.');
+        }
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchData();
+  }, []);
+
+  // Calculate totals with dynamic discount
+  const subtotal = favorites.reduce((sum, fav) => {
+    const prod = products[fav.product_id];
+    return prod ? sum + prod.price * fav.quantity : sum;
+  }, 0);
+
+  // Get discount rate from Supabase landing_pages table using landing_source
+  const [discountRate, setDiscountRate] = useState(0);
+  const [customerHasDiscount, setCustomerHasDiscount] = useState(false);
+  useEffect(() => {
+    async function fetchDiscount() {
+      if (!customerLandingSource) {
+        setDiscountRate(0);
+        setCustomerHasDiscount(false);
+        return;
+      }
+      // Query landing_pages for discount_applied and image_url (case-insensitive)
+      const { data: landingPage, error: landingErr } = await supabase
+        .from('landing_pages')
+        .select('discount_applied, image_url')
+        .ilike('name', customerLandingSource.trim())
+        .maybeSingle();
+      
+      if (!landingErr && landingPage) {
+        // Set discount if available
+        if (typeof landingPage.discount_applied === 'number' && landingPage.discount_applied > 0) {
+          // Convert percentage to decimal (e.g., 5 -> 0.05)
+          setDiscountRate(landingPage.discount_applied / 100);
+          setCustomerHasDiscount(true);
+        } else {
+          setDiscountRate(0);
+          setCustomerHasDiscount(false);
+        }
+        
+        // Set image URL if available (keep existing image if already set in earlier fetch)
+        // This is a secondary fetch for discount, the main image was already set during customer data fetch
+      } else {
+        console.warn('[Quote] Landing page not found for:', customerLandingSource, landingErr);
+        setDiscountRate(0);
+        setCustomerHasDiscount(false);
+      }
+    }
+    fetchDiscount();
+  }, [customerLandingSource]);
+
+  const discount = customerHasDiscount ? subtotal * discountRate : 0;
+  const subtotalAfterDiscount = subtotal - discount;
+  const totalConDescuento = subtotalAfterDiscount; // IVA already included in prices
+  const totalSinDescuento = subtotal; // IVA already included in prices
+
+  // Format currency
+  const formatCurrency = useCallback(
+    (amount: number) => amount.toLocaleString('es-MX', { style: 'currency', currency: 'MXN' }),
+    []
+  );
+
+  return (
+    <>
+      {/* Print CSS to ensure watermark background is visible when printing */}
+      <style>{`
+        @media print {
+          /* Force background images to print for watermark */
+          .kusam-watermark {
+            opacity: 0.08 !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+        }
+      `}</style>
+      <div className="min-h-screen flex flex-col items-center py-8 px-2 relative overflow-hidden" style={{ background: '#fff' }}>
+        <div className="bg-white shadow-lg rounded-lg max-w-3xl w-full p-8 relative text-black" style={{ zIndex: 2, overflow: 'hidden' }}>
+          {/* Watermark background inside the data container */}
+          <div
+            className="kusam-watermark"
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '100%',
+              backgroundImage: `url('/kusam_main.webp')`,
+              backgroundRepeat: 'repeat',
+              backgroundSize: '180px',
+              backgroundPosition: 'center',
+              opacity: 0.05,
+              zIndex: 0,
+              pointerEvents: 'none',
+            }}
+            aria-hidden="true"
+          />
+          {/* Content above watermark */}
+          <div style={{ position: 'relative', zIndex: 1 }}>
+            {/* Letterhead */}
+            <div className="flex items-center justify-between mb-8 border-b pb-4">
+              <div className="flex flex-col gap-1">
+                <Image src="/kusam_main.webp" alt="Kusam Logo" width={160} height={40} />
+                <div className="text-black text-base font-semibold mt-2">Cliente: {customerName || '---'}</div>
+                <div className="text-black text-sm">{quoteDate || 'Fecha: ---'}</div>
+              </div>
+              <div className="text-right text-sm text-black">
+                <div>
+                  <span className="font-bold">RFC:</span> {RFC}
+                </div>
+                <div>Kusam Outdoor Solutions</div>
+                <div>www.kusam.com.mx</div>
+              </div>
+            </div>
+            <h1 className="text-2xl font-bold mb-4 text-center text-black">Cotización de Productos</h1>
+            <div className="text-center text-xs text-gray-600 mb-4 italic">
+              * Todos los precios mostrados incluyen IVA (16%)
+            </div>
+            {loading ? (
+              <div className="text-center text-black/60">Cargando cotización...</div>
+            ) : error ? (
+              <div className="text-center text-red-600">{error}</div>
+            ) : favorites.length === 0 ? (
+              <div className="text-center text-black/60">No hay productos en tu cotización.</div>
+            ) : (
+              <>
+                {/* Responsive Table */}
+                <div className="w-full mb-6">
+                  <div className="hidden md:block">
+                    <table className="w-full border text-sm text-black">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="border px-2 py-1">Producto</th>
+                          <th className="border px-2 py-1">Tela</th>
+                          <th className="border px-2 py-1">Estructura</th>
+                          <th className="border px-2 py-1">Cantidad</th>
+                          <th className="border px-2 py-1">Precio Unitario</th>
+                          <th className="border px-2 py-1">Total</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {favorites.map((fav) => {
+                          const prod = products[fav.product_id];
+                          if (!prod) return null;
+                          return (
+                            <tr key={fav.id} className="text-center">
+                              <td className="border px-2 py-1 font-semibold">
+                                <div className="flex items-center gap-2">
+                                  <Image src={prod.image_url} alt={prod.name} width={40} height={40} className="rounded" />
+                                  <span>{prod.name}</span>
+                                </div>
+                              </td>
+                              <td className="border px-2 py-1">{fav.fabric_color || '-'}</td>
+                              <td className="border px-2 py-1">{fav.frame_color || '-'}</td>
+                              <td className="border px-2 py-1">{fav.quantity}</td>
+                              <td className="border px-2 py-1">{formatCurrency(prod.price)}</td>
+                              <td className="border px-2 py-1">{formatCurrency(prod.price * fav.quantity)}</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                  {/* Mobile stacked version */}
+                  <div className="md:hidden flex flex-col gap-4">
+                    {favorites.map((fav) => {
+                      const prod = products[fav.product_id];
+                      if (!prod) return null;
+                      return (
+                        <div key={fav.id} className="bg-white border rounded-lg shadow-sm p-3 flex flex-col gap-2">
+                          <div className="flex items-center gap-3">
+                            <Image src={prod.image_url} alt={prod.name} width={40} height={40} className="rounded" />
+                            <span className="font-semibold text-base text-black">{prod.name}</span>
+                          </div>
+                          <div className="flex flex-wrap gap-2 text-sm text-black/80">
+                            <span>
+                              <span className="font-semibold">Tela:</span> {fav.fabric_color || '-'}
+                            </span>
+                            <span>
+                              <span className="font-semibold">Estructura:</span> {fav.frame_color || '-'}
+                            </span>
+                            <span>
+                              <span className="font-semibold">Cantidad:</span> {fav.quantity}
+                            </span>
+                          </div>
+                          <div className="flex flex-wrap gap-2 text-sm text-black/80">
+                            <span>
+                              <span className="font-semibold">Precio Unitario:</span> {formatCurrency(prod.price)}
+                            </span>
+                            <span>
+                              <span className="font-semibold">Total:</span> {formatCurrency(prod.price * fav.quantity)}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+                {/* Quote summary with discount logic */}
+                <div className="flex flex-col gap-[21px] mb-[21px] w-full">
+                  {/* Discounted summary */}
+                  <div className="bg-green-50 border border-green-400 rounded-[21px] p-[21px] shadow-sm flex flex-col justify-between min-w-[233px]">
+                    <div className="text-green-900 text-[21px] font-bold mb-[13px] flex items-center gap-2">
+                      <svg className="w-[18px] h-[21px] text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      ¡Completa Tu Compra Hoy!
+                    </div>
+                    {/* Dynamic landing page image */}
+                    {customerHasDiscount && (
+                      <div className="flex justify-end mb-2">
+                        <Image src={landingPageImageUrl || '/expo1.png'} alt="Landing Page Banner" width={175} height={35} className="inline-block rounded" />
+                      </div>
+                    )}
+                    <div className="flex flex-col items-end gap-[5px] text-[13px] text-green-900">
+                      <div>
+                        <span className="font-semibold">Subtotal (antes de descuento):</span> {formatCurrency(subtotal)}
+                      </div>
+                      {customerHasDiscount && (
+                        <>
+                          <div>
+                            <span className="font-semibold">Descuento ({Math.round(discountRate * 100)}%):</span> -{formatCurrency(discount)}
+                          </div>
+                          <div>
+                            <span className="font-semibold">Subtotal (después de descuento):</span> {formatCurrency(subtotalAfterDiscount)}
+                          </div>
+                        </>
+                      )}
+                      <div className="text-[18px] font-extrabold mt-2 text-green-700 drop-shadow">
+                        <span className="font-semibold">TOTAL CON DESCUENTO:</span> {formatCurrency(totalConDescuento)}
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => router.push('/kusam/payment')}
+                      className="mt-[21px] w-full px-6 py-3 text-white rounded-lg font-semibold transition-colors shadow border-none"
+                      style={{
+                        backgroundImage: `url('/wood/var1.png')`,
+                        backgroundSize: 'cover',
+                        backgroundRepeat: 'repeat',
+                        backgroundColor: '#6b7280',
+                      }}
+                    >
+                      ¡PROCEDER AL PAGO!
+                    </button>
+                  </div>
+                  {/* Non-discounted summary */}
+                  <div className="bg-white border border-gray-300 rounded-[21px] p-[21px] shadow-sm flex flex-col justify-between min-w-[233px]">
+                    <div className="text-gray-900 text-[19px] font-bold mb-[13px] flex items-center gap-2">
+                      <span role="img" aria-label="thinking" className="mr-2">🧐</span>
+                      No estas seguro?
+                    </div>
+                    <div className="text-gray-700 text-[13px] mb-2">Solo las compras completadas hoy reciben descuento.</div>
+                    <div className="flex flex-col items-end gap-[5px] text-[13px] text-gray-900">
+                      <div>
+                        <span className="font-semibold">Subtotal:</span> {formatCurrency(subtotal)}
+                      </div>
+                      <div className="text-[18px] font-extrabold mt-2 text-red-600 drop-shadow">
+                        <span className="font-semibold">TOTAL SIN DESCUENTO:</span> {formatCurrency(totalSinDescuento)}
+                      </div>
+                      {/* Tip with share SVG */}
+                      <div className="mt-4 flex items-center text-gray-700 text-sm">
+                        <svg className="w-5 h-5 mr-2 text-gray-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 12v.01M12 4v.01M20 12v.01M12 20v.01M8.59 16.59L4 12l4.59-4.59M15.41 7.41L20 12l-4.59 4.59" />
+                        </svg>
+                        <span>
+                          <b>Tip:</b> En tu teléfono, después de tocar <b>Imprimir</b>, usa el botón de <b>compartir</b> <svg className="inline w-4 h-4 align-text-bottom mx-1 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 12v.01M12 4v.01M20 12v.01M12 20v.01M8.59 16.59L4 12l4.59-4.59M15.41 7.41L20 12l-4.59 4.59" /></svg> que aparece en las opciones de impresión para <b>guardar como PDF o imagen</b> esta cotización en tu dispositivo.
+                        </span>
+                      </div>
+                      {/* Print/Save Quote Button - full width */}
+                      <button
+                        className="mt-2.5 w-full px-6 py-3 border-2 border-black text-black rounded-lg font-semibold transition-colors shadow-none bg-transparent hover:bg-gray-100"
+                        style={{ background: 'none' }}
+                        onClick={() => window.print()}
+                      >
+                        Imprimir o Guardar Cotización (PDF)
+                      </button>
+                    </div>
+                    {/* Tip with share SVG */}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}

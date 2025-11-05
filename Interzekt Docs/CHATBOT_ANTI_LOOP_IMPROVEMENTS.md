@@ -21,7 +21,7 @@ According to the system rules, the name should only be used ONCE in the initial 
 ### Problem 3: Re-introducing Itself
 The chatbot was introducing itself even though the frontend already introduced it:
 - Frontend: "¡Hola! Soy Sammy 👋, tu asistente del Dashboard..."
-- Bot: "¡Hola! Soy tu asistente para el Dashboard Kusam..." ❌ (redundant)
+- Bot: "¡Hola! Soy tu asistente para el Dashboard..." ❌ (redundant)
 
 ### Problem 4: Not Greeting User by Name Initially
 The chatbot wasn't checking userName/dataTableSession/dataTableUser tools FIRST:
@@ -115,7 +115,7 @@ const payload = {
   session_id: sessionId,
   user_email: userEmail,
   timestamp: new Date().toISOString(),
-  context: 'kusam-admin-dashboard-chat',
+  context: 'admin-dashboard-chat',
   conversation_history: recentHistory, // NEW: Helps AI understand flow
 };
 ```
@@ -172,7 +172,7 @@ Current message: ${payload.message}
 ### ✅ Correct Flow (What should happen):
 ```
 User: "Hola"
-Bot: "¡Hola Nikko! Soy tu asistente para el Dashboard Kusam. ¿En qué puedo ayudarte?" ✅ (name used ONCE)
+Bot: "¡Hola Nikko! Soy tu asistente para el Dashboard. ¿En qué puedo ayudarte?" ✅ (name used ONCE)
 User: "quiero agregar un producto"
 Bot: "¿Quieres que te guíe paso a paso?" ✅ (no name)
 User: "Si"

@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
@@ -41,8 +40,8 @@ countryCodes.forEach(country => {
 	country.emoji = getFlagEmoji(country.code);
 });
 
-export type KusamLeadFormVariant = 
-		| 'kusam' 
+export type LeadFormVariant = 
+		| 'main' 
 		| 'saltillo' 
 		| 'vasconcelos'
 		| 'evento-especial'
@@ -52,14 +51,14 @@ export type KusamLeadFormVariant =
 		| 'movelsul-brazil'
 		| 'spoga-gafa-cologne';
 
-interface KusamLeadFormProps {
-		variant?: KusamLeadFormVariant;
+interface LeadFormProps {
+		variant?: LeadFormVariant;
 		hideEmail?: boolean;
 }
 
 // Map variants to customer-friendly landing source names
-const VARIANT_TO_LANDING_SOURCE: Record<KusamLeadFormVariant, string> = {
-		'kusam': 'Expo Mueble Internacional',
+const VARIANT_TO_LANDING_SOURCE: Record<LeadFormVariant, string> = {
+		'main': 'Expo Mueble Internacional',
 		'saltillo': 'Tienda Saltillo',
 		'vasconcelos': 'Tienda Vasconcelos',
 		'evento-especial': 'Evento Especial',
@@ -71,10 +70,10 @@ const VARIANT_TO_LANDING_SOURCE: Record<KusamLeadFormVariant, string> = {
 };
 
 const getInstructionsPath = (customerId?: string) => {
-	return `/kusam/instructions${customerId ? `?customer_id=${customerId}` : ''}`;
+	return `/main/instructions${customerId ? `?customer_id=${customerId}` : ''}`;
 };
 
-const KusamLeadForm = ({ variant = 'kusam', hideEmail = false }: KusamLeadFormProps) => {
+const LeadForm = ({ variant = 'main', hideEmail = false }: LeadFormProps) => {
 						const [name, setName] = useState('');
 						const [localWhatsapp, setLocalWhatsapp] = useState('');
 						const [selectedCountry, setSelectedCountry] = useState<CountryCode>(countryCodes[0]);
@@ -94,7 +93,7 @@ const KusamLeadForm = ({ variant = 'kusam', hideEmail = false }: KusamLeadFormPr
 		useEffect(() => {
 			if (searchParams.get('clear_session') === 'true') {
 				// Remove customer ID from localStorage
-				localStorage.removeItem('kusam_customer_id');
+				localStorage.removeItem('customer_id');
 				// Optionally clear customer Supabase session (do NOT log out admin)
 				// If you store customer auth separately, clear it here
 				// Reset other customer-related state if needed
@@ -121,10 +120,10 @@ const KusamLeadForm = ({ variant = 'kusam', hideEmail = false }: KusamLeadFormPr
 
 	useEffect(() => {
 		const initializeCustomer = async () => {
-			let currentCustomerId = localStorage.getItem('kusam_customer_id');
+			let currentCustomerId = localStorage.getItem('customer_id');
 			if (!currentCustomerId) {
 				currentCustomerId = uuidv4();
-				localStorage.setItem('kusam_customer_id', currentCustomerId);
+				localStorage.setItem('customer_id', currentCustomerId);
 			}
 			setCurrentCustomerId(currentCustomerId);
 			try {
@@ -134,7 +133,7 @@ const KusamLeadForm = ({ variant = 'kusam', hideEmail = false }: KusamLeadFormPr
 					.eq('customer_id', currentCustomerId)
 					.maybeSingle();
 				if (fetchError) throw new Error(`Error fetching customer data: ${fetchError.message}`);
-				console.log('[KusamLeadForm] Existing customer:', existingCustomer);
+				console.log('[LeadForm] Existing customer:', existingCustomer);
 				if (existingCustomer) {
 					// Helper function to check if customer name is anonymous
 					const isAnonymousName = (name: string | null | undefined): boolean => {
@@ -147,9 +146,9 @@ const KusamLeadForm = ({ variant = 'kusam', hideEmail = false }: KusamLeadFormPr
 						(existingCustomer.email !== undefined && existingCustomer.email !== null && !existingCustomer.email.endsWith('@temp.com')) &&
 						existingCustomer.whatsapp &&
 						existingCustomer.customer_type;
-					console.log('[KusamLeadForm] isFullyRegistered:', isFullyRegistered);
+					console.log('[LeadForm] isFullyRegistered:', isFullyRegistered);
 					if (isFullyRegistered) {
-						   console.log('[KusamLeadForm] DEBUG: variant:', variant, 'isFullyRegistered:', isFullyRegistered);
+						   console.log('[LeadForm] DEBUG: variant:', variant, 'isFullyRegistered:', isFullyRegistered);
 						   // For 'evento-especial', do NOT redirect, always show the form
 						   if (variant === 'evento-especial') {
 							   // Do nothing, just show the form
@@ -159,16 +158,16 @@ const KusamLeadForm = ({ variant = 'kusam', hideEmail = false }: KusamLeadFormPr
 							   if (cameFromAdmin) {
 								   router.push(`/admin/catalogo?customer_id=${currentCustomerId}`);
 							   } else {
-								   router.push(`/kusam/catalogo?customer_id=${currentCustomerId}`);
+								   router.push(`/main/catalogo?customer_id=${currentCustomerId}`);
 							   }
 							   return;
-						   } else if (variant === 'kusam') {
+						   } else if (variant === 'main') {
 							   router.push(getInstructionsPath(currentCustomerId));
 							   return;
 						   }
 					} else {
 						if (isAnonymousName(existingCustomer.name)) {
-							console.log('[KusamLeadForm] Customer is anonymous, showing form.');
+							console.log('[LeadForm] Customer is anonymous, showing form.');
 						}
 						setName(isAnonymousName(existingCustomer.name) ? '' : existingCustomer.name || '');
 						setEmail(existingCustomer.email?.endsWith('@temp.com') ? '' : existingCustomer.email || '');
@@ -190,13 +189,13 @@ const KusamLeadForm = ({ variant = 'kusam', hideEmail = false }: KusamLeadFormPr
 						}
 					}
 				} else {
-					console.log('[KusamLeadForm] No customer found, showing blank form.');
+					console.log('[LeadForm] No customer found, showing blank form.');
 					setName('');
 					setEmail('');
 					setCustomerType('');
 				}
 			} catch (error) {
-				console.error('[KusamLeadForm] Error initializing customer:', error);
+				console.error('[LeadForm] Error initializing customer:', error);
 			}
 			setIsLoadingCustomerStatus(false);
 		};
@@ -286,12 +285,12 @@ const KusamLeadForm = ({ variant = 'kusam', hideEmail = false }: KusamLeadFormPr
 			if (cameFromAdmin) {
 				defaultRedirectPath = `/admin/catalogo?customer_id=${customerIdToUse}`;
 			} else {
-				defaultRedirectPath = `/kusam/catalogo?customer_id=${customerIdToUse}`;
+				defaultRedirectPath = `/main/catalogo?customer_id=${customerIdToUse}`;
 			}
 		} else if (variant === 'evento-especial') {
-			defaultRedirectPath = `/kusam/catalogo?customer_id=${customerIdToUse}`;
+			defaultRedirectPath = `/main/catalogo?customer_id=${customerIdToUse}`;
 		} else {
-			defaultRedirectPath = `/kusam/instructions?customer_id=${customerIdToUse}`;
+			defaultRedirectPath = `/main/instructions?customer_id=${customerIdToUse}`;
 		}
 		const newRedirectPath = redirectFrom ? `${redirectFrom}?${redirectParams.toString()}` : defaultRedirectPath;
 		router.push(newRedirectPath);
@@ -315,7 +314,7 @@ const KusamLeadForm = ({ variant = 'kusam', hideEmail = false }: KusamLeadFormPr
 						transition={{ duration: 0.5 }}
 						className="relative z-20 text-center"
 				>
-						<p className="text-xl text-gray-700 font-semibold">Cargando experiencia Kusam...</p>
+						<p className="text-xl text-gray-700 font-semibold">Cargando experiencia...</p>
 						<Image src="/logo.png" alt="Loading Logo" width={100} height={25} className="mx-auto mt-4 animate-pulse" />
 				</motion.div>
 			</div>
@@ -357,7 +356,7 @@ const KusamLeadForm = ({ variant = 'kusam', hideEmail = false }: KusamLeadFormPr
 				<div className="mb-6 text-center">
 					<Image
 						src="/logo.png"
-						alt="Kusam Outdoor Solutions Logo"
+						alt="YOUR COMPANY Logo"
 						width={200}
 						height={50}
 						priority
@@ -371,7 +370,7 @@ const KusamLeadForm = ({ variant = 'kusam', hideEmail = false }: KusamLeadFormPr
 						<div className="flex flex-col items-center justify-center mb-4">
 							<Image
 								src="/other-images/jpgtest.jpg"
-								alt="Kusam Evento Especial"
+								alt="Company Evento Especial"
 								width={400}
 								height={220}
 								style={{ objectFit: 'cover', borderRadius: '1rem' }}
@@ -380,12 +379,12 @@ const KusamLeadForm = ({ variant = 'kusam', hideEmail = false }: KusamLeadFormPr
 							/>
 						</div>
 					)}
-					{variant === 'kusam' && (
+					{variant === 'main' && (
 						<p className="text-gray-600 mt-2 text-lg">
 							Su Experiencia en{' '}
 							<span className="inline-flex items-center align-middle mx-1">
 								<Image
-									src="/expo_mueble.png"
+									src="/expo1.png"
 									alt="Expo Mueble Internacional Logo"
 									width={90}
 									height={18}
@@ -406,143 +405,129 @@ const KusamLeadForm = ({ variant = 'kusam', hideEmail = false }: KusamLeadFormPr
 						       className="mx-auto"
 						       priority
 					       />
+					       <p className="text-gray-600 mt-2 text-lg">
+							       Bienvenido a nuestra sucursal de{' '}
+							       <span className="font-semibold">{variant === 'vasconcelos' ? 'Vasconcelos' : 'Saltillo'}</span>
+						       </p>
 				       </div>
 			       )}
 				</div>
 
-						<p className="text-gray-700 mb-6 text-center text-md">
+				<p className="text-gray-700 mb-6 text-center text-md">
 																																	  {variant === 'evento-especial'
 																																		  ? 'Regístrate para descubrir lo mejor de Kusam.'
 																																		  : '¡Bienvenido! Para iniciar su recorrido interactivo y obtener una cotización personalizada, por favor complete sus datos.'}
 				</p>
 
 				<form onSubmit={handleSubmit} className="space-y-4">
-					{/* ...existing form fields... */}
-					<div>
-						<label htmlFor="name" className="block text-sm font-medium text-gray-700">Nombre Completo</label>
-						<input
-							type="text"
-							id="name"
-							name="name"
-							value={name}
-							onChange={(e) => setName(e.target.value)}
-							className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-gray-900 placeholder-gray-500"
-							placeholder="Ej. Mónica García"
-							required
-						/>
-					</div>
-					<div>
-						<label htmlFor="whatsapp" className="block text-sm font-medium text-gray-700">WhatsApp</label>
-						<div className="relative mt-1 flex rounded-md shadow-sm" ref={dropdownRef}>
-							<button
-								type="button"
-								className="relative z-10 inline-flex items-center space-x-2 px-3 py-2 border border-r-0 border-gray-300 rounded-l-md bg-gray-50 text-gray-900 text-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-								onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-							>
-								<span className="text-xl leading-none">{selectedCountry.emoji}</span>
-								<span className="hidden sm:inline">{selectedCountry.dial_code}</span>
-								<svg className="-mr-1 h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-									<path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.25 4.25a.75.75 0 01-1.06 0L5.23 8.29a.75.75 0 01.02-1.06z" clipRule="evenodd" />
-								</svg>
-							</button>
-							{isDropdownOpen && (
-								<div className="absolute left-0 mt-12 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-20 max-h-60 overflow-y-auto">
-									<div className="py-1" role="menu" aria-orientation="vertical" aria-labelledby="country-select-button">
-										{countryCodes.map((country) => (
-											<a
-												key={country.code}
-												href="#"
-												className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-												role="menuitem"
-												onClick={(e) => {
-													e.preventDefault();
-													setSelectedCountry(country);
-													if (country.dial_code === '') {
-														setLocalWhatsapp('');
-													}
-													setIsDropdownOpen(false);
-												}}
-											>
-												<span className="mr-2 text-lg leading-none">{country.emoji}</span>
-												{country.name} ({country.dial_code})
-											</a>
-										))}
-									</div>
-								</div>
-							)}
+					<div className="grid grid-cols-1 gap-4">
+						<div>
+							<label htmlFor="name" className="block text-sm font-medium text-gray-700">
+								Nombre Completo
+							</label>
 							<input
-								type="tel"
-								id="localWhatsapp"
-								name="localWhatsapp"
-								value={localWhatsapp}
-								onChange={(e) => setLocalWhatsapp(e.target.value)}
-								className="flex-1 block w-full px-3 py-2 border border-gray-300 rounded-r-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-gray-900 placeholder-gray-500"
-								placeholder={selectedCountry.dial_code === '' ? "Ej. +YY XXXXXXXXXX" : "Ej. 55 1234 5678"}
+								type="text"
+								id="name"
+								value={name}
+								onChange={(e) => setName(e.target.value)}
+								className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+								placeholder="Tu nombre"
 								required
 							/>
 						</div>
+
+						<div>
+							<label htmlFor="whatsapp" className="block text-sm font-medium text-gray-700">
+								WhatsApp
+							</label>
+							<div className="mt-1 flex rounded-md shadow-sm">
+								<div className="relative" ref={dropdownRef}>
+									<button
+										type="button"
+										className="inline-flex items-center px-3 py-2 border border-r-0 border-gray-300 bg-gray-50 text-gray-500 rounded-l-md text-sm"
+										onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+									>
+										{selectedCountry.emoji} {selectedCountry.dial_code}
+									</button>
+									{isDropdownOpen && (
+										<div className="absolute z-10 mt-1 w-56 bg-white shadow-lg rounded-md border border-gray-200 max-h-60 overflow-y-auto">
+											{countryCodes.map((country) => (
+												<div
+													key={country.code}
+													className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer"
+													onClick={() => {
+														setSelectedCountry(country);
+														setIsDropdownOpen(false);
+													}}
+												>
+													{country.emoji} <span className="ml-2">{country.name} ({country.dial_code})</span>
+												</div>
+											))}
+										</div>
+									)}
+								</div>
+								<input
+									type="tel"
+									id="whatsapp"
+									value={localWhatsapp}
+									onChange={(e) => setLocalWhatsapp(e.target.value)}
+									className="flex-1 min-w-0 block w-full px-3 py-2 border-gray-300 rounded-none rounded-r-md focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+									placeholder="81 1234 5678"
+									required
+								/>
+							</div>
+						</div>
+
+						{variant !== 'evento-especial' && !hideEmail && (
+							<div>
+								<label htmlFor="email" className="block text-sm font-medium text-gray-700">
+									Email
+								</label>
+								<input
+									type="email"
+									id="email"
+									value={email}
+									onChange={(e) => setEmail(e.target.value)}
+									className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+									placeholder="tu@email.com"
+									required
+								/>
+							</div>
+						)}
+
+						<div>
+							<label htmlFor="customer_type" className="block text-sm font-medium text-gray-700">
+								¿Qué industria representas?
+							</label>
+							<select
+								id="customer_type"
+								value={customerType}
+								onChange={(e) => setCustomerType(e.target.value)}
+								className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+								required
+							>
+								<option value="" disabled>Selecciona una opción</option>
+								<option value="hotel">Hotelería</option>
+								<option value="restaurant">Restaurante</option>
+								<option value="architect">Arquitecto / Despacho</option>
+								<option value="developer">Desarrollador Inmobiliario</option>
+								<option value="other">Otro</option>
+							</select>
+						</div>
 					</div>
-					   {!hideEmail && (
-						   <div>
-							   <label htmlFor="email" className="block text-sm font-medium text-gray-700">Email</label>
-							   <input
-								   type="email"
-								   id="email"
-								   name="email"
-								   value={email}
-								   onChange={(e) => setEmail(e.target.value)}
-								   className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-gray-900 placeholder-gray-500"
-								   placeholder="Ej. su.correo@ejemplo.com"
-								   required={variant !== 'evento-especial'}
-							   />
-						   </div>
-					   )}
-					   <div>
-						   <label htmlFor="customerType" className="block text-sm font-medium text-gray-700">¿A qué te dedicas?</label>
-						   <select
-							   id="customerType"
-							   name="customerType"
-							   value={customerType}
-							   onChange={(e) => setCustomerType(e.target.value)}
-							   className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-gray-900"
-							   required
-						   >
-							   <option value="">Selecciona tu industria</option>
-							   <option value="ArquitecturaDiseño">Despacho de Arquitectura/Diseño</option>
-							   <option value="HoteleriaTurismo">Hotel / Resort / Turismo</option>
-							   <option value="RestaurantesCafes">Restaurante / Cafetería</option>
-							   <option value="DesarrolladorInmobiliario">Desarrollador Inmobiliario</option>
-							   <option value="ConstructorContratista">Constructora / Contratista</option>
-							   <option value="Inversionista">Inversionista</option>
-							   <option value="SectorPublico">Sector Público (Gobierno)</option>
-							   <option value="SpaBienestar">Spa / Centro de Bienestar</option>
-							   <option value="ClubDeportivoSocial">Club Deportivo / Social</option>
-							   <option value="ResidencialParticular">Cliente Residencial / Particular</option>
-							   <option value="ComercioRetail">Comercio / Retail</option>
-							   <option value="Educacion">Institución Educativa</option>
-							   <option value="Industrial">Sector Industrial</option>
-							   <option value="SaludMedicina">Salud / Medicina (Clínicas, Hospitales)</option>
-							   <option value="Agroindustria">Agroindustria</option>
-							   <option value="OtroNegocio">Otro Tipo de Negocio</option>
-							   <option value="Estudiante">Estudiante / Académico</option>
-						   </select>
-					   </div>
-					<button
-						   type="submit"
-						   className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-lg font-semibold bg-stone-400 text-white hover:bg-stone-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-stone-600 transition duration-150 ease-in-out"
-						   style={{
-							   backgroundImage: `url('/wood/var4.png')`,
-							   backgroundSize: '100px 100px',
-							   backgroundRepeat: 'repeat',
-							   backgroundBlendMode: 'multiply'
-						   }}
-					   >
-						   {variant === 'evento-especial' ? 'Explora Nuestro Catalogo' : 'Comienza A Explorar'}
-					   </button>
+
+					<div className="pt-4">
+						<button
+							type="submit"
+							className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+						>
+							Registrarme y Ver Catálogo
+						</button>
+					</div>
 				</form>
 			</motion.div>
 		</div>
 	);
 };
 
-export default KusamLeadForm;
+export default LeadForm;

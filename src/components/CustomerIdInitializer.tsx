@@ -1,135 +1,87 @@
 // src/components/CustomerIdInitializer.tsx
 'use client';
 
-import { useEffect, useRef } from 'react';
-import { useSearchParams, usePathname, useRouter } from 'next/navigation';
+import { useEffect } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { supabase } from '@/utils/supabase';
-import { adminList } from '../config/adminList';
+import { v4 as uuidv4 } from 'uuid';
 
 export default function CustomerIdInitializer() {
-  const searchParams = useSearchParams();
-  const pathname = usePathname();
-  const router = useRouter();
-  
-  // Use a ref to prevent this logic from running more than once on initial load.
-  const hasCheckedStatus = useRef(false);
+    const searchParams = useSearchParams();
+    const router = useRouter();
 
-  useEffect(() => {
-    // Only run this logic once on component mount.
-    if (hasCheckedStatus.current) return;
-    hasCheckedStatus.current = true;
+    useEffect(() => {
+        const initialize = async () => {
+            const customerId = localStorage.getItem('customer_id');
+            const sourceQrCode = searchParams.get('source_qr_code');
+            const clearSession = searchParams.get('clear_session');
 
+            if (clearSession === 'true') {
+                localStorage.removeItem('customer_id');
+                router.push('/');
+                return;
+            }
 
-    const checkCustomerStatusAndRedirect = async () => {
-      // Check if we've already verified this customer in this session
-      const customerId = localStorage.getItem('kusam_customer_id');
-      if (customerId && typeof window !== 'undefined') {
-        const sessionKey = `customer_verified_${customerId}`;
-        const isVerified = sessionStorage.getItem(sessionKey);
-        if (isVerified === 'true') {
-          console.log('[CustomerIdInitializer] Customer already verified in this session, skipping check.');
-          return;
-        }
-      }
-      // Exempt authenticated admins from all customer redirects
-      const getCookie = (name: string): string | null => {
-        const value = `; ${document.cookie}`;
-        const parts = value.split(`; ${name}=`);
-        if (parts.length === 2) {
-          const part = parts.pop();
-          if (part) {
-            return part.split(';').shift() ?? null;
-          }
-        }
-        return null;
-      };
-      const email = getCookie('user_email');
-      const decodedEmail = email ? decodeURIComponent(email) : null;
-      if (decodedEmail && adminList.includes(decodedEmail)) {
-        console.log('Authenticated admin detected, skipping all customer redirects.');
-        return;
-      }
-      // Only skip redirect logic for admin pages
-      const isAdminPage = pathname.startsWith('/admin');
-      if (isAdminPage) {
-        console.log('On admin page, no redirection needed.');
-        return;
-      }
+            if (customerId) {
+                // If a customer ID exists, we might not need to do anything here
+                // unless we want to validate it or fetch data.
+                // For now, we assume it's valid.
+                return;
+            }
 
-      // Case 1: No customer ID exists in local storage.
-      if (!customerId) {
-        // Do NOT redirect if on /evento-especial
-        if (pathname === '/evento-especial') {
-          console.log('No customer ID found on /evento-especial, but no redirect needed.');
-          return;
-        }
-        console.log('No customer ID found, redirecting to landing page.');
-        // Redirect to the correct event landing page
-        let eventLanding = '/kusam';
-        if (pathname.startsWith('/saltillo')) eventLanding = '/saltillo';
-        else if (pathname.startsWith('/vasconcelos')) eventLanding = '/vasconcelos';
-        const redirectPath = `${eventLanding}?redirect_from=${encodeURIComponent(pathname)}&${searchParams.toString()}`;
-        router.push(redirectPath);
-        return;
-      }
+            if (sourceQrCode) {
+                try {
+                    const { data, error } = await supabase
+                        .from('customers')
+                        .insert({ landing_source: sourceQrCode })
+                        .select()
+                        .single();
 
-      // Case 2: Customer ID exists, check if their profile is complete.
-      console.log('Checking customer status in Supabase for ID:', customerId);
-      const { data: customer, error } = await supabase
-        .from('customers')
-        .select('name, email, whatsapp')
-        .eq('customer_id', customerId)
-        .maybeSingle();
+                    if (error) throw error;
 
-      if (error) {
-        console.error('Error fetching customer status:', error);
-        return;
-      }
+                    localStorage.setItem('customer_id', data.id);
+                    router.push(`/main/catalogo?customer_id=${data.id}`);
+                } catch (error) {
+                    console.error('Error creating customer from QR code:', error);
+                }
+                return;
+            }
 
-      console.log('[CustomerIdInitializer] Customer data:', customer);
-      
-      // Helper function to check if customer name is anonymous
-      const isAnonymousName = (name: string | null | undefined): boolean => {
-        if (!name) return true;
-        return name.startsWith('Visitante Anónimo');
-      };
-      
-      // Consider customer confirmed if they have a real name (not anonymous), whatsapp, and email is either empty or not a temp email
-      const isAnonymous = !customer || isAnonymousName(customer.name) || !customer.whatsapp || (customer.email && customer.email.endsWith('@temp.com'));
-      console.log('[CustomerIdInitializer] isAnonymous:', isAnonymous, 'pathname:', pathname);
+            // This part handles redirection for specific events, like 'evento-especial'
+            const eventParam = searchParams.get('event');
+            if (eventParam) {
+                let eventLanding = '/main';
+                if (eventParam === 'evento-especial') {
+                    eventLanding = '/evento-especial';
+                }
+                router.push(eventLanding);
+                return;
+            }
 
-      // If customer is NOT anonymous, mark them as verified in sessionStorage
-      if (!isAnonymous && customerId) {
-        const sessionKey = `customer_verified_${customerId}`;
-        sessionStorage.setItem(sessionKey, 'true');
-        console.log('[CustomerIdInitializer] Customer verified and marked in session.');
-      }
+            // If no customer ID, no QR code, and no event, we might want to
+            // create a new anonymous customer or redirect to a landing page.
+            // Let's create an anonymous customer.
+            try {
+                const { data, error } = await supabase
+                    .from('customers')
+                    .insert({ name: `Visitante Anónimo ${uuidv4()}` })
+                    .select()
+                    .single();
 
-      // If on /evento-especial and customer is confirmed, redirect to event catalog
-      if (pathname === '/evento-especial' && !isAnonymous) {
-        console.log('[CustomerIdInitializer] Redirecting to /kusam/catalogo');
-        router.push('/kusam/catalogo');
-        return;
-      }
+                if (error) throw error;
 
-      // If the user has a customer ID but is still considered anonymous, redirect them.
-      if (isAnonymous) {
-        // Do NOT redirect if on /evento-especial
-        if (pathname === '/evento-especial') {
-          console.log('Customer is anonymous on /evento-especial, no redirect.');
-          return;
-        }
-        console.log('Customer is anonymous, redirecting to landing page for signup.');
-        let eventLanding = '/kusam';
-        if (pathname.startsWith('/saltillo')) eventLanding = '/saltillo';
-        else if (pathname.startsWith('/vasconcelos')) eventLanding = '/vasconcelos';
-        const redirectPath = `${eventLanding}?redirect_from=${encodeURIComponent(pathname)}&${searchParams.toString()}`;
-        router.push(redirectPath);
-      }
-    };
+                localStorage.setItem('customer_id', data.id);
+                // Decide where to redirect anonymous users.
+                // Redirecting to the main page might be a good default.
+                // router.push(`/main/catalogo?customer_id=${data.id}`);
 
-    checkCustomerStatusAndRedirect();
-  }, [searchParams, pathname, router]);
+            } catch (error) {
+                console.error('Error creating anonymous customer:', error);
+            }
+        };
 
-  return null;
+        initialize();
+    }, [router, searchParams]);
+
+    return null;
 }

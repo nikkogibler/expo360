@@ -1,4 +1,4 @@
-# 🎉 Asistente Kusam - Implementación Completa
+# 🎉 Asistente Expo360 - Implementación Completa
 
 ## ✅ Lo Que Se Implementó
 
@@ -74,7 +74,7 @@
 {
   "message": "pregunta del usuario",
   "session_id": "session_xxx",
-  "user_email": "admin@kusam.com",
+  "user_email": "admin@example.com",
   "timestamp": "ISO timestamp",
   "context": "kusam-admin-dashboard-chat"
 }

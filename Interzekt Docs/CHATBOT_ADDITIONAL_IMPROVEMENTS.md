@@ -26,7 +26,7 @@
   1. ANTES de responder cualquier pregunta sobre funcionalidades del Dashboard → EJECUTA knowledgeBase
   2. NO inventes respuestas - Si knowledgeBase no tiene la información, admítelo
   3. NO asumas que algo existe - Verifica primero
-  4. NO digas "Kusam suele tener..." sin confirmación de knowledgeBase
+  4. NO digas "La empresa suele tener..." sin confirmación de knowledgeBase
   ```
 
 - Updated Rule 5 to emphasize knowledgeBase verification
@@ -39,13 +39,13 @@
 User: "¿Qué expos de muebles existen a las que deberíamos ir?"
 
 Bot: "¡Hola Nikko! Veo que es nuestra primera interacción en esta sesión. 
-Sobre expos de muebles, Kusam suele tener información integrada sobre 
+Sobre expos de muebles, la empresa suele tener información integrada sobre 
 eventos y expos relevantes para asistir desde el panel..."
 ```
 
 **Issues:**
 - ❌ "Veo que es nuestra primera interacción en esta sesión" (technical, unnecessary)
-- ❌ "Kusam suele tener información..." (invented without checking knowledgeBase)
+- ❌ "La empresa suele tener información..." (invented without checking knowledgeBase)
 - ❌ Hallucinating features that don't exist
 
 ### AFTER (Correct):
@@ -89,7 +89,7 @@ de productos, ProShotNow™, reportes y más. ¿Qué necesitas del panel?"
 
 **What NOT to do:**
 - ❌ Assume something exists without checking
-- ❌ Say "Kusam suele tener..." without verification
+- ❌ Say "La empresa suele tener..." without verification
 - ❌ Invent features or capabilities
 - ❌ Respond based on assumptions
 

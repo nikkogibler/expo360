@@ -53,7 +53,7 @@ export default function ProShotNowLanding() {
           </button>
           <div onClick={() => router.push('/admin/pro-shot-now')} style={{ cursor: 'pointer' }}>
             <Image
-              src="/kusam_main.webp"
+              src="/logo.png"
               alt="Kusam Logo"
               width={120}
               height={30}

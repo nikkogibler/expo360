@@ -146,7 +146,7 @@ const ProductCard = ({ product, index }: ProductCardProps) => {
 					) : (
 						<div className="absolute inset-0 flex items-center justify-center bg-white">
 							<Image
-								src="/expo_mueble.png"
+								src="/expo1.png"
 								alt={`${product.name} - Imagen de muestra`}
 								fill
 								sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
@@ -166,7 +166,7 @@ const ProductCard = ({ product, index }: ProductCardProps) => {
 					</div>
 				</div>
 				<div className="space-y-2">
-					<h3 className="text-lg font-semibold text-gray-800 line-clamp-2 min-h-[3rem]">
+					<h3 className="text-lg font-semibold text-gray-800 line-clamp-2 min-h-12">
 						{product.name}
 					</h3>
 					<p className="text-sm text-gray-500 uppercase tracking-wide">
@@ -278,7 +278,7 @@ export default function EventoEspecialCatalogPage() {
 				<motion.div className="max-w-7xl mx-auto w-full relative z-10" variants={containerVariants} initial="hidden" animate="visible" role="main" aria-label="Catálogo de productos">
 					<header className="text-center mb-8">
 						<div className="mb-6">
-							<Image src="/kusam_main.webp" alt="Kusam Evento Especial" width={200} height={50} priority className="mx-auto" />
+							<Image src="/logo.png" alt="Evento Especial" width={200} height={50} priority className="mx-auto" />
 						</div>
 						<div className="mb-6 w-full">
 							<Image src="/catalog_header1.png" alt="Catálogo de productos - Evento Especial" width={800} height={200} priority className="w-full h-auto object-contain" />

@@ -13,12 +13,12 @@ export default function EventoEspecialLanding() {
     // Create anonymous customer immediately on landing
     const initializeCustomer = async () => {
       // Check if customer already exists
-      let customerId = localStorage.getItem('kusam_customer_id');
+      let customerId = localStorage.getItem('customer_id');
       
       if (!customerId) {
         // Generate new customer ID
         customerId = uuidv4();
-        localStorage.setItem('kusam_customer_id', customerId);
+        localStorage.setItem('customer_id', customerId);
         console.log('[EventoEspecial] Generated new customer ID:', customerId);
         
         // Create anonymous customer in database
@@ -97,7 +97,7 @@ export default function EventoEspecialLanding() {
     
     // Hold for 3 seconds, then redirect
     const timer = setTimeout(() => {
-      router.replace('/kusam/catalogo?from=evento-especial');
+      router.replace('/main/catalogo?from=evento-especial');
     }, 3000);
 
     return () => clearTimeout(timer);
@@ -108,8 +108,8 @@ export default function EventoEspecialLanding() {
       {/* Full-page hero image with responsive sizes */}
       <div className="relative w-full h-full max-h-screen flex items-center justify-center p-4">
         <Image
-          src="/kusam_ad_16_9_optimized.webp"
-          alt="Evento Especial Kusam"
+          src="/evento_especial.png"
+          alt="Evento Especial"
           width={1920}
           height={1080}
           priority

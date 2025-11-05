@@ -16,7 +16,7 @@ interface SucursalCard {
 }
 
 const sucursalesData: SucursalCard[] = [
-  // Kusam Locations First (Active)
+  // Main Locations First (Active)
   {
     id: 'saltillo',
     title: 'Saltillo',
@@ -75,11 +75,11 @@ const sucursalesData: SucursalCard[] = [
     isActive: false
   },
   {
-    id: 'kusam',
+    id: 'main',
     title: 'Expo Mueble GDL',
-    description: 'La exposición original de Kusam en Guadalajara',
+    description: 'La exposición original de YOUR COMPANY en Guadalajara',
     image: '/sucursales_y_expos/expomueblegdl.png',
-    route: '/kusam',
+    route: '/main',
     isActive: true
   }
 ];
@@ -121,8 +121,8 @@ const SucursalesGallery = () => {
             </svg>
           </button>
           <Image
-            src="/kusam_main.webp"
-            alt="Kusam Logo"
+            src="/logo.png"
+            alt="Company Logo"
             width={120}
             height={30}
             className="h-8 w-auto"
@@ -165,7 +165,7 @@ const SucursalesGallery = () => {
                   ? 'hover:scale-105 hover:shadow-2xl cursor-pointer bg-white' 
                   : 'opacity-60 bg-gray-100 cursor-not-allowed'
                 }
-                aspect-[4/3] min-h-[280px]
+                aspect-4/3 min-h-[280px]
               `}
             >
               {/* Background Image */}
@@ -179,7 +179,7 @@ const SucursalesGallery = () => {
               />
               
               {/* Overlay */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+              <div className="absolute inset-0 bg-linear-to-t from-black/70 via-black/20 to-transparent" />
               
               {/* Content */}
               <div className="relative h-full flex flex-col justify-end p-6">
@@ -222,7 +222,7 @@ const SucursalesGallery = () => {
       {/* Footer */}
       <div className="text-center py-6">
         <p className="text-sm text-gray-500">
-          © 2024 Kusam. Selecciona una sucursal para comenzar a agregar clientes.
+          © 2024 YOUR COMPANY. Selecciona una sucursal para comenzar a agregar clientes.
         </p>
       </div>
     </div>
