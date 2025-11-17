@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
     }
     
     // Step 2: Get product details for the favorites
-    const productIds = [...new Set(favoritesData.map((fav: any) => fav.product_id))];
+    const productIds = [...new Set(favoritesData.map((fav: { product_id: string }) => fav.product_id))];
     console.log('Unique Product IDs to fetch:', productIds);
     
     const { data: productsData, error: productsError } = await supabaseAdmin

@@ -27,21 +27,21 @@ const isSupabaseConfigured = !!(
  * Returns successful responses with empty/dummy data
  */
 class MockSupabaseClient {
-  from(table: string) {
+  from(_table: string) {
     return {
-      select: (columns?: string) => ({
-        gte: (column: string, value: any) => 
+      select: (_columns?: string) => ({
+        gte: (_column: string, _value: unknown) => 
           Promise.resolve({ data: [], error: null }),
-        in: (column: string, values: any[]) =>
+        in: (_column: string, _values: unknown[]) =>
           Promise.resolve({ data: [], error: null }),
-        then: (callback: any) => {
+        then: (callback: (result: { data: unknown[]; error: null }) => void) => {
           callback({ data: [], error: null });
           return Promise.resolve({ data: [], error: null });
         },
       }),
-      insert: (record: any) =>
+      insert: (record: unknown) =>
         Promise.resolve({ data: [record], error: null }),
-      update: (record: any) =>
+      update: (record: unknown) =>
         Promise.resolve({ data: [record], error: null }),
       delete: () =>
         Promise.resolve({ data: null, error: null }),
@@ -49,10 +49,10 @@ class MockSupabaseClient {
   }
 
   storage = {
-    from: (bucket: string) => ({
-      upload: (path: string, file: any) =>
-        Promise.resolve({ data: { path }, error: null }),
-      download: (path: string) =>
+    from: (_bucket: string) => ({
+      upload: (_path: string, _file: unknown) =>
+        Promise.resolve({ data: { path: _path }, error: null }),
+      download: (_path: string) =>
         Promise.resolve({ data: new Blob(), error: null }),
       getPublicUrl: (path: string) => ({
         data: { publicUrl: `/mock-storage/${path}` },
