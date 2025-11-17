@@ -35,13 +35,74 @@ The mock client returns:
 - **Success responses** for `insert()` / `update()`: `{ data: [record], error: null }`
 - **Mock URLs** for storage: `/mock-storage/{path}`
 
+## How the Mock System Works
+
+### Entry Points
+
+**Three ways code accesses Supabase:**
+
+1. **Client-side (browser)** - Uses `supabase` from `lib/supabaseClient.ts`
+   ```typescript
+   import { supabase } from '@/lib/supabaseClient';
+   const { data, error } = await supabase.from('customers').select('*');
+   ```
+
+2. **API routes (server)** - Uses `getSupabaseAdmin()` factory
+   ```typescript
+   import { getSupabaseAdmin } from '@/lib/supabaseMock';
+   const supabaseAdmin = getSupabaseAdmin();
+   const { data, error } = await supabaseAdmin.from('orders').insert([...]);
+   ```
+
+3. **Backward compatibility** - Uses `supabaseAdmin` from `src/utils/supabaseAdmin.ts`
+   ```typescript
+   import { supabaseAdmin } from '@/utils/supabaseAdmin';
+   const { data, error } = await supabaseAdmin.from('customers').select('*');
+   ```
+
+### How It Works Under the Hood
+
+**Without env vars (mock mode):**
+```
+Component/Route imports supabase/supabaseAdmin
+    ↓
+Calls lib/supabaseMock.ts factory function
+    ↓
+isSupabaseConfigured = false (env vars missing)
+    ↓
+Returns MockSupabaseClient
+    ↓
+All queries return empty arrays/success responses
+    ↓
+Console warning: "[MOCK MODE] Using mock Supabase..."
+```
+
+**With env vars (production):**
+```
+Component/Route imports supabase/supabaseAdmin
+    ↓
+Calls lib/supabaseMock.ts factory function
+    ↓
+isSupabaseConfigured = true (all env vars present)
+    ↓
+Returns real Supabase client from createClient()
+    ↓
+Queries hit your real Supabase database
+    ↓
+Data persists to production database
+```
+
+**The key insight:** Everything uses the factory pattern, so the switch from mock to real is invisible to application code.
+
 ### What Actually Uses Mocks
 
 1. **API Routes** (when env vars missing):
    - `/api/admin/customer-data` - Returns empty favorites data
    - `/api/analyze-prompts` - Returns empty prompts
+   - `/api/createOrder` - Silently succeeds, returns mock order ID
    - `/api/delete-prompt` - Silently succeeds
    - `/api/update-prompt-image` - Silently succeeds
+   - `/api/getOrder` - Returns empty order data
    - All other routes that use `supabase` from `lib/supabaseClient.ts`
 
 2. **Components** (when env vars missing):
@@ -270,11 +331,16 @@ lib/
   ├── supabaseAdmin.ts          ← (Deprecated, use supabaseMock instead)
   └── firebaseMock.ts           ← (Create when ready for Firebase)
 
+src/utils/
+  └── supabaseAdmin.ts          ← Re-exports getSupabaseAdmin() from mock adapter (backward compatible)
+
 src/app/api/
   ├── admin/customer-data/route.ts    ← Uses getSupabaseAdmin()
   ├── analyze-prompts/route.ts        ← Uses getSupabaseAdmin()
+  ├── createOrder/route.ts            ← Uses supabaseAdmin from src/utils/supabaseAdmin.ts
   ├── delete-prompt/route.ts          ← Uses getSupabaseAdmin()
   ├── update-prompt-image/route.ts    ← Uses getSupabaseAdmin()
+  ├── getOrder/route.ts               ← Uses supabase from supabaseClient.ts
   └── (other routes use supabase from supabaseClient.ts)
 
 supabase/
@@ -327,8 +393,16 @@ MOCK_SUPABASE_SETUP.md                ← This file
 
 ### "Provider did not return a session" error
 - **Cause**: Using old supabaseAdmin.ts instead of new mock adapter
-- **Fix**: Import from `supabaseMock.ts` instead
-- **Example**: `import { getSupabaseAdmin } from '../lib/supabaseMock';`
+- **Fix**: Import from `supabaseMock.ts` instead, or use `supabaseAdmin` from `src/utils/supabaseAdmin.ts` (backward compatible re-export)
+- **Example**: 
+  ```typescript
+  // ✅ Good
+  import { getSupabaseAdmin } from '@/lib/supabaseMock';
+  import { supabaseAdmin } from '@/utils/supabaseAdmin'; // Also works
+  
+  // ❌ Old (don't use)
+  import { supabaseAdmin } from '@/lib/supabaseAdmin'; // Throws error
+  ```
 
 ### RLS errors on queries
 - **Cause**: Missing `x-customer-id` header or incorrect table policies
@@ -357,6 +431,13 @@ For questions about this setup, refer to:
 ## Summary
 
 **Current State**: ✅ Mock mode enabled, app is fully functional without real database
+
+**All entry points covered:**
+- ✅ `lib/supabaseClient.ts` - Uses mock factory
+- ✅ `lib/supabaseMock.ts` - Factory returns mock OR real
+- ✅ `src/utils/supabaseAdmin.ts` - Re-exports from factory (backward compatible)
+- ✅ API routes check env vars before using Supabase
+- ✅ Build passes with or without env vars
 
 **To Enable Supabase**: Add 3 env vars to Vercel, deploy schema, done! No code changes needed.
 

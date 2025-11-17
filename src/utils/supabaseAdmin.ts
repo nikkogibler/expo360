@@ -1,10 +1,17 @@
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseAdmin } from '../../lib/supabaseMock';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-if (!supabaseUrl || !supabaseServiceRoleKey) {
-  throw new Error('Supabase URL and Service Role Key are required for server-side operations.');
+/**
+ * Server-side admin Supabase client (service role - bypasses RLS)
+ * 
+ * This is re-exported from the mock adapter for backward compatibility.
+ * When env vars are set, returns real Supabase admin client.
+ * When env vars are missing, returns mock client (safe during build).
+ */
+export function getSupabaseAdminClient() {
+  return getSupabaseAdmin();
 }
 
-export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey);
+/**
+ * Direct export for backward compatibility with existing code
+ */
+export const supabaseAdmin = getSupabaseAdmin();
