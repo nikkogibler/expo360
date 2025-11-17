@@ -10,20 +10,23 @@ import { Suspense } from 'react'; // <--- NEW: Import Suspense
 import { Analytics } from "@vercel/analytics/next";
 
 export const metadata: Metadata = {
-  title: "Kusam Outdoor Solutions",
-  description: "The Official Kusam Outdoor Solutions Interactive Catalog",
-  metadataBase: new URL('https://kusam.com'),
+  title: "Expo360 - Interactive Showroom",
+  description: "Expo360: Experience interactive 3D furniture and design customization in real-time.",
+  metadataBase: new URL('https://expo360.vercel.app'),
+  icons: {
+    icon: '/favicon.png',
+  },
   openGraph: {
-    title: "Kusam Outdoor Solutions",
-    description: "The Official Kusam Outdoor Solutions Interactive Catalog",
-    url: "https://kusam.com",
-    siteName: "Kusam Outdoor Solutions",
+    title: "Expo360 - Interactive Showroom",
+    description: "Experience interactive 3D furniture and design customization in real-time.",
+    url: "https://expo360.vercel.app",
+    siteName: "Expo360",
     images: [
       {
-        url: "/kusam_opengraph.jpg",
-        width: 1200,
-        height: 630,
-        alt: "Kusam Outdoor Solutions",
+        url: "/favicon.png",
+        width: 256,
+        height: 256,
+        alt: "Expo360",
       },
     ],
     locale: "es_MX",
@@ -31,9 +34,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Kusam Outdoor Solutions",
-    description: "The Official Kusam Outdoor Solutions Interactive Catalog",
-    images: ["/kusam_opengraph.jpg"],
+    title: "Expo360 - Interactive Showroom",
+    description: "Experience interactive 3D furniture and design customization in real-time.",
+    images: ["/favicon.png"],
   },
 };
 

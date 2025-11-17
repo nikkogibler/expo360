@@ -41,7 +41,7 @@ countryCodes.forEach(country => {
 	country.emoji = getFlagEmoji(country.code);
 });
 
-export type KusamLeadFormVariant = 
+export type MainLeadFormVariant = 
 		| 'kusam' 
 		| 'saltillo' 
 		| 'vasconcelos'
@@ -52,13 +52,13 @@ export type KusamLeadFormVariant =
 		| 'movelsul-brazil'
 		| 'spoga-gafa-cologne';
 
-interface KusamLeadFormProps {
-		variant?: KusamLeadFormVariant;
+interface MainLeadFormProps {
+		variant?: MainLeadFormVariant;
 		hideEmail?: boolean;
 }
 
 // Map variants to customer-friendly landing source names
-const VARIANT_TO_LANDING_SOURCE: Record<KusamLeadFormVariant, string> = {
+const VARIANT_TO_LANDING_SOURCE: Record<MainLeadFormVariant, string> = {
 		'kusam': 'Expo Mueble Internacional',
 		'saltillo': 'Tienda Saltillo',
 		'vasconcelos': 'Tienda Vasconcelos',
@@ -74,7 +74,7 @@ const getInstructionsPath = (customerId?: string) => {
 	return `/kusam/instructions${customerId ? `?customer_id=${customerId}` : ''}`;
 };
 
-const KusamLeadForm = ({ variant = 'kusam', hideEmail = false }: KusamLeadFormProps) => {
+const MainLeadForm = ({ variant = 'kusam', hideEmail = false }: MainLeadFormProps) => {
 						const [name, setName] = useState('');
 						const [localWhatsapp, setLocalWhatsapp] = useState('');
 						const [selectedCountry, setSelectedCountry] = useState<CountryCode>(countryCodes[0]);
@@ -134,7 +134,7 @@ const KusamLeadForm = ({ variant = 'kusam', hideEmail = false }: KusamLeadFormPr
 					.eq('customer_id', currentCustomerId)
 					.maybeSingle();
 				if (fetchError) throw new Error(`Error fetching customer data: ${fetchError.message}`);
-				console.log('[KusamLeadForm] Existing customer:', existingCustomer);
+				console.log('[MainLeadForm] Existing customer:', existingCustomer);
 				if (existingCustomer) {
 					// Helper function to check if customer name is anonymous
 					const isAnonymousName = (name: string | null | undefined): boolean => {
@@ -147,9 +147,9 @@ const KusamLeadForm = ({ variant = 'kusam', hideEmail = false }: KusamLeadFormPr
 						(existingCustomer.email !== undefined && existingCustomer.email !== null && !existingCustomer.email.endsWith('@temp.com')) &&
 						existingCustomer.whatsapp &&
 						existingCustomer.customer_type;
-					console.log('[KusamLeadForm] isFullyRegistered:', isFullyRegistered);
+					console.log('[MainLeadForm] isFullyRegistered:', isFullyRegistered);
 					if (isFullyRegistered) {
-						   console.log('[KusamLeadForm] DEBUG: variant:', variant, 'isFullyRegistered:', isFullyRegistered);
+						   console.log('[MainLeadForm] DEBUG: variant:', variant, 'isFullyRegistered:', isFullyRegistered);
 						   // For 'evento-especial', do NOT redirect, always show the form
 						   if (variant === 'evento-especial') {
 							   // Do nothing, just show the form
@@ -168,7 +168,7 @@ const KusamLeadForm = ({ variant = 'kusam', hideEmail = false }: KusamLeadFormPr
 						   }
 					} else {
 						if (isAnonymousName(existingCustomer.name)) {
-							console.log('[KusamLeadForm] Customer is anonymous, showing form.');
+							console.log('[MainLeadForm] Customer is anonymous, showing form.');
 						}
 						setName(isAnonymousName(existingCustomer.name) ? '' : existingCustomer.name || '');
 						setEmail(existingCustomer.email?.endsWith('@temp.com') ? '' : existingCustomer.email || '');
@@ -189,14 +189,14 @@ const KusamLeadForm = ({ variant = 'kusam', hideEmail = false }: KusamLeadFormPr
 							}
 						}
 					}
-				} else {
-					console.log('[KusamLeadForm] No customer found, showing blank form.');
+			} else {
+				console.log('[MainLeadForm] No customer found, showing blank form.');
 					setName('');
 					setEmail('');
 					setCustomerType('');
 				}
-			} catch (error) {
-				console.error('[KusamLeadForm] Error initializing customer:', error);
+		} catch (error) {
+			console.error('[MainLeadForm] Error initializing customer:', error);
 			}
 			setIsLoadingCustomerStatus(false);
 		};
@@ -315,7 +315,7 @@ const KusamLeadForm = ({ variant = 'kusam', hideEmail = false }: KusamLeadFormPr
 						transition={{ duration: 0.5 }}
 						className="relative z-20 text-center"
 				>
-						<p className="text-xl text-gray-700 font-semibold">Cargando experiencia Kusam...</p>
+						<p className="text-xl text-gray-700 font-semibold">Cargando Experiencia Expo360...</p>
 						<Image src="/logo.png" alt="Loading Logo" width={100} height={25} className="mx-auto mt-4 animate-pulse" />
 				</motion.div>
 			</div>
@@ -545,4 +545,4 @@ const KusamLeadForm = ({ variant = 'kusam', hideEmail = false }: KusamLeadFormPr
 	);
 };
 
-export default KusamLeadForm;
+export default MainLeadForm;

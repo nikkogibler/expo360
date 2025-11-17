@@ -1,20 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-
-// Server-side admin client
-const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
-  auth: {
-    autoRefreshToken: false,
-    persistSession: false
-  }
-});
+import { getSupabaseAdmin, isUsingMock } from '../../../../../lib/supabaseMock';
 
 export async function GET(request: NextRequest) {
   try {
     console.log('=== ADMIN API: Fetching customer favorites data ===');
+    
+    // If using mock, return mock data immediately
+    if (isUsingMock()) {
+      console.log('[MOCK] Returning mock customer data (no real database configured)');
+      return NextResponse.json({
+        favoriteProducts: [],
+        fabricColors: [],
+        frameColors: []
+      });
+    }
+    
+    const supabaseAdmin = getSupabaseAdmin();
     
     // Get date range parameter
     const { searchParams } = new URL(request.url);
@@ -50,7 +51,7 @@ export async function GET(request: NextRequest) {
     }
     
     // Step 2: Get product details for the favorites
-    const productIds = [...new Set(favoritesData.map(fav => fav.product_id))];
+    const productIds = [...new Set(favoritesData.map((fav: any) => fav.product_id))];
     console.log('Unique Product IDs to fetch:', productIds);
     
     const { data: productsData, error: productsError } = await supabaseAdmin

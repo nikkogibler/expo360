@@ -1,17 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-// Create service role client for API operations (has RLS bypass permissions)
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false
-    }
-  }
-);
+import { getSupabaseAdmin, isUsingMock } from '../../../../lib/supabaseMock';
 
 export async function DELETE(request: NextRequest) {
   try {
@@ -30,7 +18,14 @@ export async function DELETE(request: NextRequest) {
 
     console.log(`Deleting prompt ${promptId}`);
 
+    // If using mock, return success immediately
+    if (isUsingMock()) {
+      console.log('[MOCK] Simulating prompt deletion');
+      return NextResponse.json({ success: true, promptId, message: `Deleted prompt ${promptId}` }, { status: 200 });
+    }
+
     // Delete the prompt from the database using service role client
+    const supabaseAdmin = getSupabaseAdmin();
     const { data, error } = await supabaseAdmin
       .from('image_prompts')
       .delete()

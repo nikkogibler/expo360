@@ -1,7 +1,7 @@
 
 'use client';
-import KusamLeadForm from '../../components/KusamLeadForm';
+import MainLeadForm from '../../components/MainLeadForm';
 
 export default function KusamLanding() {
-  return <KusamLeadForm variant="kusam" />;
+  return <MainLeadForm variant="kusam" />;
 }

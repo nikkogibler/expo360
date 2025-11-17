@@ -1,17 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-// Create service role client for API operations (has RLS bypass permissions)
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false
-    }
-  }
-);
+import { getSupabaseAdmin, isUsingMock } from '../../../../lib/supabaseMock';
 
 export async function POST(request: NextRequest) {
   try {
@@ -35,7 +23,14 @@ export async function POST(request: NextRequest) {
     console.log(`Updating image for prompt ${promptId} to: ${imageUrl}`);
     console.log('promptId type and value:', typeof promptId, promptId);
 
+    // If using mock, return success immediately
+    if (isUsingMock()) {
+      console.log('[MOCK] Simulating image update');
+      return NextResponse.json({ success: true, prompt: { prompt_id: promptId, output_image: imageUrl } });
+    }
+
     // First, let's check if the prompt exists
+    const supabaseAdmin = getSupabaseAdmin();
     const { data: existingPrompt, error: selectError } = await supabaseAdmin
       .from('image_prompts')
       .select('prompt_id, output_image')
