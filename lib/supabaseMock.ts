@@ -26,6 +26,7 @@ const isSupabaseConfigured = !!(
  * Mock Supabase client for testing without real database
  * Returns successful responses with empty/dummy data
  */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 class MockSupabaseClient {
   from(_table: string) {
     return {
@@ -60,6 +61,7 @@ class MockSupabaseClient {
     }),
   };
 }
+/* eslint-enable @typescript-eslint/no-unused-vars */
 
 // ============================================================================
 // REAL IMPLEMENTATIONS
@@ -99,7 +101,7 @@ export function getSupabaseAdmin() {
   console.warn(
     '[MOCK MODE] Using mock Supabase admin client. Set SUPABASE_SERVICE_ROLE_KEY to use real database.'
   );
-  return new MockSupabaseClient() as any;
+  return new MockSupabaseClient() as unknown as ReturnType<typeof getRealSupabaseAdmin>;
 }
 
 /**
@@ -113,7 +115,7 @@ export function getSupabaseClient() {
   console.warn(
     '[MOCK MODE] Using mock Supabase client. Set NEXT_PUBLIC_SUPABASE_URL to use real database.'
   );
-  return new MockSupabaseClient() as any;
+  return new MockSupabaseClient() as unknown as ReturnType<typeof getRealSupabaseClient>;
 }
 
 /**
