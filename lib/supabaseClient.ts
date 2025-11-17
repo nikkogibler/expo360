@@ -1,6 +1,10 @@
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseClient } from './supabaseMock';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+/**
+ * Public Supabase client (anon key - respects RLS)
+ * 
+ * This is a re-export of getSupabaseClient() from the mock adapter.
+ * When env vars are set, returns real Supabase client.
+ * When env vars are missing, returns mock client.
+ */
+export const supabase = getSupabaseClient();

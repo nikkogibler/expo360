@@ -39,20 +39,43 @@ The mock client returns:
 
 1. **API Routes** (when env vars missing):
    - `/api/admin/customer-data` - Returns empty favorites data
+   - `/api/analyze-prompts` - Returns empty prompts
    - `/api/delete-prompt` - Silently succeeds
    - `/api/update-prompt-image` - Silently succeeds
+   - All other routes that use `supabase` from `lib/supabaseClient.ts`
 
 2. **Components** (when env vars missing):
    - `MainLeadForm.tsx` - Form still works, but data isn't persisted
    - `BuildWizardSimplified.tsx` - Uses localStorage instead of database
+   - Any component importing from `lib/supabaseClient.ts`
 
 3. **Default Behavior**:
    - Data is **stored in localStorage** on client (not persisted to server)
    - No real authentication
    - No image uploads to cloud storage
    - No analytics or metrics collection
+   - All Supabase queries return empty/mock responses
 
 ## How to Switch to Real Supabase
+
+### How to Switch to Real Supabase
+
+The beautiful part: **No code changes needed!** Just add environment variables.
+
+**How it works:**
+```typescript
+// In lib/supabaseMock.ts
+const isSupabaseConfigured = !!(
+  process.env.NEXT_PUBLIC_SUPABASE_URL &&
+  process.env.SUPABASE_SERVICE_ROLE_KEY &&
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+);
+
+// If all three env vars exist → uses real Supabase
+// If any are missing → uses mock
+```
+
+When env vars are added to Vercel, the entire app automatically switches from mock to real. Every component using `supabase` from `lib/supabaseClient.ts` will start persisting data to the real database.
 
 ### Step 1: Set Up Supabase Project (Free Tier)
 
@@ -93,24 +116,32 @@ The schema is defined in `supabase/multitenant_schema.sql`. You need to:
 - `admin_credits` - Admin account credits
 - `admin_credit_usage` - Credit usage logs
 - `orders` - Order records
+- `image_prompts` - Furniture design prompts/images
 
-### Step 4: Update Code (Automatic)
+### Step 4: Update Code (AUTOMATIC - No Changes Needed!)
 
-Once env vars are set, the code **automatically switches** from mock to real Supabase:
+Once env vars are set in Vercel, the code **automatically switches** from mock to real Supabase:
 
-```typescript
-// In lib/supabaseMock.ts
-const isSupabaseConfigured = !!(
-  process.env.NEXT_PUBLIC_SUPABASE_URL &&
-  process.env.SUPABASE_SERVICE_ROLE_KEY &&
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-);
+**The switch happens in THREE places:**
 
-// If all three env vars exist → use real Supabase
-// If any are missing → use mock
-```
+1. **`lib/supabaseClient.ts`** - Public anon client
+   ```typescript
+   export const supabase = getSupabaseClient();
+   // Returns real if env vars set, mock otherwise
+   ```
 
-**No component changes needed.** Everything that uses `getSupabaseAdmin()` or `getSupabaseClient()` will automatically get real clients.
+2. **`lib/supabaseAdmin.ts`** (legacy, can be removed) 
+   - Now routes import from `supabaseMock.ts` instead
+
+3. **API Routes** - All use `getSupabaseAdmin()` factory
+   ```typescript
+   import { getSupabaseAdmin } from '../../../../../lib/supabaseMock';
+   
+   const supabaseAdmin = getSupabaseAdmin();
+   // Returns real if env vars set, mock otherwise
+   ```
+
+**All components and API routes automatically get real clients.** No refactoring needed!
 
 ## How to Switch to Firebase
 
@@ -234,18 +265,20 @@ To verify mock mode is working:
 
 ```
 lib/
-  ├── supabaseMock.ts       ← Mock/Real Supabase factory
-  ├── supabaseClient.ts     ← Public client
-  ├── supabaseAdmin.ts      ← Admin client (deprecated, use supabaseMock instead)
-  └── firebaseMock.ts       ← (Create when ready for Firebase)
+  ├── supabaseMock.ts           ← Factory: creates mock OR real clients
+  ├── supabaseClient.ts         ← Public client (uses supabaseMock)
+  ├── supabaseAdmin.ts          ← (Deprecated, use supabaseMock instead)
+  └── firebaseMock.ts           ← (Create when ready for Firebase)
 
 src/app/api/
   ├── admin/customer-data/route.ts    ← Uses getSupabaseAdmin()
+  ├── analyze-prompts/route.ts        ← Uses getSupabaseAdmin()
   ├── delete-prompt/route.ts          ← Uses getSupabaseAdmin()
-  └── update-prompt-image/route.ts    ← Uses getSupabaseAdmin()
+  ├── update-prompt-image/route.ts    ← Uses getSupabaseAdmin()
+  └── (other routes use supabase from supabaseClient.ts)
 
 supabase/
-  └── multitenant_schema.sql          ← Schema to deploy
+  └── multitenant_schema.sql          ← Schema to deploy to real Supabase
 
 MOCK_SUPABASE_SETUP.md                ← This file
 ```
@@ -282,20 +315,32 @@ MOCK_SUPABASE_SETUP.md                ← This file
 ## Troubleshooting
 
 ### "supabaseUrl is required" error during build
-- **Cause**: Old code tried to initialize Supabase at module level
-- **Fix**: Ensure all API routes use `getSupabaseAdmin()` factory function
+- **Cause**: Old code tried to initialize Supabase at module level with empty env vars
+- **Fix**: All routes now use `getSupabaseAdmin()` factory or `supabaseClient.ts` which defers initialization
 - **Status**: ✅ Already fixed in this codebase
 
 ### API routes return empty data
-- **Check**: Are env vars set in Vercel?
-- **Check**: Is build in mock mode? (Look for "[MOCK MODE]" warning)
-- **Check**: Is Supabase schema deployed?
+- **Check 1**: Are env vars set in Vercel?
+- **Check 2**: Is build in mock mode? (Look for "[MOCK MODE]" warning in logs)
+- **Check 3**: Is Supabase schema deployed? (Run `supabase/multitenant_schema.sql`)
+- **Check 4**: Do you have data in your Supabase tables? (Mock returns empty arrays)
+
+### "Provider did not return a session" error
+- **Cause**: Using old supabaseAdmin.ts instead of new mock adapter
+- **Fix**: Import from `supabaseMock.ts` instead
+- **Example**: `import { getSupabaseAdmin } from '../lib/supabaseMock';`
 
 ### RLS errors on queries
-- **Cause**: Missing `x-customer-id` header
+- **Cause**: Missing `x-customer-id` header or incorrect table policies
 - **Fix**: Use `src/utils/supabase.ts` custom client that injects headers
 - **Note**: Admin client bypasses RLS (service role key)
 
+### Storage uploads failing
+- **Check**: Is bucket `product-images` created in Supabase Storage?
+- **Check**: Are RLS policies allowing uploads?
+- **Reference**: See `supabase/multitenant_schema.sql` for policy setup
+
+### Storage uploads failing
 ### Storage uploads failing
 - **Check**: Is bucket `product-images` created in Supabase Storage?
 - **Check**: Are RLS policies allowing uploads?
