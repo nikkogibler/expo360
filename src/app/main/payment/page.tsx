@@ -432,7 +432,7 @@ export default function KusamPaymentPage() {
 
         {/* ALWAYS show total at top if calculated */}
         {!loadingTotal && !paymentError && calculatedTotal > 0 && (
-          <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-green-50 rounded-lg border border-blue-200 sticky top-0 z-10">
+          <div className="mb-6 p-4 bg-linear-to-r from-blue-50 to-green-50 rounded-lg border border-blue-200 sticky top-0 z-10">
             {/* Pricing display with discount */}
             <div className="flex justify-between items-center mb-2">
               <span className="text-gray-600">Subtotal:</span>

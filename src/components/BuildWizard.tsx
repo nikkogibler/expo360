@@ -23,12 +23,85 @@ const themes = [
   { name: 'Showcase', image: '/themes/0005_1_an-e-commerce-product-listing-page-showc_YE9rFisHRjSnrJheqrCxqA__CRlbttATIGCPQITahzbvw.png' },
 ];
 
+// Types used by the wizard subcomponents
+interface CompanyInfo {
+  companyName: string;
+  employees: string;
+  locations: string;
+  description: string;
+  website: string;
+  email: string;
+  revenue: string;
+  logo: string | null;
+}
+
+interface DesignConfig {
+  primaryColor: string;
+  secondaryColor: string;
+  darkMode: boolean;
+  showPricing: boolean;
+  showRatings: boolean;
+  bannerStyle: string;
+  bannerHeight: string;
+  favicon?: string | null;
+  // Optional assets and toggles
+  bannerImage?: string | null;
+  backgroundImage?: string | null;
+  backgroundMode?: string;
+  showCompanyName?: boolean;
+}
+
+interface NavigationConfig {
+  navStyle: string;
+  navPosition: string;
+  showLogo: boolean;
+  navBackgroundColor: string;
+  navTextColor: string;
+  navAlignment: string;
+}
+
 // 3. Main Wizard Component
 export default function BuildWizard() {
   const [currentStep, setCurrentStep] = useState(1);
   const [selectedTheme, setSelectedTheme] = useState<string | null>(themes[2].name);
 
-  const [companyInfo, setCompanyInfo] = useState({
+  interface CompanyInfo {
+    companyName: string;
+    employees: string;
+    locations: string;
+    description: string;
+    website: string;
+    email: string;
+    revenue: string;
+    logo: string | null;
+  }
+
+  interface DesignConfig {
+    primaryColor: string;
+    secondaryColor: string;
+    darkMode: boolean;
+    showPricing: boolean;
+    showRatings: boolean;
+    bannerStyle: string;
+    bannerHeight: string;
+    favicon?: string | null;
+    // Optional assets and toggles
+    bannerImage?: string | null;
+    backgroundImage?: string | null;
+    backgroundMode?: string; // 'tile' | 'fullscreen' | etc
+    showCompanyName?: boolean;
+  }
+
+  interface NavigationConfig {
+    navStyle: string;
+    navPosition: string;
+    showLogo: boolean;
+    navBackgroundColor: string;
+    navTextColor: string;
+    navAlignment: string;
+  }
+
+  const [companyInfo, setCompanyInfo] = useState<CompanyInfo>({
     companyName: '',
     employees: '',
     locations: '',
@@ -39,7 +112,7 @@ export default function BuildWizard() {
     logo: null as string | null,
   });
 
-  const [designConfig, setDesignConfig] = useState({
+  const [designConfig, setDesignConfig] = useState<DesignConfig>({
     primaryColor: '#3B82F6',
     secondaryColor: '#10B981',
     darkMode: false,
@@ -50,7 +123,7 @@ export default function BuildWizard() {
     favicon: null as string | null,
   });
 
-  const [navigationConfig, setNavigationConfig] = useState({
+  const [navigationConfig, setNavigationConfig] = useState<NavigationConfig>({
     navStyle: 'horizontal',
     navPosition: 'top',
     showLogo: true,
@@ -147,7 +220,6 @@ export default function BuildWizard() {
                   navigationConfig={navigationConfig}
                   onUpdateNavigationConfig={setNavigationConfig}
                   companyInfo={companyInfo}
-                  designConfig={designConfig}
                 />
               )}
               {currentStep === 5 && <LaunchStep companyInfo={companyInfo} designConfig={designConfig} />}
@@ -209,7 +281,7 @@ const ThemeSelector = ({ selectedTheme, onSelectTheme }: { selectedTheme: string
 );
 
 // 5. Company Info Step
-const CompanyInfoStep = ({ companyInfo, onUpdateCompanyInfo }: { companyInfo: any, onUpdateCompanyInfo: (info: any) => void }) => {
+const CompanyInfoStep = ({ companyInfo, onUpdateCompanyInfo }: { companyInfo: CompanyInfo, onUpdateCompanyInfo: (info: CompanyInfo) => void }) => {
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -375,9 +447,9 @@ const CompanyInfoStep = ({ companyInfo, onUpdateCompanyInfo }: { companyInfo: an
 };
 
 // 6. Design Studio Step
-const DesignStudioStep = ({ designConfig, onUpdateDesignConfig, companyInfo }: { designConfig: any, onUpdateDesignConfig: (config: any) => void, companyInfo: any }) => {
+const DesignStudioStep = ({ designConfig, onUpdateDesignConfig, companyInfo }: { designConfig: DesignConfig, onUpdateDesignConfig: (config: DesignConfig) => void, companyInfo: CompanyInfo }) => {
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const updateConfig = (key: string, value: any) => {
+  const updateConfig = (key: string, value: string | boolean | null | undefined) => {
     onUpdateDesignConfig({ ...designConfig, [key]: value });
   };
 
@@ -1077,8 +1149,8 @@ const DesignStudioStep = ({ designConfig, onUpdateDesignConfig, companyInfo }: {
 };
 
 // 7. Navigation Step
-const NavigationStep = ({ navigationConfig, onUpdateNavigationConfig, companyInfo, designConfig }: { navigationConfig: any, onUpdateNavigationConfig: (config: any) => void, companyInfo: any, designConfig: any }) => {
-  const updateConfig = (key: string, value: any) => {
+const NavigationStep = ({ navigationConfig, onUpdateNavigationConfig, companyInfo }: { navigationConfig: NavigationConfig, onUpdateNavigationConfig: (config: NavigationConfig) => void, companyInfo: CompanyInfo }) => {
+  const updateConfig = (key: string, value: string | boolean | null | undefined) => {
     onUpdateNavigationConfig({ ...navigationConfig, [key]: value });
   };
 
@@ -1266,7 +1338,7 @@ const NavigationStep = ({ navigationConfig, onUpdateNavigationConfig, companyInf
 };
 
 // 8. Launch Step
-const LaunchStep = ({ companyInfo, designConfig }: { companyInfo: any, designConfig: any }) => (
+const LaunchStep = ({ companyInfo, designConfig }: { companyInfo: CompanyInfo, designConfig: DesignConfig }) => (
   <div className="text-center py-16">
     <h2 className="text-2xl font-bold text-gray-800">¡Listo para Lanzar!</h2>
     <p className="mt-4 text-gray-600">Has completado la configuración de tu negocio</p>

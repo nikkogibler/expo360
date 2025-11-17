@@ -141,7 +141,9 @@ export default function FloatingChatbot({
         timestamp: new Date(),
       };
 
-      setMessages(prev => [...prev, botMessage]);
+  setMessages(prev => [...prev, botMessage]);
+  // If chat is not open, mark that there are new messages
+  if (!isOpen) setHasNewMessages(true);
     } catch (error) {
       console.error('Error sending message:', error);
       
@@ -153,7 +155,8 @@ export default function FloatingChatbot({
         timestamp: new Date(),
       };
 
-      setMessages(prev => [...prev, errorMessage]);
+  setMessages(prev => [...prev, errorMessage]);
+  if (!isOpen) setHasNewMessages(true);
     } finally {
       setIsLoading(false);
     }
@@ -192,7 +195,10 @@ export default function FloatingChatbot({
             transition={{ duration: 0.2, ease: 'easeOut' }}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            onClick={() => setIsOpen(true)}
+            onClick={() => {
+              setIsOpen(true);
+              setHasNewMessages(false);
+            }}
             className="fixed bottom-6 right-6 w-16 h-16 rounded-full text-gray-700 transition-all duration-200 flex items-center justify-center z-50 group cursor-pointer"
             style={{
               background: 'linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 20%, #c8c8c8 40%, #b0b0b0 50%, #c8c8c8 60%, #e0e0e0 80%, #f5f5f5 100%)',
