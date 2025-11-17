@@ -2,16 +2,27 @@ import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { CREDIT_PACKAGES } from '@/config/creditPackages';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-08-27.basil',
-});
+/**
+ * Get Stripe client (deferred initialization)
+ * Returns null if STRIPE_SECRET_KEY is not configured
+ */
+function getStripeClient(): Stripe | null {
+  const key = process.env.STRIPE_SECRET_KEY;
+  if (!key) {
+    return null;
+  }
+  return new Stripe(key, {
+    apiVersion: '2025-08-27.basil',
+  });
+}
 
 export async function POST(request: NextRequest) {
   try {
     console.log('Creating Stripe session - Start');
     
     // Check if Stripe secret key is configured
-    if (!process.env.STRIPE_SECRET_KEY) {
+    const stripe = getStripeClient();
+    if (!stripe || !process.env.STRIPE_SECRET_KEY) {
       console.error('STRIPE_SECRET_KEY is not configured');
       return NextResponse.json(
         { error: 'Stripe not configured' },
