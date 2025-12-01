@@ -62,18 +62,18 @@ CREATE POLICY variable_types_tenant_select ON public.variable_types
   FOR SELECT USING (
     auth.role() = 'service_role'
     OR current_setting('jwt.claims.client_id', true) = client_id::text
-    OR EXISTS (SELECT 1 FROM public.user_clients uc WHERE uc.user_id = auth.uid() AND uc.client_id = client_id)
+    OR EXISTS (SELECT 1 FROM public.user_clients uc WHERE uc.user_id = auth.uid() AND uc.client_id::text = client_id::text)
   );
 
 CREATE POLICY variable_types_tenant_modify ON public.variable_types
   FOR ALL USING (
     auth.role() = 'service_role'
     OR current_setting('jwt.claims.client_id', true) = client_id::text
-    OR EXISTS (SELECT 1 FROM public.user_clients uc WHERE uc.user_id = auth.uid() AND uc.client_id = client_id)
+    OR EXISTS (SELECT 1 FROM public.user_clients uc WHERE uc.user_id = auth.uid() AND uc.client_id::text = client_id::text)
   ) WITH CHECK (
     auth.role() = 'service_role'
     OR current_setting('jwt.claims.client_id', true) = client_id::text
-    OR EXISTS (SELECT 1 FROM public.user_clients uc WHERE uc.user_id = auth.uid() AND uc.client_id = client_id)
+    OR EXISTS (SELECT 1 FROM public.user_clients uc WHERE uc.user_id = auth.uid() AND uc.client_id::text = client_id::text)
   );
 
 -- VARIABLE_VALUES (check parent variable_type client)
@@ -115,8 +115,8 @@ CREATE POLICY variable_values_tenant_modify ON public.variable_values
     OR EXISTS (
       SELECT 1 FROM public.user_clients uc
       WHERE uc.user_id = auth.uid()
-        AND uc.client_id = (
-          SELECT client_id FROM public.variable_types WHERE id = variable_type_id LIMIT 1
+        AND uc.client_id::text = (
+          SELECT client_id::text FROM public.variable_types WHERE id = variable_type_id LIMIT 1
         )
     )
   );
@@ -139,7 +139,7 @@ CREATE POLICY clients_tenant_modify ON public.clients
   ) WITH CHECK (
     auth.role() = 'service_role'
     OR current_setting('jwt.claims.client_id', true) = id::text
-    OR EXISTS (SELECT 1 FROM public.user_clients uc WHERE uc.user_id = auth.uid() AND uc.client_id = id)
+    OR EXISTS (SELECT 1 FROM public.user_clients uc WHERE uc.user_id = auth.uid() AND uc.client_id::text = id::text)
   );
 
 -- CUSTOMERS: tenant-scoped management
@@ -152,7 +152,7 @@ CREATE POLICY customers_tenant_manage ON public.customers
   ) WITH CHECK (
     auth.role() = 'service_role'
     OR current_setting('jwt.claims.client_id', true) = client_id::text
-    OR EXISTS (SELECT 1 FROM public.user_clients uc WHERE uc.user_id = auth.uid() AND uc.client_id = client_id)
+    OR EXISTS (SELECT 1 FROM public.user_clients uc WHERE uc.user_id = auth.uid() AND uc.client_id::text = client_id::text)
   );
 
 COMMIT;
