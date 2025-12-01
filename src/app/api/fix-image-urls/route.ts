@@ -58,7 +58,7 @@ export async function GET() {
       .from('image_prompts')
       .select('*', { count: 'exact', head: true })
       .not('output_image', 'is', null)
-      .ilike('output_image', '%kusam-furniture%');
+      .ilike('output_image', '%expo360-furniture%');
 
     return NextResponse.json({
       totalWithImages: totalWithImages || 0,

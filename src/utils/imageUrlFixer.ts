@@ -7,8 +7,8 @@ function extractBaseFilename(url: string): string | null {
     const filename = urlParts[urlParts.length - 1];
     
     // Remove timestamp and extension to get base pattern
-    // Example: kusam-furniture---1759983238841.png -> kusam-furniture---
-    const match = filename.match(/^(kusam-furniture[^0-9]*)(\d+)\.(.+)$/);
+    // Example: expo360-furniture---1759983238841.png -> expo360-furniture---
+    const match = filename.match(/^(expo360-furniture[^0-9]*)(\d+)\.(.+)$/);
     if (match) {
       return match[1]; // Returns "kusam-furniture---" or similar pattern
     }
@@ -23,7 +23,7 @@ function extractBaseFilename(url: string): string | null {
 // Find the actual image URL in the bucket that matches the pattern
 export async function findActualImageUrl(storedUrl: string): Promise<string | null> {
   try {
-    if (!storedUrl || !storedUrl.includes('kusam-furniture')) {
+    if (!storedUrl || !storedUrl.includes('expo360-furniture')) {
       return storedUrl; // Return as-is if not a problematic URL
     }
 
@@ -82,7 +82,7 @@ export async function fixAllImageUrls(): Promise<{ fixed: number; errors: number
       .from('image_prompts')
       .select('prompt_id, output_image')
       .not('output_image', 'is', null)
-      .ilike('output_image', '%kusam-furniture%');
+      .ilike('output_image', '%expo360-furniture%');
 
     if (fetchError) {
       console.error('Error fetching prompts for URL fix:', fetchError);

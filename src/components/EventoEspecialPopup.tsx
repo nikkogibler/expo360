@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
+import { useClient } from '@/context/ClientContext';
 
 interface EventoEspecialPopupProps {
   isOpen: boolean;
@@ -11,6 +12,7 @@ interface EventoEspecialPopupProps {
 
 export default function EventoEspecialPopup({ isOpen, onClose }: EventoEspecialPopupProps) {
   const [showPopup, setShowPopup] = useState(false);
+  const { logoUrl: ctxLogo } = useClient();
 
   useEffect(() => {
     if (isOpen) {
@@ -65,8 +67,8 @@ export default function EventoEspecialPopup({ isOpen, onClose }: EventoEspecialP
               <div className="relative h-48 bg-linear-to-br from-amber-50 to-amber-100">
                 <div className="absolute inset-0 flex items-center justify-center">
                   <Image
-                    src="/logo.png"
-                    alt="YOUR COMPANY Furniture"
+                    src={ctxLogo || '/logo.png'}
+                    alt={ctxLogo ? 'Client Furniture' : 'YOUR COMPANY Furniture'}
                     width={120}
                     height={120}
                     className="object-contain drop-shadow-lg"

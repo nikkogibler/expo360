@@ -104,7 +104,7 @@ RESPOND WITH ONLY THE FILENAME (no extension). Be descriptive of what's actually
             'Authorization': `Bearer ${openrouterApiKey}`,
             'Content-Type': 'application/json',
             'HTTP-Referer': 'http://localhost:3001',
-            'X-Title': 'Kusam AI Image Namer'
+            'X-Title': 'Expo360 AI Image Namer'
           },
           body: JSON.stringify({
             model: model,

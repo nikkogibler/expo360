@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+import { useClient } from '@/context/ClientContext';
 import BurgerMenu from './BurgerMenu';
 import AdminMenu from './AdminMenu';
 
@@ -87,6 +88,7 @@ const sucursalesData: SucursalCard[] = [
 const SucursalesGallery = () => {
   const router = useRouter();
   const [burgerOpen, setBurgerOpen] = useState(false);
+  const { logoUrl: ctxLogo } = useClient();
 
   const handleCardClick = (card: SucursalCard) => {
     if (card.isActive && card.route !== '#') {
@@ -121,8 +123,8 @@ const SucursalesGallery = () => {
             </svg>
           </button>
           <Image
-            src="/logo.png"
-            alt="Company Logo"
+            src={ctxLogo || '/logo.png'}
+            alt={ctxLogo ? 'Client Logo' : 'Company Logo'}
             width={120}
             height={30}
             className="h-8 w-auto"

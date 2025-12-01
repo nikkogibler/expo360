@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
         'Authorization': `Bearer ${openrouterApiKey}`,
         'Content-Type': 'application/json',
         'HTTP-Referer': 'http://localhost:3001',
-        'X-Title': 'Kusam AI Product Description Editor'
+        'X-Title': 'Expo360 AI Product Description Editor'
       },
       body: JSON.stringify({
         model: 'openai/gpt-5-mini',

@@ -521,7 +521,13 @@ export default function AdminCatalogPage() {
       image_url: newProduct.image_url || null,
     };
 
+    // Client-side quota check: prevent creating more than 500 products
     try {
+      if (products && products.length >= 500) {
+        alert('Límite de productos alcanzado (500). Elimina algunos productos o solicita aumento de cuota.');
+        return;
+      }
+
       const { error } = await supabase
         .from('products')
         .insert([productToInsert])
@@ -664,6 +670,19 @@ export default function AdminCatalogPage() {
     setVariableUploadProgress(true);
 
     try {
+      // Quota check: do not allow more than 50 values per variable type
+      const { data: existingVars, error: countErr } = await supabase
+        .from('global_product_options')
+        .select('id, type', { count: 'exact', head: false })
+        .eq('type', newVariable.type);
+
+      if (countErr) {
+        console.warn('Could not count existing variable values:', countErr);
+      } else if (Array.isArray(existingVars) && existingVars.length >= 50) {
+        alert('Límite de valores alcanzado para este tipo de variable (50).');
+        setVariableUploadProgress(false);
+        return;
+      }
       // Upload image to product_variables bucket
       const fileExt = newVariable.image.name.split('.').pop();
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;

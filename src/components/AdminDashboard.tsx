@@ -1,5 +1,6 @@
 "use client";
 import React, { useRef, useEffect, useState, useCallback } from 'react';
+import { useClient } from '@/context/ClientContext';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import BurgerMenu from './BurgerMenu';
@@ -533,7 +534,7 @@ const useMobileDetection = () => {
   return isMobile;
 };
 
-const MagicBento: React.FC<BentoProps> = ({
+const MagicBento: React.FC<BentoProps & { client?: any; logoUrl?: string }> = ({
   textAutoHide = true,
   enableStars = true,
   enableSpotlight = true,
@@ -544,7 +545,9 @@ const MagicBento: React.FC<BentoProps> = ({
   enableTilt = true,
   glowColor = DEFAULT_GLOW_COLOR,
   clickEffect = true,
-  enableMagnetism = true
+  enableMagnetism = true,
+  client,
+  logoUrl
 }) => {
   const gridRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
@@ -552,6 +555,7 @@ const MagicBento: React.FC<BentoProps> = ({
   const shouldDisableAnimations = disableAnimations || isMobile;
 
   const [showImageEditor, setShowImageEditor] = useState(false);
+  const { logoUrl: ctxLogo } = useClient();
   const [burgerOpen, setBurgerOpen] = useState(false);
 
   // Handle card navigation
@@ -731,8 +735,8 @@ const MagicBento: React.FC<BentoProps> = ({
         <div style={{ height: '80px', width: '100%', position: 'relative', marginTop: '2.5rem', marginBottom: '2rem' }}>
           <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
             <Image
-              src="/logo.png"
-              alt="Company Logo"
+              src={logoUrl || ctxLogo || '/logo.png'}
+              alt={(client || {}).name ? `${(client || {}).name} logo` : 'Company Logo'}
               width={200}
               height={60}
               style={{ objectFit: 'contain', display: 'block', margin: '0 auto', maxWidth: '100%', maxHeight: '100%' }}

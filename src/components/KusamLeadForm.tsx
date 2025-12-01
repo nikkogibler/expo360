@@ -1,6 +1,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
+import { useClient } from '@/context/ClientContext';
 import { motion } from 'framer-motion';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { v4 as uuidv4 } from 'uuid';
@@ -75,6 +76,7 @@ const getInstructionsPath = (customerId?: string) => {
 };
 
 const KusamLeadForm = ({ variant = 'kusam', hideEmail = false }: KusamLeadFormProps) => {
+	const { logoUrl: ctxLogo } = useClient();
 						const [name, setName] = useState('');
 						const [localWhatsapp, setLocalWhatsapp] = useState('');
 						const [selectedCountry, setSelectedCountry] = useState<CountryCode>(countryCodes[0]);
@@ -316,7 +318,7 @@ const KusamLeadForm = ({ variant = 'kusam', hideEmail = false }: KusamLeadFormPr
 						className="relative z-20 text-center"
 				>
 						<p className="text-xl text-gray-700 font-semibold">Cargando Experiencia Expo360...</p>
-						<Image src="/logo.png" alt="Loading Logo" width={100} height={25} className="mx-auto mt-4 animate-pulse" />
+						<Image src={ctxLogo || '/logo.png'} alt="Loading Logo" width={100} height={25} className="mx-auto mt-4 animate-pulse" />
 				</motion.div>
 			</div>
 		);
@@ -356,7 +358,7 @@ const KusamLeadForm = ({ variant = 'kusam', hideEmail = false }: KusamLeadFormPr
 			>
 				<div className="mb-6 text-center">
 					<Image
-						src="/logo.png"
+						src={ctxLogo || '/logo.png'}
 						alt="Kusam Outdoor Solutions Logo"
 						width={200}
 						height={50}

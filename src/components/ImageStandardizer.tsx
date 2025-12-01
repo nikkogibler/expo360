@@ -47,7 +47,7 @@ const imageStandardizationSteps = [
   { text: "Configurando variables seleccionadas" },
   { text: "Llamando a ProShotNow™ by Interzekt" },
   { text: "Generando imagen estandarizada" },
-  { text: "Guardando en la Librería de Imágenes Kusam" },
+  { text: "Guardando en la Librería de Imágenes Expo360" },
   { text: "¡Listo! Tu imagen estará lista en..." },
   { text: "5" },
   { text: "4" },
@@ -346,7 +346,7 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
     } catch (error) {
       console.error('[ImageStandardizer] ⚠️ Error generating descriptive filename, using fallback:', error);
       // Fallback: simple descriptive naming based on available context
-      const parts = ['kusam_furniture'];
+      const parts = ['expo360_furniture'];
       if (selectedFabric && selectedFabric !== 'Pearl') {
         parts.push(selectedFabric.toLowerCase().replace(/[^a-z0-9]/g, ''));
       }
@@ -362,7 +362,7 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
 
   // Helper to generate consistent file name (fallback)
   function getImageFileName() {
-    return `kusam-furniture-${selectedFabric.toLowerCase().replace(/\s+/g, '-')}-${selectedFrame.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}.png`;
+    return `expo360-furniture-${selectedFabric.toLowerCase().replace(/\s+/g, '-')}-${selectedFrame.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}.png`;
   }
 
   const handleDownload = () => {
@@ -1943,7 +1943,7 @@ export default function ImageStandardizer({ onBack }: ImageStandardizerProps) {
       {/* Success message for upload */}
       {!error && editedImageUrl && (
         <div className="text-green-600 mt-4 p-3 bg-green-50 rounded-lg border border-green-200">
-          <p className="font-medium">Tu imagen fue agregada a la librería de imágenes Kusam.</p>
+          <p className="font-medium">Tu imagen fue agregada a la librería de imágenes Expo360.</p>
         </div>
       )}
 

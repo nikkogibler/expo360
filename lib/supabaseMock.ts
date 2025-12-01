@@ -12,11 +12,10 @@
 
 import { createClient } from '@supabase/supabase-js';
 
-const isSupabaseConfigured = !!(
-  process.env.NEXT_PUBLIC_SUPABASE_URL &&
-  process.env.SUPABASE_SERVICE_ROLE_KEY &&
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-);
+// Determine which parts of Supabase are configured independently:
+const hasAnonKeys = !!(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+const hasServiceRole = !!(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY);
+const isSupabaseConfigured = hasAnonKeys && hasServiceRole;
 
 // ============================================================================
 // MOCK IMPLEMENTATIONS
@@ -95,12 +94,10 @@ function getRealSupabaseClient() {
  * Returns mock if env vars not configured, real client otherwise
  */
 export function getSupabaseAdmin() {
-  if (isSupabaseConfigured) {
+  if (hasServiceRole) {
     return getRealSupabaseAdmin();
   }
-  console.warn(
-    '[MOCK MODE] Using mock Supabase admin client. Set SUPABASE_SERVICE_ROLE_KEY to use real database.'
-  );
+  console.warn('[MOCK MODE] Using mock Supabase admin client. Set SUPABASE_SERVICE_ROLE_KEY to use real database.');
   return new MockSupabaseClient() as unknown as ReturnType<typeof getRealSupabaseAdmin>;
 }
 
@@ -109,12 +106,10 @@ export function getSupabaseAdmin() {
  * Returns mock if env vars not configured, real client otherwise
  */
 export function getSupabaseClient() {
-  if (isSupabaseConfigured) {
+  if (hasAnonKeys) {
     return getRealSupabaseClient();
   }
-  console.warn(
-    '[MOCK MODE] Using mock Supabase client. Set NEXT_PUBLIC_SUPABASE_URL to use real database.'
-  );
+  console.warn('[MOCK MODE] Using mock Supabase client. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY to use real database.');
   return new MockSupabaseClient() as unknown as ReturnType<typeof getRealSupabaseClient>;
 }
 
@@ -122,5 +117,20 @@ export function getSupabaseClient() {
  * Check if using mock or real Supabase
  */
 export function isUsingMock() {
-  return !isSupabaseConfigured;
+  // Backwards-compatible: true if either admin or client is missing
+  return !(hasAnonKeys && hasServiceRole);
+}
+
+/**
+ * Whether the anonymous (client) keys are missing.
+ */
+export function isUsingMockClient() {
+  return !hasAnonKeys;
+}
+
+/**
+ * Whether the admin/service-role key is missing.
+ */
+export function isUsingMockAdmin() {
+  return !hasServiceRole;
 }

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
+import { useClient } from '@/context/ClientContext';
 import { motion } from 'framer-motion';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { v4 as uuidv4 } from 'uuid';
@@ -74,6 +75,7 @@ const getInstructionsPath = (customerId?: string) => {
 };
 
 const LeadForm = ({ variant = 'main', hideEmail = false }: LeadFormProps) => {
+	const { logoUrl: ctxLogo } = useClient();
 						const [name, setName] = useState('');
 						const [localWhatsapp, setLocalWhatsapp] = useState('');
 						const [selectedCountry, setSelectedCountry] = useState<CountryCode>(countryCodes[0]);
@@ -315,7 +317,7 @@ const LeadForm = ({ variant = 'main', hideEmail = false }: LeadFormProps) => {
 						className="relative z-20 text-center"
 				>
 						<p className="text-xl text-gray-700 font-semibold">Cargando experiencia...</p>
-						<Image src="/logo.png" alt="Loading Logo" width={100} height={25} className="mx-auto mt-4 animate-pulse" />
+						<Image src={ctxLogo || '/logo.png'} alt="Loading Logo" width={100} height={25} className="mx-auto mt-4 animate-pulse" />
 				</motion.div>
 			</div>
 		);
@@ -355,8 +357,8 @@ const LeadForm = ({ variant = 'main', hideEmail = false }: LeadFormProps) => {
 			>
 				<div className="mb-6 text-center">
 					<Image
-						src="/logo.png"
-						alt="YOUR COMPANY Logo"
+						src={ctxLogo || '/logo.png'}
+						alt={ctxLogo ? 'Client Logo' : 'YOUR COMPANY Logo'}
 						width={200}
 						height={50}
 						priority
@@ -396,15 +398,15 @@ const LeadForm = ({ variant = 'main', hideEmail = false }: LeadFormProps) => {
 					)}
 			       {(variant === 'vasconcelos' || variant === 'saltillo') && (
 				       <div className="flex flex-col items-center justify-center mb-4">
-					       <Image
-						       src="/other-images/jpgtest.jpg"
-						       alt="Kusam Evento Especial"
-						       width={400}
-						       height={220}
-						       style={{ objectFit: 'cover', borderRadius: '1rem' }}
-						       className="mx-auto"
-						       priority
-					       />
+						       <Image
+							       src="/other-images/jpgtest.jpg"
+							       alt="Evento Especial"
+							       width={400}
+							       height={220}
+							       style={{ objectFit: 'cover', borderRadius: '1rem' }}
+							       className="mx-auto"
+							       priority
+						       />
 					       <p className="text-gray-600 mt-2 text-lg">
 							       Bienvenido a nuestra sucursal de{' '}
 							       <span className="font-semibold">{variant === 'vasconcelos' ? 'Vasconcelos' : 'Saltillo'}</span>
@@ -414,9 +416,9 @@ const LeadForm = ({ variant = 'main', hideEmail = false }: LeadFormProps) => {
 				</div>
 
 				<p className="text-gray-700 mb-6 text-center text-md">
-																																	  {variant === 'evento-especial'
-																																		  ? 'Regístrate para descubrir lo mejor de Kusam.'
-																																		  : '¡Bienvenido! Para iniciar su recorrido interactivo y obtener una cotización personalizada, por favor complete sus datos.'}
+																																	{variant === 'evento-especial'
+																																																																					? 'Regístrate para descubrir lo mejor de Expo360.'
+																																																																					: '¡Bienvenido! Para iniciar su recorrido interactivo y obtener una cotización personalizada, por favor complete sus datos.'}
 				</p>
 
 				<form onSubmit={handleSubmit} className="space-y-4">

@@ -54,8 +54,8 @@ export default function SafeImage({
   );
 
   const handleError = async () => {
-    // Try to fix the URL if it looks like a problematic kusam-furniture URL
-    if (src && src.includes('kusam-furniture') && !hasError) {
+    // Try to fix the URL if it looks like a problematic expo360-furniture URL
+    if (src && src.includes('expo360-furniture') && !hasError) {
       try {
         const response = await fetch('/api/fix-image-urls', {
           method: 'POST',

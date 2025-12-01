@@ -1,6 +1,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
+import { useClient } from '@/context/ClientContext';
 import { motion } from 'framer-motion';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { v4 as uuidv4 } from 'uuid';
@@ -42,7 +43,7 @@ countryCodes.forEach(country => {
 });
 
 export type MainLeadFormVariant = 
-		| 'kusam' 
+	| 'expo360' 
 		| 'saltillo' 
 		| 'vasconcelos'
 		| 'evento-especial'
@@ -55,11 +56,13 @@ export type MainLeadFormVariant =
 interface MainLeadFormProps {
 		variant?: MainLeadFormVariant;
 		hideEmail?: boolean;
+		client?: any;
+		logoUrl?: string | null;
 }
 
 // Map variants to customer-friendly landing source names
 const VARIANT_TO_LANDING_SOURCE: Record<MainLeadFormVariant, string> = {
-		'kusam': 'Expo Mueble Internacional',
+	'expo360': 'Expo Mueble Internacional',
 		'saltillo': 'Tienda Saltillo',
 		'vasconcelos': 'Tienda Vasconcelos',
 		'evento-especial': 'Evento Especial',
@@ -71,10 +74,12 @@ const VARIANT_TO_LANDING_SOURCE: Record<MainLeadFormVariant, string> = {
 };
 
 const getInstructionsPath = (customerId?: string) => {
-	return `/kusam/instructions${customerId ? `?customer_id=${customerId}` : ''}`;
+	return `/expo360/instructions${customerId ? `?customer_id=${customerId}` : ''}`;
 };
 
-const MainLeadForm = ({ variant = 'kusam', hideEmail = false }: MainLeadFormProps) => {
+const MainLeadForm = ({ variant = 'expo360', hideEmail = false, client, logoUrl = null }: MainLeadFormProps) => {
+	const { logoUrl: ctxLogo } = useClient();
+	const effectiveLogo = logoUrl || ctxLogo || '/logo.png';
 						const [name, setName] = useState('');
 						const [localWhatsapp, setLocalWhatsapp] = useState('');
 						const [selectedCountry, setSelectedCountry] = useState<CountryCode>(countryCodes[0]);
@@ -93,8 +98,9 @@ const MainLeadForm = ({ variant = 'kusam', hideEmail = false }: MainLeadFormProp
 		// Clear customer session if ?clear_session=true is present
 		useEffect(() => {
 			if (searchParams.get('clear_session') === 'true') {
-				// Remove customer ID from localStorage
-				localStorage.removeItem('kusam_customer_id');
+				// Remove customer ID from localStorage. Use a dynamic key per-client
+				const customerKey = client?.slug ? `${client.slug}_customer_id` : 'expo360_customer_id';
+				localStorage.removeItem(customerKey);
 				// Optionally clear customer Supabase session (do NOT log out admin)
 				// If you store customer auth separately, clear it here
 				// Reset other customer-related state if needed
@@ -121,17 +127,29 @@ const MainLeadForm = ({ variant = 'kusam', hideEmail = false }: MainLeadFormProp
 
 	useEffect(() => {
 		const initializeCustomer = async () => {
-			let currentCustomerId = localStorage.getItem('kusam_customer_id');
+			// Use a per-client key when available so each client has an isolated customer session.
+			const customerKey = client?.slug ? `${client.slug}_customer_id` : 'expo360_customer_id';
+			let currentCustomerId = localStorage.getItem(customerKey);
+
+			// Backwards-compatibility: if old `kusam_customer_id` exists, migrate it to the new key
+			if (!currentCustomerId) {
+				const oldKusam = localStorage.getItem('kusam_customer_id');
+				if (oldKusam) {
+					currentCustomerId = oldKusam;
+					localStorage.setItem(customerKey, currentCustomerId);
+				}
+			}
+
 			if (!currentCustomerId) {
 				currentCustomerId = uuidv4();
-				localStorage.setItem('kusam_customer_id', currentCustomerId);
+				localStorage.setItem(customerKey, currentCustomerId);
 			}
 			setCurrentCustomerId(currentCustomerId);
 			try {
 				const { data: existingCustomer, error: fetchError } = await supabase
 					.from('customers')
 					.select('*')
-					.eq('customer_id', currentCustomerId)
+						.eq('customer_id', currentCustomerId)
 					.maybeSingle();
 				if (fetchError) throw new Error(`Error fetching customer data: ${fetchError.message}`);
 				console.log('[MainLeadForm] Existing customer:', existingCustomer);
@@ -159,10 +177,10 @@ const MainLeadForm = ({ variant = 'kusam', hideEmail = false }: MainLeadFormProp
 							   if (cameFromAdmin) {
 								   router.push(`/admin/catalogo?customer_id=${currentCustomerId}`);
 							   } else {
-								   router.push(`/kusam/catalogo?customer_id=${currentCustomerId}`);
+								   router.push(`/expo360/catalogo?customer_id=${currentCustomerId}`);
 							   }
 							   return;
-						   } else if (variant === 'kusam') {
+						   } else if (variant === 'expo360') {
 							   router.push(getInstructionsPath(currentCustomerId));
 							   return;
 						   }
@@ -281,17 +299,17 @@ const MainLeadForm = ({ variant = 'kusam', hideEmail = false }: MainLeadFormProp
 
 		// Check variant to determine redirect path
 		let defaultRedirectPath;
-		if (variant === 'saltillo' || variant === 'vasconcelos') {
+				if (variant === 'saltillo' || variant === 'vasconcelos') {
 			const cameFromAdmin = redirectFrom && redirectFrom.startsWith('/admin');
 			if (cameFromAdmin) {
 				defaultRedirectPath = `/admin/catalogo?customer_id=${customerIdToUse}`;
 			} else {
-				defaultRedirectPath = `/kusam/catalogo?customer_id=${customerIdToUse}`;
+						defaultRedirectPath = `/expo360/catalogo?customer_id=${customerIdToUse}`;
 			}
 		} else if (variant === 'evento-especial') {
-			defaultRedirectPath = `/kusam/catalogo?customer_id=${customerIdToUse}`;
+			defaultRedirectPath = `/expo360/catalogo?customer_id=${customerIdToUse}`;
 		} else {
-			defaultRedirectPath = `/kusam/instructions?customer_id=${customerIdToUse}`;
+			defaultRedirectPath = `/expo360/instructions?customer_id=${customerIdToUse}`;
 		}
 		const newRedirectPath = redirectFrom ? `${redirectFrom}?${redirectParams.toString()}` : defaultRedirectPath;
 		router.push(newRedirectPath);
@@ -315,8 +333,8 @@ const MainLeadForm = ({ variant = 'kusam', hideEmail = false }: MainLeadFormProp
 						transition={{ duration: 0.5 }}
 						className="relative z-20 text-center"
 				>
-						<p className="text-xl text-gray-700 font-semibold">Cargando Experiencia Expo360...</p>
-						<Image src="/logo.png" alt="Loading Logo" width={100} height={25} className="mx-auto mt-4 animate-pulse" />
+					<p className="text-xl text-gray-700 font-semibold">Cargando Experiencia Expo360...</p>
+					<Image src={logoUrl || '/logo.png'} alt="Loading Logo" width={100} height={25} className="mx-auto mt-4 animate-pulse" />
 				</motion.div>
 			</div>
 		);
@@ -356,8 +374,8 @@ const MainLeadForm = ({ variant = 'kusam', hideEmail = false }: MainLeadFormProp
 			>
 				<div className="mb-6 text-center">
 					<Image
-						src="/logo.png"
-						alt="Kusam Outdoor Solutions Logo"
+						src={logoUrl || '/logo.png'}
+						alt="Expo360 Logo"
 						width={200}
 						height={50}
 						priority
@@ -380,7 +398,7 @@ const MainLeadForm = ({ variant = 'kusam', hideEmail = false }: MainLeadFormProp
 							/>
 						</div>
 					)}
-					{variant === 'kusam' && (
+					{variant === 'expo360' && (
 						<p className="text-gray-600 mt-2 text-lg">
 							Su Experiencia en{' '}
 							<span className="inline-flex items-center align-middle mx-1">
@@ -412,7 +430,7 @@ const MainLeadForm = ({ variant = 'kusam', hideEmail = false }: MainLeadFormProp
 
 						<p className="text-gray-700 mb-6 text-center text-md">
 																																	  {variant === 'evento-especial'
-																																		  ? 'Regístrate para descubrir lo mejor de Kusam.'
+																																		  ? 'Regístrate para descubrir lo mejor de Expo360.'
 																																		  : '¡Bienvenido! Para iniciar su recorrido interactivo y obtener una cotización personalizada, por favor complete sus datos.'}
 				</p>
 

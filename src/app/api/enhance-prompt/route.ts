@@ -122,7 +122,7 @@ Return only the enhanced prompt text.`;
         'Authorization': `Bearer ${openrouterApiKey}`,
         'Content-Type': 'application/json',
         'HTTP-Referer': process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3001',
-        'X-Title': 'Kusam Prompt Enhancer'
+        'X-Title': 'Expo360 Prompt Enhancer'
       },
       body: JSON.stringify({
         model: '@preset/maestro-by-interzekt-grok4-edition',

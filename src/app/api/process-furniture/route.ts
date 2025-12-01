@@ -209,7 +209,7 @@ Again, ensure the output is a vertical, tall, 9:16 portrait image matching the a
           'Authorization': `Bearer ${openrouterApiKey}`,
           'Content-Type': 'application/json',
           'HTTP-Referer': 'http://localhost:3001',
-          'X-Title': 'Kusam AI Furniture Editor'
+          'X-Title': 'Expo360 AI Furniture Editor'
         },
         body: JSON.stringify({
           model: 'google/gemini-2.5-flash-image',

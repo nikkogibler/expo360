@@ -17,6 +17,7 @@ export default function BuildWizardSimplified() {
   const [companyEmail, setCompanyEmail] = useState('');
   const [description, setDescription] = useState('');
   const [logo, setLogo] = useState<string | null>(null);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
 
   const [primaryColor, setPrimaryColor] = useState('#3b82f6');
   const [secondaryColor, setSecondaryColor] = useState('#10b981');
@@ -32,6 +33,7 @@ export default function BuildWizardSimplified() {
     const reader = new FileReader();
     reader.onloadend = () => setLogo(reader.result as string);
     reader.readAsDataURL(file);
+    setLogoFile(file);
   };
 
   const goNext = () => setCurrentStep((s) => Math.min(s + 1, steps.length));
@@ -206,6 +208,42 @@ export default function BuildWizardSimplified() {
                     <div className="mt-4 flex gap-3">
                       <button onClick={saveConfig} className="px-4 py-2 bg-green-500 text-white rounded">Guardar Configuración</button>
                       <button onClick={() => alert('Previsualización guardada localmente.')} className="px-4 py-2 bg-blue-100 text-blue-700 rounded">Previsualizar</button>
+                      <button
+                        onClick={async () => {
+                          try {
+                            const form = new FormData();
+                            const slug = companyName ? companyName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g,'') : '';
+                            form.append('name', companyName || 'Untitled');
+                            form.append('slug', slug);
+                            form.append('description', description || '');
+                            form.append('theme', JSON.stringify({ primaryColor, secondaryColor, darkMode }));
+                            if (logoFile) form.append('logo', logoFile);
+
+                            const headers: Record<string,string> = {};
+                            // For local testing you can set NEXT_PUBLIC_ADMIN_API_KEY in your .env.local
+                            // This will be sent as `x-admin-key`. In production use server-only ADMIN_API_KEY.
+                            const adminKey = process.env.NEXT_PUBLIC_ADMIN_API_KEY;
+                            if (adminKey) headers['x-admin-key'] = adminKey;
+
+                            const res = await fetch('/api/admin/create-client', {
+                              method: 'POST',
+                              headers,
+                              body: form
+                            });
+                            const json = await res.json();
+                            if (!res.ok) throw new Error(json?.error?.message || json?.error || 'Create failed');
+                            alert(`Cliente creado — vista previa: ${json.previewUrl}`);
+                            // open preview in new tab
+                            if (json.previewUrl) window.open(json.previewUrl, '_blank');
+                          } catch (err: any) {
+                            console.error('Create client error', err);
+                            alert('No se pudo crear el cliente: ' + (err?.message || String(err)));
+                          }
+                        }}
+                        className="px-4 py-2 bg-blue-600 text-white rounded"
+                      >
+                        Lanzar Cliente
+                      </button>
                     </div>
                   </div>
                 )}

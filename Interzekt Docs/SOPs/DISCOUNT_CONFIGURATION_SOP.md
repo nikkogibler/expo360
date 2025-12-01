@@ -6,12 +6,12 @@ This document provides step-by-step instructions for managing the discount confi
 ## System Architecture
 - **Configuration File**: `/src/config/discountConfig.ts`
 - **Database Field**: `customer.landing_source` (stores variant like "Expo Mueble Internacional")
-- **Affected Pages**: Quote page (`/kusam/quote`) and Payment page (`/kusam/payment`)
+- **Affected Pages**: Quote page (`/expo360/quote`) and Payment page (`/expo360/payment`)
 
 ## Landing Source Variants
 | Variant Name | Landing Page | Default Discount |
 |--------------|--------------|------------------|
-| `Expo Mueble Internacional` | `/kusam` | 15% |
+| `Expo Mueble Internacional` | `/expo360` | 15% |
 | `Tienda Saltillo` | `/saltillo` | 0% |
 | `Tienda Vasconcelos` | `/vasconcelos` | 0% |
 
@@ -76,8 +76,8 @@ Create discounts for new store locations, trade shows, or promotional campaigns.
    };
    ```
 
-2. **Update KusamLeadForm variants** (if needed)
-   - Navigate to `/src/components/KusamLeadForm.tsx`
+2. **Update ClientLeadForm variants** (if needed)
+   - Navigate to `/src/components/ClientLeadForm.tsx`
    - Add new variant to `VARIANT_TO_LANDING_SOURCE` mapping
    - Create corresponding landing page route
 
