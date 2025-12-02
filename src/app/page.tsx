@@ -855,47 +855,47 @@ const LandingPage = () => {
         </motion.div>
 
         {/* Pricing cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto">
           {/* One-Time Card */}
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="bg-linear-to-br from-white/10 to-white/5 border-2 border-white/20 rounded-2xl p-8 relative overflow-hidden"
+            className="bg-linear-to-br from-white/10 to-white/5 border-2 border-white/20 rounded-2xl p-6 relative overflow-hidden"
           >
               {/* Badge */}
-              <div className="absolute top-0 right-0 bg-green-500 text-white px-4 py-1 text-sm font-semibold rounded-bl-lg">
+              <div className="absolute top-0 right-0 bg-green-500 text-white px-3 py-1 text-xs font-semibold rounded-bl-lg">
                 Más Popular
               </div>
 
-              <h3 className="text-2xl font-bold text-white mb-2">
+              <h3 className="text-xl font-bold text-white mb-2">
                 Una Sola Expo
               </h3>
-              <p className="text-gray-300 mb-6">
+              <p className="text-gray-300 text-sm mb-4">
                 Perfecto para probar o para una única exposición
               </p>
 
               {/* Price */}
-              <div className="mb-8">
-                <div className="text-5xl font-bold text-white">$15,000</div>
-                <p className="text-gray-300 mt-2">MXN pago único</p>
-                <p className="text-green-400 text-sm mt-3 font-semibold">
-                  + 1 mes de acceso a todas las funciones premium
+              <div className="mb-6">
+                <div className="text-4xl font-bold text-white">$15,000</div>
+                <p className="text-gray-300 text-sm mt-1">MXN pago único</p>
+                <p className="text-green-400 text-xs mt-2 font-semibold">
+                  + 1 mes de acceso premium
                 </p>
               </div>
 
               {/* Features */}
-              <ul className="space-y-4 mb-8">
+              <ul className="space-y-3 mb-6">
                 {[
                   'Página de destino para 1 expo',
-                  'Panel de administración con 2 usuarios',
+                  'Panel de admin con 2 usuarios',
                   'Hasta 500 productos',
                   'Capturas de clientes ilimitadas',
-                  'Cotizaciones y ventas en tiempo real',
-                  '1 mes completo de acceso premium'
+                  'Cotizaciones en tiempo real',
+                  '1 mes de acceso premium'
                 ].map((feature, idx) => (
-                  <li key={idx} className="flex items-start gap-3">
-                    <Check className="w-5 h-5 text-green-400 shrink-0 mt-0.5" />
-                    <span className="text-gray-200">{feature}</span>
+                  <li key={idx} className="flex items-start gap-2">
+                    <Check className="w-4 h-4 text-green-400 shrink-0 mt-0.5" />
+                    <span className="text-gray-200 text-sm">{feature}</span>
                   </li>
                 ))}
               </ul>
@@ -907,44 +907,39 @@ const LandingPage = () => {
               >
                 Comienza Ahora
               </a>
-
-              {/* Data export note */}
-              <p className="text-xs text-gray-400 mt-4 text-center">
-                El primer mes incluye acceso completo. Después puedes continuar con el plan anual.
-              </p>
             </motion.div>
 
           {/* Annual Plan Card */}
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="bg-linear-to-br from-purple-600 to-blue-600 rounded-2xl p-8 relative overflow-hidden shadow-2xl"
+            className="bg-linear-to-br from-purple-600 to-blue-600 rounded-2xl p-6 relative overflow-hidden shadow-2xl"
           >
               {/* Badge */}
-              <div className="absolute top-0 right-0 bg-yellow-400 text-gray-900 px-4 py-1 text-sm font-semibold rounded-bl-lg">
+              <div className="absolute top-0 right-0 bg-yellow-400 text-gray-900 px-3 py-1 text-xs font-semibold rounded-bl-lg">
                 Best Value
               </div>
 
-              <h3 className="text-2xl font-bold text-white mb-2">
+              <h3 className="text-xl font-bold text-white mb-2">
                 Plan Anual
               </h3>
-              <p className="text-purple-100 mb-6">
-                Exposiciones ilimitadas, eventos y ubicaciones todo el año
+              <p className="text-purple-100 text-sm mb-4">
+                Expos ilimitadas todo el año
               </p>
 
               {/* Price */}
-              <div className="mb-8">
-                <div className="text-5xl font-bold text-white">$84,999</div>
-                <p className="text-purple-100 mt-2">MXN por año</p>
-                <p className="text-purple-200 text-sm mt-3">
+              <div className="mb-6">
+                <div className="text-4xl font-bold text-white">$84,999</div>
+                <p className="text-purple-100 text-sm mt-1">MXN por año</p>
+                <p className="text-purple-200 text-xs mt-2">
                   (Tasa fija garantizada)
                 </p>
               </div>
 
               {/* Features */}
-              <ul className="space-y-4 mb-8">
+              <ul className="space-y-3 mb-6">
                 {[
-                  'Exposiciones comerciales y eventos ilimitados',
+                  'Expos y eventos ilimitados',
                   'Hasta 5 ubicaciones físicas',
                   'Productos y usuarios ilimitados',
                   'Capturas de clientes ilimitadas',
@@ -952,9 +947,9 @@ const LandingPage = () => {
                   'Soporte continuo de Interzekt',
                   'Incorporación prioritaria'
                 ].map((feature, idx) => (
-                  <li key={idx} className="flex items-start gap-3">
-                    <Check className="w-5 h-5 text-yellow-300 shrink-0 mt-0.5" />
-                    <span className="text-white">{feature}</span>
+                  <li key={idx} className="flex items-start gap-2">
+                    <Check className="w-4 h-4 text-yellow-300 shrink-0 mt-0.5" />
+                    <span className="text-white text-sm">{feature}</span>
                   </li>
                 ))}
               </ul>
@@ -966,11 +961,60 @@ const LandingPage = () => {
               >
                 Desbloquea Acceso Ilimitado
               </a>
+            </motion.div>
 
-              {/* Billing note */}
-              <p className="text-xs text-purple-200 mt-4 text-center">
-                Compromiso de 12 meses con tarjeta registrada
+          {/* Enterprise Card */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-linear-to-br from-white/10 to-white/5 border-2 border-purple-500/50 rounded-2xl p-6 relative overflow-hidden"
+          >
+              {/* Badge */}
+              <div className="absolute top-0 right-0 bg-purple-500 text-white px-3 py-1 text-xs font-semibold rounded-bl-lg">
+                Enterprise
+              </div>
+
+              <h3 className="text-xl font-bold text-white mb-2">
+                Soluciones a Medida
+              </h3>
+              <p className="text-gray-300 text-sm mb-4">
+                Para necesidades empresariales únicas
               </p>
+
+              {/* Price */}
+              <div className="mb-6">
+                <div className="text-4xl font-bold text-white">Personalizado</div>
+                <p className="text-gray-300 text-sm mt-1">Cotización a medida</p>
+                <p className="text-purple-400 text-xs mt-2 font-semibold">
+                  Diseñado para tu negocio
+                </p>
+              </div>
+
+              {/* Features */}
+              <ul className="space-y-3 mb-6">
+                {[
+                  'Todo del Plan Anual',
+                  'Integraciones con handhelds',
+                  'APIs personalizadas',
+                  'Branding white-label',
+                  'Ubicaciones ilimitadas',
+                  'Soporte dedicado 24/7',
+                  'Onboarding personalizado'
+                ].map((feature, idx) => (
+                  <li key={idx} className="flex items-start gap-2">
+                    <Check className="w-4 h-4 text-purple-400 shrink-0 mt-0.5" />
+                    <span className="text-gray-200 text-sm">{feature}</span>
+                  </li>
+                ))}
+              </ul>
+
+              {/* CTA */}
+              <button
+                onClick={() => setIsModalOpen(true)}
+                className="block w-full py-3 bg-linear-to-r from-purple-600 to-blue-600 text-white font-semibold rounded-lg text-center hover:shadow-lg hover:shadow-purple-600/50 transition-all duration-300 cursor-pointer"
+              >
+                Contáctanos
+              </button>
             </motion.div>
         </div>
 
