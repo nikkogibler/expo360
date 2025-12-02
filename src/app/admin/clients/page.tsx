@@ -1,5 +1,5 @@
 import React from 'react';
-import { getSupabaseAdmin } from '@/lib/supabaseMock';
+import { getSupabaseAdmin } from '../../../lib/supabaseMock';
 
 export default async function Page() {
   const supabaseAdmin = getSupabaseAdmin();

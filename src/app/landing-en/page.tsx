@@ -429,7 +429,7 @@ const LandingPage = () => {
               Sign In
             </a>
             <a
-              href="mailto:info0@interzekt.com?subject=Expo360%20-%20Sign%20Up"
+              href="#pricing"
               className="px-6 py-2 bg-linear-to-r from-purple-600 to-blue-600 text-white text-sm font-semibold rounded-lg hover:shadow-lg hover:shadow-purple-600/50 transition-all duration-300"
             >
               Sign Up
@@ -506,7 +506,7 @@ const LandingPage = () => {
             className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12"
           >
             <a
-              href="mailto:info0@interzekt.com?subject=Expo360%20-%20Ready%20to%20Get%20Started"
+              href="#pricing"
               className="group relative px-8 py-4 bg-linear-to-r from-purple-600 to-blue-600 text-white font-semibold rounded-lg overflow-hidden hover:shadow-2xl hover:shadow-purple-600/50 transition-all duration-300 flex items-center gap-2"
             >
               <span className="relative z-10">Get Started</span>
