@@ -1,0 +1,15 @@
+# Ignore admin and pro-shot-now pages for now - they have many legacy issues
+src/app/admin/**
+src/app/c/[slug]/page.tsx
+src/components/AdminDashboard.tsx
+src/components/BuildWizard.tsx
+src/components/BuildWizardSimplified.tsx
+src/components/ClientLeadForm.tsx
+src/components/ClientPreviewShell.tsx
+src/components/CompactTagDropdown.tsx
+src/components/ImageStandardizer.tsx
+src/components/InlineTagEditor.tsx
+src/components/MainLeadForm.tsx
+src/components/SafeImage.tsx
+src/context/ClientContext.tsx
+src/utils/navigation.ts

@@ -15,7 +15,7 @@ import { createClient } from '@supabase/supabase-js';
 // Determine which parts of Supabase are configured independently:
 const hasAnonKeys = !!(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
 const hasServiceRole = !!(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY);
-const isSupabaseConfigured = hasAnonKeys && hasServiceRole;
+// const isSupabaseConfigured = hasAnonKeys && hasServiceRole;
 
 // ============================================================================
 // MOCK IMPLEMENTATIONS
