@@ -94,7 +94,7 @@ const LandingPage = () => {
         setSubmissionSuccess(false);
         setStatusMessage('There was an error. Please try again.');
       }
-    } catch (error) {
+    } catch (_error) {
       setSubmissionSuccess(false);
       setStatusMessage('Connection error. Please try later.');
     } finally {
@@ -592,7 +592,7 @@ const LandingPage = () => {
             variants={fadeInUp}
             className="text-xl text-gray-600 max-w-2xl mx-auto"
           >
-            While your competitors are still planning, you're already selling.
+            While your competitors are still planning, you&apos;re already selling.
           </motion.p>
         </motion.div>
 

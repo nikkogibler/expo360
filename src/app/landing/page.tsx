@@ -2,7 +2,6 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import Image from 'next/image';
 import { Check, ArrowRight, Zap, Users, TrendingUp, Lock, Clock, Smartphone } from 'lucide-react';
 
 const LandingPage = () => {

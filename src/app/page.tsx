@@ -95,7 +95,7 @@ const LandingPage = () => {
         setSubmissionSuccess(false);
         setStatusMessage('Hubo un error. Por favor intenta de nuevo.');
       }
-    } catch (error) {
+    } catch (_error) {
       setSubmissionSuccess(false);
       setStatusMessage('Error de conexión. Por favor intenta más tarde.');
     } finally {
