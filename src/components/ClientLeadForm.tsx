@@ -73,7 +73,8 @@ const VARIANT_TO_LANDING_SOURCE: Record<ClientLeadFormVariant, string> = {
 };
 
 const getInstructionsPath = (customerId?: string) => {
-    return `/expo360/instructions${customerId ? `?customer_id=${customerId}` : ''}`;
+    const queryString = customerId ? `?customer_id=${customerId}` : '';
+    return `/expo360/instructions${queryString}`;
 };
 
 const ClientLeadForm = ({ variant = 'expo360', hideEmail = false }: ClientLeadFormProps) => {

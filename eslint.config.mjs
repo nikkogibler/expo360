@@ -22,6 +22,7 @@ const eslintConfig = [
       "src/components/AdminDashboard.tsx",
       "src/components/BuildWizard.tsx",
       "src/components/BuildWizardSimplified.tsx",
+      "src/components/ClientLeadForm.tsx",
       "src/components/ImageStandardizer.tsx",
       "src/components/MainLeadForm.tsx",
       "src/components/SafeImage.tsx",
