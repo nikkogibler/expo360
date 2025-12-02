@@ -7,6 +7,100 @@ import { Check, ArrowRight, Zap, Users, TrendingUp, Lock, Clock, Smartphone } fr
 
 const LandingPage = () => {
   const [annualBillingSelected, setAnnualBillingSelected] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [statusMessage, setStatusMessage] = useState('');
+  const [submissionSuccess, setSubmissionSuccess] = useState(false);
+  const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    company: '',
+    jobTitle: '',
+    phone: '',
+    industry: '',
+    interests: [] as string[],
+    eventName: '',
+    howDidYouHear: ''
+  });
+
+  const industryOptions = [
+    'Furniture & Décor',
+    'Technology',
+    'Fashion',
+    'Automotive',
+    'Food & Beverage',
+    'Beauty & Cosmetics',
+    'Construction',
+    'Other'
+  ];
+
+  const interestOptions = [
+    'Customer Capture',
+    'Real-Time Sales',
+    'Data Analytics',
+    'Integrations',
+    'Dedicated Support'
+  ];
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleInterestChange = (interest: string) => {
+    setFormData(prev => ({
+      ...prev,
+      interests: prev.interests.includes(interest)
+        ? prev.interests.filter(i => i !== interest)
+        : [...prev.interests, interest]
+    }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setStatusMessage('');
+
+    try {
+      const response = await fetch('/api/contact', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (response.ok) {
+        setSubmissionSuccess(true);
+        setStatusMessage('Thank you! We\'ll be in touch soon.');
+        setFormData({
+          firstName: '',
+          lastName: '',
+          email: '',
+          company: '',
+          jobTitle: '',
+          phone: '',
+          industry: '',
+          interests: [],
+          eventName: '',
+          howDidYouHear: ''
+        });
+        setTimeout(() => setIsModalOpen(false), 2000);
+      } else {
+        setSubmissionSuccess(false);
+        setStatusMessage('There was an error. Please try again.');
+      }
+    } catch (error) {
+      setSubmissionSuccess(false);
+      setStatusMessage('Connection error. Please try later.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   // Animation variants
   const fadeInUp = {
@@ -31,6 +125,314 @@ const LandingPage = () => {
     hidden: { opacity: 0, scale: 0.95 },
     visible: { opacity: 1, scale: 1, transition: { duration: 0.6 } }
   };
+
+  // ==================== CONTACT MODAL ====================
+  const ContactModal = () => (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: isModalOpen ? 1 : 0 }}
+      exit={{ opacity: 0 }}
+      className={`fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 ${
+        isModalOpen ? 'pointer-events-auto' : 'pointer-events-none'
+      }`}
+      onClick={() => setIsModalOpen(false)}
+    >
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+        animate={isModalOpen ? { opacity: 1, scale: 1, y: 0 } : { opacity: 0, scale: 0.95, y: 20 }}
+        exit={{ opacity: 0, scale: 0.95, y: 20 }}
+        transition={{ duration: 0.3 }}
+        className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Close button */}
+        <div className="sticky top-0 bg-white border-b border-gray-200 px-8 py-4 flex justify-between items-center z-10">
+          <h2 className="text-2xl font-bold text-gray-900">Request a Personalized Demo</h2>
+          <button
+            onClick={() => setIsModalOpen(false)}
+            className="text-gray-400 hover:text-gray-600 transition-colors"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Form Content */}
+        <div className="p-8">
+          <p className="text-gray-600 mb-6">Fill out the form to see Expo360 in action and receive a personalized proposal.</p>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1">
+                  First Name *
+                </label>
+                <input
+                  type="text"
+                  id="firstName"
+                  name="firstName"
+                  value={formData.firstName}
+                  onChange={handleInputChange}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-1">
+                  Last Name *
+                </label>
+                <input
+                  type="text"
+                  id="lastName"
+                  name="lastName"
+                  value={formData.lastName}
+                  onChange={handleInputChange}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                Email *
+              </label>
+              <input
+                type="email"
+                id="email"
+                name="email"
+                value={formData.email}
+                onChange={handleInputChange}
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="company" className="block text-sm font-medium text-gray-700 mb-1">
+                  Company *
+                </label>
+                <input
+                  type="text"
+                  id="company"
+                  name="company"
+                  value={formData.company}
+                  onChange={handleInputChange}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label htmlFor="jobTitle" className="block text-sm font-medium text-gray-700 mb-1">
+                  Job Title
+                </label>
+                <input
+                  type="text"
+                  id="jobTitle"
+                  name="jobTitle"
+                  value={formData.jobTitle}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
+                WhatsApp Number
+              </label>
+              <input
+                type="tel"
+                id="phone"
+                name="phone"
+                value={formData.phone}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="industry" className="block text-sm font-medium text-gray-700 mb-1">
+                Industry
+              </label>
+              <select
+                id="industry"
+                name="industry"
+                value={formData.industry}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="">Select your industry</option>
+                {industryOptions.map((industry) => (
+                  <option key={industry} value={industry}>
+                    {industry}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Areas of Interest (Select all that apply)
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                {interestOptions.map((interest) => (
+                  <label key={interest} className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={formData.interests.includes(interest)}
+                      onChange={() => handleInterestChange(interest)}
+                      className="mr-2 text-blue-600 focus:ring-blue-500"
+                    />
+                    <span className="text-sm text-gray-700">{interest}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label htmlFor="eventName" className="block text-sm font-medium text-gray-700 mb-1">
+                Event/Trade Show Name
+              </label>
+              <input
+                type="text"
+                id="eventName"
+                name="eventName"
+                value={formData.eventName}
+                onChange={handleInputChange}
+                placeholder="Where did you hear about us?"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="howDidYouHear" className="block text-sm font-medium text-gray-700 mb-1">
+                How did you hear about us?
+              </label>
+              <select
+                id="howDidYouHear"
+                name="howDidYouHear"
+                value={formData.howDidYouHear}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="">Select an option</option>
+                <option value="Trade Show Booth">Trade Show Booth</option>
+                <option value="Brochure/Flyer">Brochure/Flyer</option>
+                <option value="Referral">Referral</option>
+                <option value="Online Search">Online Search</option>
+                <option value="Social Media">Social Media</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="w-full bg-linear-to-r from-blue-600 to-purple-600 text-white font-semibold py-3 px-6 rounded-md hover:from-blue-700 hover:to-purple-700 transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+            >
+              {isSubmitting ? 'Sending...' : 'View Expo360 Demo'}
+            </button>
+
+            {statusMessage && (
+              <div className={`text-center p-3 rounded-md ${
+                submissionSuccess 
+                  ? 'bg-green-100 text-green-800 border border-green-200' 
+                  : 'bg-blue-100 text-blue-800 border border-blue-200'
+              }`}>
+                {statusMessage}
+              </div>
+            )}
+          </form>
+
+          <div className="mt-6 pt-6 border-t border-gray-200">
+            <div className="flex items-center justify-center space-x-6 text-sm text-gray-500">
+              <span className="flex items-center">
+                <svg className="w-4 h-4 mr-1 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+                Safe & Secure
+              </span>
+              <span className="flex items-center">
+                <svg className="w-4 h-4 mr-1 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+                No Spam Guaranteed
+              </span>
+            </div>
+            <p className="text-center text-xs text-gray-400 mt-2">
+              By submitting this form, you agree to our privacy policy and terms of service.
+            </p>
+          </div>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+
+  // ==================== HEADER NAVIGATION ====================
+  const Header = () => (
+    <header className="absolute top-0 left-0 right-0 z-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-0.5">
+        <div className="flex items-center justify-between">
+          {/* Logo - Left */}
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6 }}
+          >
+            <Image
+              src="/expo360_logo.png"
+              alt="Expo360 Logo"
+              width={120}
+              height={120}
+              className="rounded-lg scale-150"
+            />
+          </motion.div>
+
+          {/* Center Nav Links */}
+          <motion.nav
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="hidden md:flex items-center gap-8 absolute left-1/2 transform -translate-x-1/2"
+          >
+            <a href="#features" className="text-gray-300 hover:text-white transition text-sm font-medium">
+              Features
+            </a>
+            <a href="#pricing" className="text-gray-300 hover:text-white transition text-sm font-medium">
+              Pricing
+            </a>
+            <a href="#faq" className="text-gray-300 hover:text-white transition text-sm font-medium">
+              Questions
+            </a>
+          </motion.nav>
+
+          {/* Right Auth Buttons */}
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6, delay: 0.3 }}
+            className="flex gap-3"
+          >
+            <a
+              href="mailto:info0@interzekt.com?subject=Expo360%20-%20Sign%20In"
+              className="hidden sm:inline-block px-6 py-2 text-sm font-semibold rounded-lg transition-all duration-300 bg-linear-to-r from-blue-400 via-cyan-400 to-pink-400 bg-clip-text text-transparent"
+            >
+              Sign In
+            </a>
+            <a
+              href="mailto:info0@interzekt.com?subject=Expo360%20-%20Sign%20Up"
+              className="px-6 py-2 bg-linear-to-r from-purple-600 to-blue-600 text-white text-sm font-semibold rounded-lg hover:shadow-lg hover:shadow-purple-600/50 transition-all duration-300"
+            >
+              Sign Up
+            </a>
+          </motion.div>
+        </div>
+      </div>
+    </header>
+  );
 
   // ==================== HERO SECTION ====================
   const HeroSection = () => (
@@ -105,15 +507,13 @@ const LandingPage = () => {
               <ArrowRight className="w-5 h-5 relative z-10 group-hover:translate-x-1 transition-transform" />
               <div className="absolute inset-0 bg-linear-to-r from-blue-600 to-purple-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
             </a>
-            <a
-              href="https://wa.me/528186931122?text=Interested%20in%20learning%20more%20about%20Expo360"
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
+              onClick={() => setIsModalOpen(true)}
               className="px-8 py-4 border-2 border-gray-400 text-white font-semibold rounded-lg hover:border-white hover:bg-white/5 transition-all duration-300 flex items-center gap-2"
             >
               Contact Us
               <ArrowRight className="w-4 h-4" />
-            </a>
+            </button>
           </motion.div>
 
           {/* Trust badges */}
@@ -123,35 +523,35 @@ const LandingPage = () => {
           >
             <div className="flex items-center gap-2">
               <Check className="w-4 h-4 text-green-400" />
-              <span>30-Day Free Trial</span>
+              <span>Color & Finish Variables</span>
             </div>
             <div className="hidden sm:block w-px h-4 bg-gray-600"></div>
             <div className="flex items-center gap-2">
               <Check className="w-4 h-4 text-green-400" />
-              <span>No Credit Card Required</span>
+              <span>Intuitive Dashboard</span>
             </div>
             <div className="hidden sm:block w-px h-4 bg-gray-600"></div>
             <div className="flex items-center gap-2">
               <Check className="w-4 h-4 text-green-400" />
-              <span>Deployed in Minutes</span>
+              <span>Sales Analytics</span>
             </div>
           </motion.div>
         </motion.div>
 
-        {/* Hero visual - we'll add image later */}
+        {/* Hero visual */}
         <motion.div
           variants={fadeInUp}
           className="mt-16 relative"
         >
           <div className="bg-linear-to-br from-purple-500/10 to-blue-500/10 rounded-2xl p-1 border border-purple-500/20">
-            <div className="bg-slate-800 rounded-xl aspect-video flex items-center justify-center overflow-hidden">
-              {/* Placeholder for hero image - user can provide actual screenshot */}
-              <div className="w-full h-full bg-linear-to-br from-slate-700 to-slate-900 flex items-center justify-center">
-                <p className="text-gray-400 text-center">
-                  <span className="block text-sm mb-2">Hero Image / Dashboard Preview</span>
-                  <span className="text-xs">(Your platform screenshot here)</span>
-                </p>
-              </div>
+            <div className="bg-slate-800 rounded-xl aspect-video flex items-center justify-center overflow-hidden relative">
+              <Image
+                src="/kusam_hero2.png"
+                alt="Expo360 Dashboard Preview"
+                fill
+                className="object-cover"
+                priority
+              />
             </div>
           </div>
           
@@ -180,13 +580,13 @@ const LandingPage = () => {
             variants={fadeInUp}
             className="text-4xl md:text-5xl font-bold text-slate-900 mb-4"
           >
-            Get Live in 3 Simple Steps
+            From Idea to Reality in 3 Steps
           </motion.h2>
           <motion.p 
             variants={fadeInUp}
             className="text-xl text-gray-600 max-w-2xl mx-auto"
           >
-            From signup to launching your first expo, we make it frictionless
+            While your competitors are still planning, you're already selling.
           </motion.p>
         </motion.div>
 
@@ -269,13 +669,13 @@ const LandingPage = () => {
             variants={fadeInUp}
             className="text-4xl md:text-5xl font-bold text-white mb-4"
           >
-            Why Expo360 Wins
+            Beyond Data Capture
           </motion.h2>
           <motion.p 
             variants={fadeInUp}
             className="text-xl text-gray-300 max-w-2xl mx-auto"
           >
-            Purpose-built for exhibitions. Trusted by sales teams worldwide.
+            Capture leads, personalize your sales, close with confidence. Everything under your control, on a simple and easy-to-use platform.
           </motion.p>
         </motion.div>
 
@@ -733,7 +1133,7 @@ const LandingPage = () => {
               href="mailto:info0@interzekt.com?subject=Expo360%20-%20Ready%20to%20Get%20Started"
               className="group relative px-10 py-4 bg-white text-purple-600 font-bold rounded-lg hover:shadow-2xl transition-all duration-300 flex items-center gap-2"
             >
-              <span>Get Started Free</span>
+              <span>Get Started Now</span>
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </a>
             <a
@@ -745,14 +1145,6 @@ const LandingPage = () => {
               Schedule a Demo
             </a>
           </motion.div>
-
-          {/* Guarantee */}
-          <motion.p 
-            variants={fadeInUp}
-            className="text-purple-100 text-sm mt-8"
-          >
-            30-day free trial • No credit card required • Cancel anytime
-          </motion.p>
         </motion.div>
       </div>
     </div>
@@ -810,8 +1202,12 @@ const LandingPage = () => {
   );
 
   return (
-    <div className="overflow-hidden">
-      <HeroSection />
+    <div className="overflow-hidden bg-white">
+      <ContactModal />
+      <div className="relative">
+        <Header />
+        <HeroSection />
+      </div>
       <StepsSection />
       <BenefitsSection />
       <PricingSection />
