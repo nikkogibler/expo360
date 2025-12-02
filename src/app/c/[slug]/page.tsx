@@ -1,11 +1,11 @@
 import React from 'react';
-import { getSupabaseAdmin, getSupabaseClient, isUsingMock, isUsingMockAdmin, isUsingMockClient } from '../../../../lib/supabaseMock';
+import { getSupabaseAdmin, getSupabaseClient, isUsingMockAdmin, isUsingMockClient } from '../../../../lib/supabaseMock';
 import ClientPreviewShell from '@/components/ClientPreviewShell';
 
 const BUCKET = 'expo360-clients-assets';
 
-export default async function Page({ params }: { params: { slug: string } }) {
-  const { slug } = params;
+export default async function Page({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
 
   // If no Supabase anon/client keys are configured, fall back to a lightweight mock client.
   if (isUsingMockClient()) {
@@ -63,7 +63,7 @@ export default async function Page({ params }: { params: { slug: string } }) {
       try {
         const publicObj = await supabaseClient.storage.from(BUCKET).getPublicUrl(client.logo_path);
         logoUrl = publicObj?.data?.publicUrl || null;
-      } catch (e) {
+      } catch {
         logoUrl = null;
       }
     }
