@@ -72,7 +72,7 @@ const LandingPage = () => {
           {/* Eyebrow text */}
           <motion.div variants={fadeInUp} className="inline-block mb-6">
             <div className="bg-purple-500/20 border border-purple-500/50 rounded-full px-4 py-2 backdrop-blur-sm">
-              <p className="text-purple-200 text-sm font-semibold">🚀 Transforma Tus Exposiciones Hoy</p>
+              <p className="text-purple-200 text-sm font-semibold">🚀 Transform Your Expos Today</p>
             </div>
           </motion.div>
 
@@ -81,7 +81,7 @@ const LandingPage = () => {
             variants={fadeInUp}
             className="text-5xl md:text-7xl font-bold text-white mb-6 leading-tight"
           >
-            De Visitantes a Ventas: <span className="bg-linear-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">En Minutos, No Meses</span>
+            Convert Visitors Into <span className="bg-linear-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">Paying Customers</span>
           </motion.h1>
 
           {/* Subheadline */}
@@ -89,7 +89,7 @@ const LandingPage = () => {
             variants={fadeInUp}
             className="text-xl md:text-2xl text-gray-300 mb-8 leading-relaxed"
           >
-            Transforma tus ferias comerciales y exhibiciones en experiencias digitales interactivas que capturen datos de clientes, permitan ventas en tiempo real y proporcionen atribución post-evento instantánea.
+            Turn your trade shows and exhibitions into interactive digital experiences that capture customer data, enable real-time sales, and provide instant post-event attribution.
           </motion.p>
 
           {/* CTA Buttons */}
@@ -98,20 +98,20 @@ const LandingPage = () => {
             className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12"
           >
             <a
-              href="mailto:info0@interzekt.com?subject=Expo360%20-%20Listo%20para%20Comenzar"
+              href="mailto:info0@interzekt.com?subject=Expo360%20-%20Ready%20to%20Get%20Started"
               className="group relative px-8 py-4 bg-linear-to-r from-purple-600 to-blue-600 text-white font-semibold rounded-lg overflow-hidden hover:shadow-2xl hover:shadow-purple-600/50 transition-all duration-300 flex items-center gap-2"
             >
-              <span className="relative z-10">Comenzar Ahora</span>
+              <span className="relative z-10">Get Started</span>
               <ArrowRight className="w-5 h-5 relative z-10 group-hover:translate-x-1 transition-transform" />
               <div className="absolute inset-0 bg-linear-to-r from-blue-600 to-purple-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
             </a>
             <a
-              href="https://wa.me/528186931122?text=Me%20interesa%20saber%20m%C3%A1s%20sobre%20Expo360"
+              href="https://wa.me/528186931122?text=Interested%20in%20learning%20more%20about%20Expo360"
               target="_blank"
               rel="noopener noreferrer"
               className="px-8 py-4 border-2 border-gray-400 text-white font-semibold rounded-lg hover:border-white hover:bg-white/5 transition-all duration-300 flex items-center gap-2"
             >
-              Contáctanos
+              Contact Us
               <ArrowRight className="w-4 h-4" />
             </a>
           </motion.div>
@@ -123,17 +123,17 @@ const LandingPage = () => {
           >
             <div className="flex items-center gap-2">
               <Check className="w-4 h-4 text-green-400" />
-              <span>Prueba Gratuita de 30 Días</span>
+              <span>30-Day Free Trial</span>
             </div>
             <div className="hidden sm:block w-px h-4 bg-gray-600"></div>
             <div className="flex items-center gap-2">
               <Check className="w-4 h-4 text-green-400" />
-              <span>Sin Tarjeta de Crédito Requerida</span>
+              <span>No Credit Card Required</span>
             </div>
             <div className="hidden sm:block w-px h-4 bg-gray-600"></div>
             <div className="flex items-center gap-2">
               <Check className="w-4 h-4 text-green-400" />
-              <span>Implementado en Minutos</span>
+              <span>Deployed in Minutes</span>
             </div>
           </motion.div>
         </motion.div>
@@ -180,13 +180,13 @@ const LandingPage = () => {
             variants={fadeInUp}
             className="text-4xl md:text-5xl font-bold text-slate-900 mb-4"
           >
-            Comienza en 3 Pasos Simples
+            Get Live in 3 Simple Steps
           </motion.h2>
           <motion.p 
             variants={fadeInUp}
             className="text-xl text-gray-600 max-w-2xl mx-auto"
           >
-            Desde el registro hasta el lanzamiento de tu primera expo, lo hacemos sin fricciones
+            From signup to launching your first expo, we make it frictionless
           </motion.p>
         </motion.div>
 
@@ -195,18 +195,18 @@ const LandingPage = () => {
           {[
             {
               number: '01',
-              title: 'Regístrate',
-              description: 'Crea tu cuenta de Expo360 y cuéntanos sobre tu evento. Solo toma 2 minutos.'
+              title: 'Sign Up',
+              description: 'Create your Expo360 account and tell us about your event. Takes just 2 minutes.'
             },
             {
               number: '02',
-              title: 'Configura MyExpo360',
-              description: 'Carga tus productos, personaliza tu marca y configura tu panel de control.'
+              title: 'Set Up MyExpo360',
+              description: 'Upload your products, customize your branding, and configure your dashboard.'
             },
             {
               number: '03',
-              title: 'Lanza tu Expo',
-              description: 'Ve en vivo en tu evento. Comienza a capturar clientes y a habilitar ventas en tiempo real.'
+              title: 'Launch for Expo',
+              description: 'Go live at your event. Start capturing customers and enabling real-time sales.'
             }
           ].map((step, idx) => (
             <motion.div
@@ -269,13 +269,13 @@ const LandingPage = () => {
             variants={fadeInUp}
             className="text-4xl md:text-5xl font-bold text-white mb-4"
           >
-            Por Qué Expo360 Gana
+            Why Expo360 Wins
           </motion.h2>
           <motion.p 
             variants={fadeInUp}
             className="text-xl text-gray-300 max-w-2xl mx-auto"
           >
-            Construido para exhibiciones. Confiado por equipos de ventas en todo el mundo.
+            Purpose-built for exhibitions. Trusted by sales teams worldwide.
           </motion.p>
         </motion.div>
 
@@ -284,33 +284,33 @@ const LandingPage = () => {
           {[
             {
               icon: Users,
-              title: 'Captura Información de Clientes',
-              description: 'Recopila instantáneamente datos de visitantes, preferencias e información de contacto en una plataforma unificada.'
+              title: 'Capture Customer Info',
+              description: 'Instantly collect visitor data, preferences, and contact information in one unified platform.'
             },
             {
               icon: Smartphone,
-              title: 'Ventas Móviles Directas',
-              description: 'Permite que los clientes compren directamente desde sus teléfonos en tu stand. Sin retrasos en el pago.'
+              title: 'Direct Mobile Sales',
+              description: 'Let customers purchase directly from their phones at your booth. No checkout delays.'
             },
             {
               icon: TrendingUp,
-              title: 'Atribución en Tiempo Real',
-              description: 'Rastrea qué clientes se convirtieron post-evento con precisión absoluta. Sabe qué funciona.'
+              title: 'Real-Time Attribution',
+              description: 'Track which customers converted post-event with pinpoint accuracy. Know what works.'
             },
             {
               icon: Zap,
-              title: 'Cotizaciones Instantáneas',
-              description: 'Genera cotizaciones personalizadas en segundos. Cierra tratos mientras tus clientes están emocionados.'
+              title: 'Instant Quoting',
+              description: 'Generate personalized quotes in seconds. Close deals while your customers are excited.'
             },
             {
               icon: Lock,
-              title: 'Posees Tus Datos',
-              description: 'Sin bloqueo de proveedor. Exporta datos de clientes en cualquier momento via CSV. Tus datos, tu control.'
+              title: 'You Own Your Data',
+              description: 'No vendor lock-in. Export customer data anytime via CSV. Your data, your control.'
             },
             {
               icon: Clock,
-              title: 'Basado en la Nube y Rápido',
-              description: 'Implementa en minutos. Sin descargas, sin configuración complicada. En vivo y listo para funcionar.'
+              title: 'Cloud-Based & Fast',
+              description: 'Deploy in minutes. No downloads, no complicated setup. Live and ready to go.'
             }
           ].map((benefit, idx) => {
             const Icon = benefit.icon;
@@ -358,13 +358,13 @@ const LandingPage = () => {
             variants={fadeInUp}
             className="text-4xl md:text-5xl font-bold text-slate-900 mb-4"
           >
-            Precios Simples y Transparentes
+            Simple, Transparent Pricing
           </motion.h2>
           <motion.p 
             variants={fadeInUp}
             className="text-xl text-gray-600 max-w-2xl mx-auto mb-8"
           >
-            Elige lo que mejor funcione para tu negocio. Sin tarifas ocultas.
+            Choose what works best for your business. No hidden fees.
           </motion.p>
 
           {/* Billing toggle */}
@@ -378,7 +378,7 @@ const LandingPage = () => {
                     : 'text-gray-600'
                 }`}
               >
-                Uso Único
+                One-Time Use
               </button>
               <button
                 onClick={() => setAnnualBillingSelected(true)}
@@ -388,7 +388,7 @@ const LandingPage = () => {
                     : 'text-gray-600'
                 }`}
               >
-                Plan Anual
+                Annual Plan
               </button>
             </div>
           </motion.div>
@@ -406,31 +406,31 @@ const LandingPage = () => {
             >
               {/* Badge */}
               <div className="absolute top-0 right-0 bg-green-500 text-white px-4 py-1 text-sm font-semibold rounded-bl-lg">
-                Más Popular
+                Most Popular
               </div>
 
               <h3 className="text-2xl font-bold text-slate-900 mb-2">
-                Uso Único
+                One-Time Use
               </h3>
               <p className="text-gray-600 mb-6">
-                Perfecto para probar u alojar un único evento
+                Perfect for trying us out or hosting a single event
               </p>
 
               {/* Price */}
               <div className="mb-8">
                 <div className="text-5xl font-bold text-slate-900">$750</div>
-                <p className="text-gray-600 mt-2">USD + prueba gratuita de 30 días incluida</p>
+                <p className="text-gray-600 mt-2">USD + 30-day free trial included</p>
               </div>
 
               {/* Features */}
               <ul className="space-y-4 mb-8">
                 {[
-                  'Página de destino para 1 expo',
-                  'Panel de administración con 2 usuarios',
-                  'Hasta 500 productos',
-                  'Capturas de clientes ilimitadas',
-                  'Cotizaciones y ventas en tiempo real',
-                  '30 días de acceso'
+                  'Landing page for 1 expo',
+                  'Admin dashboard with 2 users',
+                  'Up to 500 products',
+                  'Unlimited customer captures',
+                  'Real-time quoting & sales',
+                  '30 days of access'
                 ].map((feature, idx) => (
                   <li key={idx} className="flex items-start gap-3">
                     <Check className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />
@@ -441,15 +441,15 @@ const LandingPage = () => {
 
               {/* CTA */}
               <a
-                href="mailto:info0@interzekt.com?subject=Expo360%20-%20Uso%20Único"
+                href="mailto:info0@interzekt.com?subject=Expo360%20-%20One-Time%20Use"
                 className="block w-full py-3 bg-linear-to-r from-purple-600 to-blue-600 text-white font-semibold rounded-lg text-center hover:shadow-lg hover:shadow-purple-600/50 transition-all duration-300"
               >
-                Comienza Ahora
+                Get Started Now
               </a>
 
               {/* Data export note */}
               <p className="text-xs text-gray-500 mt-4 text-center">
-                Después de 30 días, exporta tus datos via CSV o continúa con el plan anual
+                After 30 days, export your data via CSV or continue with annual plan
               </p>
             </motion.div>
           )}
@@ -486,13 +486,13 @@ const LandingPage = () => {
               {/* Features */}
               <ul className="space-y-4 mb-8">
                 {[
-                  'Exposiciones comerciales y eventos ilimitados',
-                  'Hasta 5 ubicaciones físicas',
-                  'Productos y usuarios ilimitados',
-                  'Capturas de clientes ilimitadas',
-                  'Cotización y ventas en tiempo real',
-                  'Soporte continuo de Interzekt',
-                  'Incorporación prioritaria'
+                  'Unlimited trade shows & events',
+                  'Up to 5 brick-and-mortar locations',
+                  'Unlimited products & users',
+                  'Unlimited customer captures',
+                  'Real-time quoting & sales',
+                  'Ongoing Interzekt support',
+                  'Priority onboarding'
                 ].map((feature, idx) => (
                   <li key={idx} className="flex items-start gap-3">
                     <Check className="w-5 h-5 text-yellow-300 shrink-0 mt-0.5" />
@@ -503,15 +503,15 @@ const LandingPage = () => {
 
               {/* CTA */}
               <a
-                href="mailto:info0@interzekt.com?subject=Expo360%20-%20Plan%20Anual"
+                href="mailto:info0@interzekt.com?subject=Expo360%20-%20Annual%20Plan"
                 className="block w-full py-3 bg-white text-purple-600 font-semibold rounded-lg text-center hover:bg-gray-100 transition-all duration-300"
               >
-                Desbloquea Acceso Ilimitado
+                Unlock Unlimited Access
               </a>
 
               {/* Billing note */}
               <p className="text-xs text-purple-200 mt-4 text-center">
-                Compromiso de 12 meses con tarjeta registrada
+                12-month commitment with card on file
               </p>
             </motion.div>
           )}
@@ -579,7 +579,7 @@ const LandingPage = () => {
           className="text-center mt-16"
         >
           <p className="text-gray-600">
-            ¿Tienes preguntas? <a href="https://wa.me/528186931122" className="text-purple-600 font-semibold hover:underline">Chatea con nosotros en WhatsApp</a>
+            Have questions? <a href="https://wa.me/528186931122" className="text-purple-600 font-semibold hover:underline">Chat with us on WhatsApp</a>
           </p>
         </motion.div>
       </div>
@@ -608,13 +608,13 @@ const LandingPage = () => {
             variants={fadeInUp}
             className="text-4xl md:text-5xl font-bold text-white mb-4"
           >
-            Construido para Velocidad y Simplicidad
+            Built for Speed & Simplicity
           </motion.h2>
           <motion.p 
             variants={fadeInUp}
             className="text-xl text-gray-300 max-w-2xl mx-auto"
           >
-            Características de nivel empresarial sin complejidad
+            Enterprise-grade features without the complexity
           </motion.p>
         </motion.div>
 
@@ -622,20 +622,20 @@ const LandingPage = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12 max-w-4xl mx-auto">
           {[
             {
-              title: 'Sin Descargas Necesarias',
-              description: 'Completamente basado en la nube. Funciona en cualquier dispositivo, en cualquier lugar, en cualquier momento.'
+              title: 'No Downloads Needed',
+              description: 'Completely cloud-based. Works on any device, anywhere, anytime.'
             },
             {
-              title: 'Implementación Ultrarrápida',
-              description: 'Actívate en minutos. Comienza inmediatamente sin configuraciones complejas.'
+              title: 'Lightning-Fast Deployment',
+              description: 'Go live in minutes. Get started immediately without complex setups.'
             },
             {
-              title: 'Análisis en Tiempo Real',
-              description: 'Observa el compromiso del cliente en vivo. Realiza un seguimiento de lo que importa durante tu evento.'
+              title: 'Real-Time Analytics',
+              description: 'Watch customer engagement happen live. Track what matters during your event.'
             },
             {
-              title: 'Diseño Centrado en Dispositivos Móviles',
-              description: 'Experiencia perfecta en tabletas y teléfonos. Tus clientes nunca tendrán fricción.'
+              title: 'Mobile-First Design',
+              description: 'Perfect experience on tablets and phones. Customers never have friction.'
             }
           ].map((feature, idx) => (
             <motion.div
@@ -675,7 +675,7 @@ const LandingPage = () => {
             variants={fadeInUp}
             className="text-gray-600 font-semibold mb-6"
           >
-            Confiado por equipos de ventas en empresas líderes
+            Trusted by sales teams at leading companies
           </motion.p>
           
           {/* Placeholder for company logos */}
@@ -715,14 +715,14 @@ const LandingPage = () => {
             variants={fadeInUp}
             className="text-4xl md:text-6xl font-bold text-white mb-6 leading-tight"
           >
-            ¿Listo para Transformar Tus Exposiciones?
+            Ready to Transform Your Expos?
           </motion.h2>
 
           <motion.p 
             variants={fadeInUp}
             className="text-xl text-purple-100 mb-10 max-w-2xl mx-auto"
           >
-            Únete a equipos de ventas visionarios que están capturando más clientes, cerrando más tratos y siendo dueños de sus datos de clientes.
+            Join forward-thinking sales teams who are capturing more customers, closing more deals, and owning their customer data.
           </motion.p>
 
           <motion.div 
@@ -730,19 +730,19 @@ const LandingPage = () => {
             className="flex flex-col sm:flex-row gap-4 justify-center items-center"
           >
             <a
-              href="mailto:info0@interzekt.com?subject=Expo360%20-%20Listo%20para%20Comenzar"
+              href="mailto:info0@interzekt.com?subject=Expo360%20-%20Ready%20to%20Get%20Started"
               className="group relative px-10 py-4 bg-white text-purple-600 font-bold rounded-lg hover:shadow-2xl transition-all duration-300 flex items-center gap-2"
             >
-              <span>Comenzar Gratis</span>
+              <span>Get Started Free</span>
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </a>
             <a
-              href="https://wa.me/528186931122?text=Quiero%20aprender%20más%20sobre%20Expo360"
+              href="https://wa.me/528186931122?text=I%20want%20to%20learn%20more%20about%20Expo360"
               target="_blank"
               rel="noopener noreferrer"
               className="px-10 py-4 border-2 border-white text-white font-semibold rounded-lg hover:bg-white/10 transition-all duration-300"
             >
-              Programar una Demo
+              Schedule a Demo
             </a>
           </motion.div>
 
@@ -751,7 +751,7 @@ const LandingPage = () => {
             variants={fadeInUp}
             className="text-purple-100 text-sm mt-8"
           >
-            Prueba gratuita de 30 días • Sin tarjeta de crédito requerida • Cancelar en cualquier momento
+            30-day free trial • No credit card required • Cancel anytime
           </motion.p>
         </motion.div>
       </div>
@@ -764,41 +764,41 @@ const LandingPage = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-12">
           <div>
-            <h4 className="text-white font-semibold mb-4">Producto</h4>
+            <h4 className="text-white font-semibold mb-4">Product</h4>
             <ul className="space-y-2 text-sm text-gray-400">
-              <li><a href="#" className="hover:text-white transition">Características</a></li>
-              <li><a href="#" className="hover:text-white transition">Precios</a></li>
-              <li><a href="#" className="hover:text-white transition">Seguridad</a></li>
+              <li><a href="#" className="hover:text-white transition">Features</a></li>
+              <li><a href="#" className="hover:text-white transition">Pricing</a></li>
+              <li><a href="#" className="hover:text-white transition">Security</a></li>
             </ul>
           </div>
           <div>
-            <h4 className="text-white font-semibold mb-4">Empresa</h4>
+            <h4 className="text-white font-semibold mb-4">Company</h4>
             <ul className="space-y-2 text-sm text-gray-400">
-              <li><a href="#" className="hover:text-white transition">Acerca de</a></li>
+              <li><a href="#" className="hover:text-white transition">About</a></li>
               <li><a href="#" className="hover:text-white transition">Blog</a></li>
-              <li><a href="#" className="hover:text-white transition">Carreras</a></li>
+              <li><a href="#" className="hover:text-white transition">Careers</a></li>
             </ul>
           </div>
           <div>
-            <h4 className="text-white font-semibold mb-4">Recursos</h4>
+            <h4 className="text-white font-semibold mb-4">Resources</h4>
             <ul className="space-y-2 text-sm text-gray-400">
-              <li><a href="#" className="hover:text-white transition">Centro de Ayuda</a></li>
-              <li><a href="#" className="hover:text-white transition">Documentación</a></li>
-              <li><a href="#" className="hover:text-white transition">Estado</a></li>
+              <li><a href="#" className="hover:text-white transition">Help Center</a></li>
+              <li><a href="#" className="hover:text-white transition">Documentation</a></li>
+              <li><a href="#" className="hover:text-white transition">Status</a></li>
             </ul>
           </div>
           <div>
             <h4 className="text-white font-semibold mb-4">Legal</h4>
             <ul className="space-y-2 text-sm text-gray-400">
-              <li><a href="#" className="hover:text-white transition">Privacidad</a></li>
-              <li><a href="#" className="hover:text-white transition">Términos</a></li>
-              <li><a href="#" className="hover:text-white transition">Contacto</a></li>
+              <li><a href="#" className="hover:text-white transition">Privacy</a></li>
+              <li><a href="#" className="hover:text-white transition">Terms</a></li>
+              <li><a href="#" className="hover:text-white transition">Contact</a></li>
             </ul>
           </div>
         </div>
 
         <div className="border-t border-slate-800 pt-8 flex flex-col md:flex-row justify-between items-center text-sm text-gray-400">
-          <p>© 2024 Expo360 por Interzekt. Todos los derechos reservados.</p>
+          <p>© 2024 Expo360 by Interzekt. All rights reserved.</p>
           <div className="flex gap-6 mt-4 md:mt-0">
             <a href="#" className="hover:text-white transition">Twitter</a>
             <a href="#" className="hover:text-white transition">LinkedIn</a>
