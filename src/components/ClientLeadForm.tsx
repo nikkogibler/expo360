@@ -1,5 +1,3 @@
-```tsx
-
 import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { useClient } from '@/context/ClientContext';
@@ -445,5 +443,3 @@ const ClientLeadForm = ({ variant = 'expo360', hideEmail = false }: ClientLeadFo
 };
 
 export default ClientLeadForm;
-
-```
