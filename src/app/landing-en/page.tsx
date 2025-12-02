@@ -132,7 +132,7 @@ const LandingPage = () => {
       initial={{ opacity: 0 }}
       animate={{ opacity: isModalOpen ? 1 : 0 }}
       exit={{ opacity: 0 }}
-      className={`fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 ${
+      className={`fixed inset-0 bg-black/50 backdrop-blur-sm z-9999 flex items-center justify-center p-4 ${
         isModalOpen ? 'pointer-events-auto' : 'pointer-events-none'
       }`}
       onClick={() => setIsModalOpen(false)}
@@ -146,16 +146,22 @@ const LandingPage = () => {
         onClick={(e) => e.stopPropagation()}
       >
         {/* Close button */}
-        <div className="sticky top-0 bg-white border-b border-gray-200 px-8 py-4 flex justify-between items-center z-10">
-          <h2 className="text-2xl font-bold text-gray-900">Request a Personalized Demo</h2>
+        <div className="sticky top-0 bg-white z-10">
           <button
             onClick={() => setIsModalOpen(false)}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors z-20"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
+          <Image
+            src="/solicita.jpeg"
+            alt="Request a Personalized Demo"
+            width={600}
+            height={100}
+            className="w-full h-auto"
+          />
         </div>
 
         {/* Form Content */}
