@@ -549,6 +549,9 @@ const LandingPage = () => {
         <motion.div
           variants={fadeInUp}
           className="mt-16 relative"
+          initial={{ opacity: 0, y: 40 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 3.5, duration: 0.8, ease: 'easeOut' }}
         >
           <div className="bg-linear-to-br from-purple-500/10 to-blue-500/10 rounded-2xl p-1 border border-purple-500/20">
             <div className="bg-slate-800 rounded-xl aspect-video flex items-center justify-center overflow-hidden relative">
@@ -696,7 +699,7 @@ const LandingPage = () => {
             variants={fadeInUp}
             className="text-4xl md:text-5xl font-bold text-white mb-4"
           >
-            Más Allá de Capturar Datos
+            Más Que Una Simple Captura de Datos
           </motion.h2>
           <motion.p 
             variants={fadeInUp}

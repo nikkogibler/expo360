@@ -2,10 +2,12 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowRight, Mail, Lock, Eye, EyeOff, Github, Chrome } from 'lucide-react';
+import { ArrowRight, Mail, Lock, Eye, EyeOff, Github, Chrome, X } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 export default function SignInPage() {
+  const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -29,6 +31,10 @@ export default function SignInPage() {
     }
   };
 
+  const handleClose = () => {
+    router.back();
+  };
+
   const containerVariants = {
     hidden: { opacity: 0, y: 20 },
     visible: {
@@ -48,63 +54,35 @@ export default function SignInPage() {
   };
 
   return (
-    <div className="relative min-h-screen overflow-hidden">
-      {/* Animated gradient background */}
-      <div className="absolute inset-0 bg-linear-to-br from-slate-900 via-purple-900 to-slate-900"></div>
-
-      {/* Animated background elements */}
+    <div className="fixed inset-0 z-50 flex items-center justify-center px-4 backdrop-blur-sm bg-black/30">
       <motion.div
-        className="absolute top-0 left-0 w-96 h-96 bg-purple-500/20 rounded-full filter blur-3xl"
-        animate={{
-          x: [0, 50, 0],
-          y: [0, -50, 0],
-        }}
-        transition={{
-          duration: 20,
-          repeat: Infinity,
-          ease: 'easeInOut',
-        }}
-      />
-      <motion.div
-        className="absolute bottom-0 right-0 w-96 h-96 bg-blue-500/20 rounded-full filter blur-3xl"
-        animate={{
-          x: [0, -50, 0],
-          y: [0, 50, 0],
-        }}
-        transition={{
-          duration: 20,
-          repeat: Infinity,
-          ease: 'easeInOut',
-        }}
-      />
-
-      {/* Grid background */}
-      <div className="absolute inset-0 opacity-10">
-        <div className="absolute inset-0 bg-grid-pattern"></div>
-      </div>
-
-      {/* Content */}
-      <div className="relative z-10 flex items-center justify-center min-h-screen px-4">
-        <motion.div
-          initial="hidden"
-          animate="visible"
-          variants={containerVariants}
-          className="w-full max-w-sm"
+        initial="hidden"
+        animate="visible"
+        variants={containerVariants}
+        className="w-full max-w-sm relative"
+      >
+        {/* Close button */}
+        <button
+          onClick={handleClose}
+          className="absolute -top-10 right-0 text-gray-400 hover:text-white transition-colors"
         >
-          {/* Card */}
-          <div className="bg-linear-to-br from-white/10 to-white/5 backdrop-blur-xl rounded-2xl p-6 border border-white/20 shadow-2xl">
-            {/* Logo and header */}
-            <motion.div
-              variants={itemVariants}
-              className="text-center mb-0 -mt-20"
-            >
-              <Link href="/" className="inline-block mb-0">
-                <img src="/expo360_logo.png" alt="Expo360" className="h-80 mx-auto" />
-              </Link>
-            </motion.div>
+          <X className="w-6 h-6" />
+        </button>
 
-            {/* Form */}
-            <form onSubmit={handleSubmit} className="space-y-1 -mt-20">
+        {/* Card */}
+        <div className="bg-linear-to-br from-white/10 to-white/5 backdrop-blur-xl rounded-2xl p-6 border border-white/20 shadow-2xl">
+          {/* Logo and header */}
+          <motion.div
+            variants={itemVariants}
+            className="text-center mb-0 -mt-20"
+          >
+            <Link href="/" className="inline-block mb-0">
+              <img src="/expo360_logo.png" alt="Expo360" className="h-80 mx-auto" />
+            </Link>
+          </motion.div>
+
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="space-y-1 -mt-20">
               {/* Email Field */}
               <motion.div variants={itemVariants}>
                 <label className="block text-xs font-semibold text-gray-200 mb-1">
@@ -242,16 +220,15 @@ export default function SignInPage() {
               variants={itemVariants}
               className="mt-0.5 pt-0.5 border-t border-white/10 text-center"
             >
-              <Link
-                href="/"
+              <button
+                onClick={handleClose}
                 className="inline-flex items-center gap-2 text-gray-400 hover:text-white transition-colors text-xs"
               >
-                ← Volver al inicio
-              </Link>
+                Cerrar ✕
+              </button>
             </motion.div>
-          </div>
-        </motion.div>
-      </div>
+        </div>
+      </motion.div>
     </div>
   );
 }
