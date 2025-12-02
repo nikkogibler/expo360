@@ -1,9 +1,71 @@
 'use client';
 
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
+import React, { useState, useRef } from 'react';
+import { motion, useScroll, useTransform } from 'framer-motion';
 import Image from 'next/image';
 import { Check, ArrowRight, Zap, Users, TrendingUp, Lock, Clock, Smartphone } from 'lucide-react';
+import { LayoutGrid } from '@/ui/layout-grid';
+
+// ==================== SKELETON COMPONENTS ====================
+const SkeletonOne = () => (
+  <div>
+    <p className="font-bold text-4xl text-white">Captura en Tiempo Real</p>
+    <p className="font-normal text-base text-white/80">Accede a los datos de tus clientes instantáneamente con nuestra tecnología de punta.</p>
+    <p className="font-normal text-sm text-white/60 mt-4">Expo360</p>
+  </div>
+);
+
+const SkeletonTwo = () => (
+  <div>
+    <p className="font-bold text-4xl text-white">Venta Móvil Primero</p>
+    <p className="font-normal text-base text-white/80">Experiencia de compra fluida desde cualquier dispositivo.</p>
+    <p className="font-normal text-sm text-white/60 mt-4">Mobile Optimized</p>
+  </div>
+);
+
+const SkeletonThree = () => (
+  <div>
+    <p className="font-bold text-4xl text-white">Cotizaciones al Instante</p>
+    <p className="font-normal text-base text-white/80">Genera presupuestos personalizados en segundos.</p>
+    <p className="font-normal text-sm text-white/60 mt-4">Instant Quotes</p>
+  </div>
+);
+
+const SkeletonFour = () => (
+  <div>
+    <p className="font-bold text-4xl text-white">Tu Información, Tu Control</p>
+    <p className="font-normal text-base text-white/80">Posee y controla todos los datos e insights de tus clientes.</p>
+    <p className="font-normal text-sm text-white/60 mt-4">Data Ownership</p>
+  </div>
+);
+
+// ==================== HERO CARDS ====================
+const heroCards = [
+  {
+    id: 1,
+    content: <SkeletonOne />,
+    className: "md:col-span-2",
+    thumbnail: "/hero/hero2.webp",
+  },
+  {
+    id: 2,
+    content: <SkeletonTwo />,
+    className: "col-span-1",
+    thumbnail: "/hero/hero3.webp",
+  },
+  {
+    id: 3,
+    content: <SkeletonThree />,
+    className: "col-span-1",
+    thumbnail: "/hero/hero4.webp",
+  },
+  {
+    id: 4,
+    content: <SkeletonFour />,
+    className: "md:col-span-2",
+    thumbnail: "/hero/hero5.webp",
+  },
+];
 
 const LandingPage = () => {
   const [annualBillingSelected, setAnnualBillingSelected] = useState(true);
@@ -406,13 +468,13 @@ const LandingPage = () => {
             className="hidden md:flex items-center gap-8 absolute left-1/2 transform -translate-x-1/2"
           >
             <a href="#features" className="text-gray-300 hover:text-white transition text-sm font-medium">
-              Características
+              ¿Porqué Expo360?
             </a>
             <a href="#pricing" className="text-gray-300 hover:text-white transition text-sm font-medium">
               Precios
             </a>
             <a href="#faq" className="text-gray-300 hover:text-white transition text-sm font-medium">
-              Preguntas
+              Preguntas Frecuentes
             </a>
           </motion.nav>
 
@@ -545,28 +607,19 @@ const LandingPage = () => {
           </motion.div>
         </motion.div>
 
-        {/* Hero visual */}
+        {/* Hero visual - Layout Grid */}
         <motion.div
           variants={fadeInUp}
-          className="mt-16 relative"
+          className="mt-16 relative w-full"
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 3.5, duration: 0.8, ease: 'easeOut' }}
+          transition={{ delay: 1.5, duration: 0.8, ease: 'easeOut' }}
         >
           <div className="bg-linear-to-br from-purple-500/10 to-blue-500/10 rounded-2xl p-1 border border-purple-500/20">
-            <div className="bg-slate-800 rounded-xl aspect-video flex items-center justify-center overflow-hidden relative">
-              <Image
-                src="/kusam_hero2.png"
-                alt="Expo360 Dashboard Preview"
-                fill
-                className="object-cover"
-                priority
-              />
+            <div className="p-8">
+              <LayoutGrid cards={heroCards} />
             </div>
           </div>
-          
-          {/* Decorative blur effect */}
-          <div className="absolute -bottom-4 -right-4 w-96 h-96 bg-blue-500/20 rounded-full filter blur-3xl -z-10"></div>
         </motion.div>
       </div>
     </div>
@@ -678,7 +731,8 @@ const LandingPage = () => {
   );
 
   // ==================== KEY BENEFITS SECTION ====================
-  const BenefitsSection = () => (
+  const BenefitsSection = () => {
+    return (
     <div className="relative py-20 md:py-32 bg-linear-to-br from-slate-900 to-slate-800 overflow-hidden">
       {/* Animated background elements */}
       <motion.div 
@@ -744,14 +798,14 @@ const LandingPage = () => {
             }
           ].map((benefit, idx) => {
             const Icon = benefit.icon;
+            
             return (
               <motion.div
                 key={idx}
                 initial="hidden"
                 whileInView="visible"
                 viewport={{ once: true }}
-                variants={fadeInUp}
-                transition={{ delay: idx * 0.05 }}
+                variants={scaleIn}
                 className="bg-white/5 border border-white/10 rounded-xl p-8 backdrop-blur-sm hover:bg-white/10 hover:border-purple-500/50 transition-all duration-300"
               >
                 <div className="mb-4">
@@ -769,7 +823,8 @@ const LandingPage = () => {
         </div>
       </div>
     </div>
-  );
+    );
+  };
 
   // ==================== PRICING SECTION ====================
   const PricingSection = () => (
@@ -797,44 +852,16 @@ const LandingPage = () => {
           >
             Elige lo que mejor funcione para tu negocio. Sin tarifas ocultas.
           </motion.p>
-
-          {/* Billing toggle */}
-          <motion.div variants={fadeInUp} className="flex justify-center mb-12">
-            <div className="bg-white/10 rounded-lg p-1 flex gap-1">
-              <button
-                onClick={() => setAnnualBillingSelected(false)}
-                className={`px-6 py-2 rounded-md font-semibold transition-all ${
-                  !annualBillingSelected
-                    ? 'bg-white text-purple-600 shadow-md'
-                    : 'text-gray-300'
-                }`}
-              >
-                Una Sola Expo
-              </button>
-              <button
-                onClick={() => setAnnualBillingSelected(true)}
-                className={`px-6 py-2 rounded-md font-semibold transition-all ${
-                  annualBillingSelected
-                    ? 'bg-white text-purple-600 shadow-md'
-                    : 'text-gray-300'
-                }`}
-              >
-                Plan Anual
-              </button>
-            </div>
-          </motion.div>
         </motion.div>
 
         {/* Pricing cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
           {/* One-Time Card */}
-          {!annualBillingSelected && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-linear-to-br from-white/10 to-white/5 border-2 border-white/20 rounded-2xl p-8 relative overflow-hidden"
-            >
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-linear-to-br from-white/10 to-white/5 border-2 border-white/20 rounded-2xl p-8 relative overflow-hidden"
+          >
               {/* Badge */}
               <div className="absolute top-0 right-0 bg-green-500 text-white px-4 py-1 text-sm font-semibold rounded-bl-lg">
                 Más Popular
@@ -886,16 +913,13 @@ const LandingPage = () => {
                 El primer mes incluye acceso completo. Después puedes continuar con el plan anual.
               </p>
             </motion.div>
-          )}
 
           {/* Annual Plan Card */}
-          {annualBillingSelected && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-linear-to-br from-purple-600 to-blue-600 rounded-2xl p-8 relative overflow-hidden shadow-2xl md:col-span-2 lg:col-span-1"
-            >
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-linear-to-br from-purple-600 to-blue-600 rounded-2xl p-8 relative overflow-hidden shadow-2xl"
+          >
               {/* Badge */}
               <div className="absolute top-0 right-0 bg-yellow-400 text-gray-900 px-4 py-1 text-sm font-semibold rounded-bl-lg">
                 Best Value
@@ -948,68 +972,6 @@ const LandingPage = () => {
                 Compromiso de 12 meses con tarjeta registrada
               </p>
             </motion.div>
-          )}
-
-          {/* Show both when neither selected, but let toggle control display */}
-          {annualBillingSelected && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-linear-to-br from-white to-gray-50 border-2 border-gray-200 rounded-2xl p-8 relative overflow-hidden"
-            >
-              {/* Badge */}
-              <div className="absolute top-0 right-0 bg-blue-500 text-white px-4 py-1 text-sm font-semibold rounded-bl-lg">
-                Popular
-              </div>
-
-              <h3 className="text-2xl font-bold text-slate-900 mb-2">
-                Una Sola Expo
-              </h3>
-              <p className="text-gray-600 mb-6">
-                Perfecto para probar o para una única exposición
-              </p>
-
-              {/* Price */}
-              <div className="mb-8">
-                <div className="text-5xl font-bold text-slate-900">$15,000</div>
-                <p className="text-gray-600 mt-2">MXN pago único</p>
-                <p className="text-green-600 text-sm mt-3 font-semibold">
-                  + 1 mes de acceso a todas las funciones premium
-                </p>
-              </div>
-
-              {/* Features */}
-              <ul className="space-y-4 mb-8">
-                {[
-                  'Página de destino para 1 expo',
-                  'Panel de administración con 2 usuarios',
-                  'Hasta 500 productos',
-                  'Capturas de clientes ilimitadas',
-                  'Cotizaciones y ventas en tiempo real',
-                  '1 mes completo de acceso premium'
-                ].map((feature, idx) => (
-                  <li key={idx} className="flex items-start gap-3">
-                    <Check className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />
-                    <span className="text-gray-700">{feature}</span>
-                  </li>
-                ))}
-              </ul>
-
-              {/* CTA */}
-              <a
-                href="mailto:info0@interzekt.com?subject=Expo360%20-%20Una%20Sola%20Expo"
-                className="block w-full py-3 bg-linear-to-r from-purple-600 to-blue-600 text-white font-semibold rounded-lg text-center hover:shadow-lg hover:shadow-purple-600/50 transition-all duration-300"
-              >
-                Comienza Ahora
-              </a>
-
-              {/* Data export note */}
-              <p className="text-xs text-gray-500 mt-4 text-center">
-                El primer mes incluye acceso completo. Después puedes continuar con el plan anual.
-              </p>
-            </motion.div>
-          )}
         </div>
 
         {/* FAQ note */}
@@ -1020,8 +982,8 @@ const LandingPage = () => {
           variants={fadeInUp}
           className="text-center mt-16"
         >
-          <p className="text-gray-600">
-            ¿Tienes preguntas? <a href="https://wa.me/528186931122" className="text-purple-600 font-semibold hover:underline">Chatea con nosotros en WhatsApp</a>
+          <p className="text-gray-300">
+            ¿Tienes preguntas? <a href="https://wa.me/528186931122" className="text-purple-400 font-semibold hover:underline">Chatea con nosotros en WhatsApp</a>
           </p>
         </motion.div>
       </div>
@@ -1117,17 +1079,17 @@ const LandingPage = () => {
             variants={fadeInUp}
             className="text-gray-600 font-semibold mb-6"
           >
-            Confiado por equipos de ventas en empresas líderes
+            Integraciones y Conectividad
           </motion.p>
           
-          {/* Placeholder for company logos */}
+          {/* Integration options */}
           <motion.div 
             variants={fadeInUp}
-            className="flex flex-wrap justify-center items-center gap-8 md:gap-12 opacity-60"
+            className="flex flex-wrap justify-center items-center gap-8 md:gap-12 opacity-70"
           >
-            {['Company A', 'Company B', 'Company C', 'Company D'].map((company, idx) => (
-              <div key={idx} className="text-gray-400 font-semibold text-lg">
-                {company}
+            {['Stripe', 'Google Analytics', 'N8N', 'Webhooks', 'MCPs', 'ChatGPT', 'Todoist', 'Airtable', 'y más...'].map((integration, idx) => (
+              <div key={idx} className="text-gray-500 font-semibold text-sm md:text-base">
+                {integration}
               </div>
             ))}
           </motion.div>
@@ -1164,7 +1126,7 @@ const LandingPage = () => {
             variants={fadeInUp}
             className="text-xl text-purple-100 mb-10 max-w-2xl mx-auto"
           >
-            Únete a equipos de ventas visionarios que están capturando más clientes, cerrando más tratos y siendo dueños de sus datos de clientes.
+            Transforma tus exposiciones en máquinas de ventas. Captura clientes, aumenta conversiones y controla tus propios datos.
           </motion.p>
 
           <motion.div 
