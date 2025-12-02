@@ -424,7 +424,7 @@ const LandingPage = () => {
             className="flex gap-3"
           >
             <a
-              href="mailto:info0@interzekt.com?subject=Expo360%20-%20Iniciar%20Sesión"
+              href="/signin"
               className="hidden sm:inline-block px-6 py-2 text-sm font-semibold rounded-lg transition-all duration-300 bg-linear-to-r from-blue-400 via-cyan-400 to-pink-400 bg-clip-text text-transparent"
             >
               Iniciar Sesión
@@ -510,7 +510,7 @@ const LandingPage = () => {
               href="#pricing"
               className="group relative px-8 py-4 bg-linear-to-r from-purple-600 to-blue-600 text-white font-semibold rounded-lg overflow-hidden hover:shadow-2xl hover:shadow-purple-600/50 transition-all duration-300 flex items-center gap-2"
             >
-              <span className="relative z-10">Comenzar Ahora</span>
+              <span className="relative z-10">Comienza Ahora</span>
               <ArrowRight className="w-5 h-5 relative z-10 group-hover:translate-x-1 transition-transform" />
               <div className="absolute inset-0 bg-linear-to-r from-blue-600 to-purple-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
             </a>
@@ -571,9 +571,20 @@ const LandingPage = () => {
 
   // ==================== 3-STEP PROCESS ====================
   const StepsSection = () => (
-    <div className="relative py-20 md:py-32 bg-white overflow-hidden">
-      {/* Subtle gradient background */}
-      <div className="absolute inset-0 bg-linear-to-b from-gray-50 to-white"></div>
+    <div className="relative py-20 md:py-32 overflow-hidden">
+      {/* Video background */}
+      <video 
+        autoPlay 
+        muted 
+        loop
+        className="absolute inset-0 w-full h-full object-cover"
+        style={{ position: 'absolute', top: 0, left: 0 }}
+      >
+        <source src="/expo_not_loop.mp4" type="video/mp4" />
+      </video>
+      
+      {/* Overlay for better text readability */}
+      <div className="absolute inset-0 bg-black/55"></div>
       
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div
@@ -585,13 +596,13 @@ const LandingPage = () => {
         >
           <motion.h2 
             variants={fadeInUp}
-            className="text-4xl md:text-5xl font-bold text-slate-900 mb-4"
+            className="text-4xl md:text-5xl font-bold text-white mb-4"
           >
             De Idea a Realidad en 3 Pasos
           </motion.h2>
           <motion.p 
             variants={fadeInUp}
-            className="text-xl text-gray-600 max-w-2xl mx-auto"
+            className="text-xl text-gray-200 max-w-2xl mx-auto"
           >
             Mientras tus competidores siguen planificando, tú ya estás vendiendo.
           </motion.p>
@@ -603,7 +614,9 @@ const LandingPage = () => {
             {
               number: '01',
               title: 'Regístrate',
-              description: 'Crea tu cuenta de Expo360 y cuéntanos sobre tu evento. Solo toma 2 minutos.'
+              description: 'Crea tu cuenta de ',
+              hasLogo: true,
+              descriptionAfter: ' y cuéntanos sobre tu evento. Solo toma 2 minutos.'
             },
             {
               number: '02',
@@ -645,6 +658,13 @@ const LandingPage = () => {
                 {/* Description */}
                 <p className="text-gray-600 leading-relaxed">
                   {step.description}
+                  {step.hasLogo && (
+                    <>
+                      <img src="/expo360.png" alt="Expo360" className="inline h-10 mx-1" />
+                      {step.descriptionAfter}
+                    </>
+                  )}
+                  {!step.hasLogo && step.description}
                 </p>
               </div>
             </motion.div>
@@ -1152,7 +1172,7 @@ const LandingPage = () => {
               href="mailto:info0@interzekt.com?subject=Expo360%20-%20Listo%20para%20Comenzar"
               className="group relative px-10 py-4 bg-white text-purple-600 font-bold rounded-lg hover:shadow-2xl transition-all duration-300 flex items-center gap-2"
             >
-              <span>Comenzar Ahora</span>
+              <span>Comienza Ahora</span>
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </a>
             <a
