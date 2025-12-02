@@ -167,7 +167,7 @@ const LandingPage = () => {
 
         {/* Form Content */}
         <div className="p-8">
-          <p className="text-gray-600 mb-6">Completa el formulario para ver Expo360 en acción y recibir una propuesta personalizada.</p>
+          <p className="text-gray-600 mb-6">Completa el formulario para ver <img src="/expo360.png" alt="Expo360" className="inline h-10 mx-1" /> en acción y recibir una propuesta personalizada.</p>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -750,8 +750,9 @@ const LandingPage = () => {
 
   // ==================== PRICING SECTION ====================
   const PricingSection = () => (
-    <div className="relative py-20 md:py-32 bg-white overflow-hidden">
-      <div className="absolute inset-0 bg-linear-to-b from-gray-50 to-white"></div>
+    <div id="pricing" className="relative py-20 md:py-32 overflow-hidden">
+      {/* Gradient Background */}
+      <div className="absolute inset-0 bg-linear-to-br from-slate-900 via-purple-900 to-slate-900"></div>
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div
@@ -763,26 +764,26 @@ const LandingPage = () => {
         >
           <motion.h2 
             variants={fadeInUp}
-            className="text-4xl md:text-5xl font-bold text-slate-900 mb-4"
+            className="text-4xl md:text-5xl font-bold text-white mb-4"
           >
             Precios Simples y Transparentes
           </motion.h2>
           <motion.p 
             variants={fadeInUp}
-            className="text-xl text-gray-600 max-w-2xl mx-auto mb-8"
+            className="text-xl text-gray-300 max-w-2xl mx-auto mb-8"
           >
             Elige lo que mejor funcione para tu negocio. Sin tarifas ocultas.
           </motion.p>
 
           {/* Billing toggle */}
           <motion.div variants={fadeInUp} className="flex justify-center mb-12">
-            <div className="bg-gray-100 rounded-lg p-1 flex gap-1">
+            <div className="bg-white/10 rounded-lg p-1 flex gap-1">
               <button
                 onClick={() => setAnnualBillingSelected(false)}
                 className={`px-6 py-2 rounded-md font-semibold transition-all ${
                   !annualBillingSelected
                     ? 'bg-white text-purple-600 shadow-md'
-                    : 'text-gray-600'
+                    : 'text-gray-300'
                 }`}
               >
                 Una Sola Expo
@@ -792,7 +793,7 @@ const LandingPage = () => {
                 className={`px-6 py-2 rounded-md font-semibold transition-all ${
                   annualBillingSelected
                     ? 'bg-white text-purple-600 shadow-md'
-                    : 'text-gray-600'
+                    : 'text-gray-300'
                 }`}
               >
                 Plan Anual
@@ -809,25 +810,25 @@ const LandingPage = () => {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-linear-to-br from-white to-gray-50 border-2 border-gray-200 rounded-2xl p-8 relative overflow-hidden"
+              className="bg-linear-to-br from-white/10 to-white/5 border-2 border-white/20 rounded-2xl p-8 relative overflow-hidden"
             >
               {/* Badge */}
               <div className="absolute top-0 right-0 bg-green-500 text-white px-4 py-1 text-sm font-semibold rounded-bl-lg">
                 Más Popular
               </div>
 
-              <h3 className="text-2xl font-bold text-slate-900 mb-2">
+              <h3 className="text-2xl font-bold text-white mb-2">
                 Una Sola Expo
               </h3>
-              <p className="text-gray-600 mb-6">
+              <p className="text-gray-300 mb-6">
                 Perfecto para probar o para una única exposición
               </p>
 
               {/* Price */}
               <div className="mb-8">
-                <div className="text-5xl font-bold text-slate-900">$15,000</div>
-                <p className="text-gray-600 mt-2">MXN pago único</p>
-                <p className="text-green-600 text-sm mt-3 font-semibold">
+                <div className="text-5xl font-bold text-white">$15,000</div>
+                <p className="text-gray-300 mt-2">MXN pago único</p>
+                <p className="text-green-400 text-sm mt-3 font-semibold">
                   + 1 mes de acceso a todas las funciones premium
                 </p>
               </div>
@@ -843,8 +844,8 @@ const LandingPage = () => {
                   '1 mes completo de acceso premium'
                 ].map((feature, idx) => (
                   <li key={idx} className="flex items-start gap-3">
-                    <Check className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />
-                    <span className="text-gray-700">{feature}</span>
+                    <Check className="w-5 h-5 text-green-400 shrink-0 mt-0.5" />
+                    <span className="text-gray-200">{feature}</span>
                   </li>
                 ))}
               </ul>
@@ -858,7 +859,7 @@ const LandingPage = () => {
               </a>
 
               {/* Data export note */}
-              <p className="text-xs text-gray-500 mt-4 text-center">
+              <p className="text-xs text-gray-400 mt-4 text-center">
                 El primer mes incluye acceso completo. Después puedes continuar con el plan anual.
               </p>
             </motion.div>

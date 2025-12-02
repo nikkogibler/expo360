@@ -271,7 +271,7 @@ export default function OnboardingPage() {
           >
             <div className="mb-6">
               <h2 className="text-2xl font-bold text-gray-900 mb-2">Solicita una Demostración Personalizada</h2>
-              <p className="text-gray-600">Completa el formulario para ver Expo360 en acción y recibir una propuesta personalizada.</p>
+              <p className="text-gray-600">Completa el formulario para ver <img src="/expo360.png" alt="Expo360" className="inline h-10 mx-1" /> en acción y recibir una propuesta personalizada.</p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
