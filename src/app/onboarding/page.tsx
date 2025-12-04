@@ -168,9 +168,9 @@ export default function OnboardingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-linear-to-br from-slate-900 via-purple-900 to-slate-900">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200">
+      <div className="bg-linear-to-br from-slate-900 via-purple-900 to-slate-900 border-b border-purple-800">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <Link href="/">
             <div className="flex items-center space-x-2 cursor-pointer">
@@ -198,10 +198,10 @@ export default function OnboardingPage() {
             className="space-y-8"
           >
             <motion.div variants={fadeInUp}>
-              <h2 className="text-3xl font-bold text-gray-900 mb-6">
+              <h2 className="text-3xl font-bold text-white mb-6">
                 ¿Qué es Expo360?
               </h2>
-              <p className="text-lg text-gray-700 mb-6">
+              <p className="text-lg text-gray-200 mb-6">
                 Expo360 by Interzekt™ redefine la forma en que las empresas exhiben sus productos en ferias, exposiciones y salas de exhibición. Nuestra plataforma digital interactiva transforma las exhibiciones de productos tradicionales en experiencias personalizadas y dinámicas, que cautivan y convierten a los visitantes en clientes.
               </p>
             </motion.div>
@@ -214,8 +214,8 @@ export default function OnboardingPage() {
                   </svg>
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Experiencia Digital Completa</h3>
-                  <p className="text-gray-600">Catálogos interactivos con códigos QR, carrito digital y favoritos personalizables</p>
+                  <h3 className="text-lg font-semibold text-white mb-2">Experiencia Digital Completa</h3>
+                  <p className="text-gray-300">Catálogos interactivos con códigos QR, carrito digital y favoritos personalizables</p>
                 </div>
               </div>
 
@@ -226,8 +226,8 @@ export default function OnboardingPage() {
                   </svg>
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Pagos y Cotizaciones Integrados</h3>
-                  <p className="text-gray-600">Procesamiento seguro con Stripe, MercadoPago y cotizaciones en tiempo real</p>
+                  <h3 className="text-lg font-semibold text-white mb-2">Pagos y Cotizaciones Integrados</h3>
+                  <p className="text-gray-300">Procesamiento seguro con Stripe, MercadoPago y cotizaciones en tiempo real</p>
                 </div>
               </div>
 
@@ -238,8 +238,8 @@ export default function OnboardingPage() {
                   </svg>
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Múltiples Industrias</h3>
-                  <p className="text-gray-600">Ideal para muebles, equipo, retail y más con integración CRM automática</p>
+                  <h3 className="text-lg font-semibold text-white mb-2">Múltiples Industrias</h3>
+                  <p className="text-gray-300">Ideal para muebles, equipo, retail y más con integración CRM automática</p>
                 </div>
               </div>
             </motion.div>
@@ -248,8 +248,8 @@ export default function OnboardingPage() {
               variants={fadeInUp}
               className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6 border border-blue-100"
             >
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">¿Listo para tu Próxima Exposición?</h3>
-              <p className="text-gray-700 mb-4">
+              <h3 className="text-xl font-semibold text-white mb-3">¿Listo para tu Próxima Exposición?</h3>
+              <p className="text-gray-200 mb-4">
                 Ya seas un expositor que busca maximizar la interacción en su stand, el dueño de una sala de exhibición que quiere mejorar la experiencia del cliente, o un negocio minorista que une las compras físicas y digitales, <strong>Expo360 es tu solución definitiva.</strong>
               </p>
               <div className="flex items-center text-sm text-blue-600">
@@ -267,17 +267,17 @@ export default function OnboardingPage() {
             whileInView="visible"
             viewport={{ once: true }}
             variants={fadeInUp}
-            className="bg-white rounded-xl shadow-lg border border-gray-200 p-8"
+            className="bg-white/10 backdrop-blur-lg rounded-xl shadow-lg border border-white/20 p-8"
           >
             <div className="mb-6">
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Solicita una Demostración Personalizada</h2>
-              <p className="text-gray-600">Completa el formulario para ver <img src="/expo360.png" alt="Expo360" className="inline h-10 mx-1" /> en acción y recibir una propuesta personalizada.</p>
+              <h2 className="text-2xl font-bold text-white mb-2">Solicita una Demostración Personalizada</h2>
+              <p className="text-gray-200">Completa el formulario para ver <img src="/expo360.png" alt="Expo360" className="inline h-10 mx-1" /> en acción y recibir una propuesta personalizada.</p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="firstName" className="block text-sm font-medium text-white mb-1">
                     Nombre *
                   </label>
                   <input
@@ -287,11 +287,11 @@ export default function OnboardingPage() {
                     value={formData.firstName}
                     onChange={handleInputChange}
                     required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-white/20 bg-white/10 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent backdrop-blur-sm"
                   />
                 </div>
                 <div>
-                  <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="lastName" className="block text-sm font-medium text-white mb-1">
                     Apellido *
                   </label>
                   <input
@@ -301,13 +301,13 @@ export default function OnboardingPage() {
                     value={formData.lastName}
                     onChange={handleInputChange}
                     required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-white/20 bg-white/10 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent backdrop-blur-sm"
                   />
                 </div>
               </div>
 
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="email" className="block text-sm font-medium text-white mb-1">
                   Correo Electrónico *
                 </label>
                 <input
@@ -317,13 +317,13 @@ export default function OnboardingPage() {
                   value={formData.email}
                   onChange={handleInputChange}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-white/20 bg-white/10 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent backdrop-blur-sm"
                 />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="company" className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="company" className="block text-sm font-medium text-white mb-1">
                     Empresa *
                   </label>
                   <input
@@ -333,11 +333,11 @@ export default function OnboardingPage() {
                     value={formData.company}
                     onChange={handleInputChange}
                     required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-white/20 bg-white/10 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent backdrop-blur-sm"
                   />
                 </div>
                 <div>
-                  <label htmlFor="jobTitle" className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="jobTitle" className="block text-sm font-medium text-white mb-1">
                     Cargo
                   </label>
                   <input
@@ -346,13 +346,13 @@ export default function OnboardingPage() {
                     name="jobTitle"
                     value={formData.jobTitle}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-white/20 bg-white/10 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent backdrop-blur-sm"
                   />
                 </div>
               </div>
 
               <div>
-                <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="phone" className="block text-sm font-medium text-white mb-1">
                   Número de WhatsApp
                 </label>
                 <input
@@ -361,12 +361,12 @@ export default function OnboardingPage() {
                   name="phone"
                   value={formData.phone}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-white/20 bg-white/10 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent backdrop-blur-sm"
                 />
               </div>
 
               <div>
-                <label htmlFor="industry" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="industry" className="block text-sm font-medium text-white mb-1">
                   Industria
                 </label>
                 <select
@@ -374,7 +374,7 @@ export default function OnboardingPage() {
                   name="industry"
                   value={formData.industry}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-white/20 bg-white/10 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent backdrop-blur-sm"
                 >
                   <option value="">Selecciona tu industria</option>
                   {industryOptions.map((industry) => (
@@ -386,7 +386,7 @@ export default function OnboardingPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-white mb-2">
                   Áreas de Interés (Selecciona todas las que apliquen)
                 </label>
                 <div className="grid grid-cols-2 gap-2">
@@ -396,16 +396,16 @@ export default function OnboardingPage() {
                         type="checkbox"
                         checked={formData.interests.includes(interest)}
                         onChange={() => handleInterestChange(interest)}
-                        className="mr-2 text-blue-600 focus:ring-blue-500"
+                        className="mr-2 text-purple-600 focus:ring-purple-500"
                       />
-                      <span className="text-sm text-gray-700">{interest}</span>
+                      <span className="text-sm text-gray-200">{interest}</span>
                     </label>
                   ))}
                 </div>
               </div>
 
               <div>
-                <label htmlFor="eventName" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="eventName" className="block text-sm font-medium text-white mb-1">
                   Nombre del Evento/Feria Comercial
                 </label>
                 <input
@@ -415,12 +415,12 @@ export default function OnboardingPage() {
                   value={formData.eventName}
                   onChange={handleInputChange}
                   placeholder="¿Dónde nos encontraste?"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-white/20 bg-white/10 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent backdrop-blur-sm"
                 />
               </div>
 
               <div>
-                <label htmlFor="howDidYouHear" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="howDidYouHear" className="block text-sm font-medium text-white mb-1">
                   ¿Cómo te enteraste de nosotros?
                 </label>
                 <select
@@ -428,22 +428,21 @@ export default function OnboardingPage() {
                   name="howDidYouHear"
                   value={formData.howDidYouHear}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  <option value="">Selecciona una opción</option>
-                  <option value="Stand de Feria Comercial">Stand de Feria Comercial</option>
-                  <option value="Folleto/Volante">Folleto/Volante</option>
-                  <option value="Referencia">Referencia</option>
-                  <option value="Búsqueda en Línea">Búsqueda en Línea</option>
-                  <option value="Redes Sociales">Redes Sociales</option>
-                  <option value="Otro">Otro</option>
+                  className="w-full px-3 py-2 border border-white/20 bg-white/10 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent backdrop-blur-sm">
+                  <option value="" className="bg-slate-900">Selecciona una opción</option>
+                  <option value="Stand de Feria Comercial" className="bg-slate-900">Stand de Feria Comercial</option>
+                  <option value="Folleto/Volante" className="bg-slate-900">Folleto/Volante</option>
+                  <option value="Referencia" className="bg-slate-900">Referencia</option>
+                  <option value="Búsqueda en Línea" className="bg-slate-900">Búsqueda en Línea</option>
+                  <option value="Redes Sociales" className="bg-slate-900">Redes Sociales</option>
+                  <option value="Otro" className="bg-slate-900">Otro</option>
                 </select>
               </div>
 
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold py-3 px-6 rounded-md hover:from-blue-700 hover:to-purple-700 transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                className="w-full bg-linear-to-r from-purple-600 to-blue-600 text-white font-semibold py-3 px-6 rounded-md hover:from-purple-700 hover:to-blue-700 transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
               >
                 {isSubmitting ? 'Enviando...' : 'Ver Demostración de Expo360'}
               </button>
@@ -459,16 +458,16 @@ export default function OnboardingPage() {
               )}
             </form>
 
-            <div className="mt-6 pt-6 border-t border-gray-200">
-              <div className="flex items-center justify-center space-x-6 text-sm text-gray-500">
+            <div className="mt-6 pt-6 border-t border-white/20">
+              <div className="flex items-center justify-center space-x-6 text-sm text-gray-300">
                 <span className="flex items-center">
-                  <svg className="w-4 h-4 mr-1 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                  <svg className="w-4 h-4 mr-1 text-green-400" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                   </svg>
                   Seguro y Privado
                 </span>
                 <span className="flex items-center">
-                  <svg className="w-4 h-4 mr-1 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+                  <svg className="w-4 h-4 mr-1 text-purple-400" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                   </svg>
                   Sin Spam Garantizado

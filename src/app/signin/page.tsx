@@ -54,7 +54,7 @@ export default function SignInPage() {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center px-4 backdrop-blur-sm bg-black/30">
+    <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-linear-to-br from-slate-900 via-purple-900 to-slate-900">
       <motion.div
         initial="hidden"
         animate="visible"
