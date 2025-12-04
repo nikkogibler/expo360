@@ -844,7 +844,7 @@ const LandingPage = () => {
             variants={fadeInUp}
             className="text-4xl md:text-5xl font-bold text-white mb-4"
           >
-            Precios Simples y Transparentes
+            Precios Sencillos y Transparentes
           </motion.h2>
           <motion.p 
             variants={fadeInUp}
