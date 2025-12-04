@@ -171,14 +171,14 @@ export default function OnboardingPage() {
     <div className="min-h-screen bg-linear-to-br from-slate-900 via-purple-900 to-slate-900">
       {/* Header */}
       <div className="bg-linear-to-br from-slate-900 via-purple-900 to-slate-900 border-b border-purple-800">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <Link href="/">
-            <div className="flex items-center space-x-2 cursor-pointer">
+            <div className="flex justify-center cursor-pointer">
               <Image
                 src="/expo360_logo.png"
                 alt="Expo360"
-                width={120}
-                height={60}
+                width={240}
+                height={120}
               />
             </div>
           </Link>
@@ -244,15 +244,15 @@ export default function OnboardingPage() {
               </div>
             </motion.div>
 
-            <motion.div 
+            <motion.div
               variants={fadeInUp}
-              className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6 border border-blue-100"
+              className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-purple-500/50"
             >
               <h3 className="text-xl font-semibold text-white mb-3">¿Listo para tu Próxima Exposición?</h3>
               <p className="text-gray-200 mb-4">
-                Ya seas un expositor que busca maximizar la interacción en su stand, el dueño de una sala de exhibición que quiere mejorar la experiencia del cliente, o un negocio minorista que une las compras físicas y digitales, <strong>Expo360 es tu solución definitiva.</strong>
+                Ya seas un expositor que busca maximizar la interacción en su stand, el dueño de una sala de exhibición que quiere mejorar la experiencia del cliente, o un negocio minorista que une las compras físicas y digitales, <strong className="text-purple-300">Expo360 es tu solución definitiva.</strong>
               </p>
-              <div className="flex items-center text-sm text-blue-600">
+              <div className="flex items-center text-sm text-purple-300">
                 <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                 </svg>
@@ -271,7 +271,7 @@ export default function OnboardingPage() {
           >
             <div className="mb-6">
               <h2 className="text-2xl font-bold text-white mb-2">Solicita una Demostración Personalizada</h2>
-              <p className="text-gray-200">Completa el formulario para ver <img src="/expo360.png" alt="Expo360" className="inline h-10 mx-1" /> en acción y recibir una propuesta personalizada.</p>
+              <p className="text-gray-200">Completa el formulario para ver <img src="/expo360_logo.png" alt="Expo360" className="inline-block h-12 mx-1 align-middle object-cover object-center" style={{aspectRatio: '3/1', objectPosition: 'center 50%'}} /> en acción y recibir una propuesta personalizada.</p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">

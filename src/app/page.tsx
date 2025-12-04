@@ -229,7 +229,7 @@ const LandingPage = () => {
 
         {/* Form Content */}
         <div className="p-8">
-          <p className="text-gray-600 mb-6">Completa el formulario para ver <img src="/expo360.png" alt="Expo360" className="inline h-10 mx-1" /> en acción y recibir una propuesta personalizada.</p>
+          <p className="text-gray-600 mb-6">Completa el formulario para ver <img src="/expo360_logo.png" alt="Expo360" className="inline-block h-12 mx-1 align-middle object-cover object-center" style={{aspectRatio: '3/1', objectPosition: 'center 50%'}} /> en acción y recibir una propuesta personalizada.</p>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -716,7 +716,7 @@ const LandingPage = () => {
                   {step.description}
                   {step.hasLogo && (
                     <>
-                      <img src="/expo360.png" alt="Expo360" className="inline h-10 mx-1" />
+                      <img src="/expo360_logo.png" alt="Expo360" className="inline-block h-12 mx-1 align-middle object-cover object-center" style={{aspectRatio: '3/1', objectPosition: 'center 50%'}} />
                       {step.descriptionAfter}
                     </>
                   )}

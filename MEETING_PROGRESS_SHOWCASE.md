@@ -64,7 +64,7 @@ We've successfully built and launched **Expo360**, a comprehensive SaaS platform
   - Hero section with animated background
   - 3-step process visualization
   - 6 benefit cards with hover animations
-  - Dual pricing plans (One-Time & Annual) with toggle
+  - 3 pricing plans (Una Sola Expo, Plan Anual, Soluciones a Medida) - All visible simultaneously
   - Social proof section
   - Multiple CTAs optimized for conversions
   - Footer with company information
@@ -102,7 +102,7 @@ We've successfully built and launched **Expo360**, a comprehensive SaaS platform
 - **What:** Multi-payment gateway support
 - **Integrated:**
   - ✅ Stripe (international payments)
-  - ✅ MercadoPago (Latin America)
+  - ✅ MercadoPago (Latin America) Maybe not.
 - **Features:**
   - Checkout flow with order summary
   - Success/failure handling
