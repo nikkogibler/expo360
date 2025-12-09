@@ -44,7 +44,7 @@ export default async function AdminPage() {
     .maybeSingle();
 
   let client = null;
-  let logoUrl = null;
+  let logoUrl: string | undefined;
 
   if (userClient) {
     const { data: clientData } = await supabase

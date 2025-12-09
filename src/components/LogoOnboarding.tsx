@@ -191,7 +191,7 @@ export default function LogoOnboarding({ client, onComplete }: LogoOnboardingPro
             <input
               type="file"
               accept="image/png"
-              onChange={(e) => handleFileUpload(e, step)}
+              onChange={(e) => handleFileUpload(e, step as 'client' | 'expo')}
               disabled={uploading}
               className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
             />
