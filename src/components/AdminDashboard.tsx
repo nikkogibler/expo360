@@ -732,13 +732,13 @@ const MagicBento: React.FC<BentoProps & { client?: any; logoUrl?: string }> = ({
         />
       )}
       <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
-        <div style={{ height: '80px', width: '100%', position: 'relative', marginTop: '2.5rem', marginBottom: '2rem' }}>
+        <div style={{ height: '160px', width: '100%', position: 'relative', marginTop: '2.5rem', marginBottom: '2rem' }}>
           <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
             <Image
               src={logoUrl || ctxLogo || '/logo.png'}
               alt={(client || {}).name ? `${(client || {}).name} logo` : 'Company Logo'}
-              width={200}
-              height={60}
+              width={400}
+              height={120}
               style={{ objectFit: 'contain', display: 'block', margin: '0 auto', maxWidth: '100%', maxHeight: '100%' }}
               priority
             />

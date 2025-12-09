@@ -1,10 +1,15 @@
 "use client";
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabase } from '../../../../lib/supabaseClient';
+import { createBrowserClient } from '@supabase/ssr';
 import { useAdminAuth } from '../../../hooks/useAdminAuth';
+import Image from 'next/image';
 
 export default function AdminSettings() {
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -14,6 +19,15 @@ export default function AdminSettings() {
   const [userEmail, setUserEmail] = useState('');
   const [userName, setUserName] = useState('');
   
+  // Logo management state
+  const [client, setClient] = useState<any>(null);
+  const [expo, setExpo] = useState<any>(null);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [logoMessage, setLogoMessage] = useState('');
+  const [logoError, setLogoError] = useState('');
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [expoLogoUrl, setExpoLogoUrl] = useState<string | null>(null);
+
   const router = useRouter();
   const isAuthenticated = useAdminAuth();
 
@@ -34,6 +48,48 @@ export default function AdminSettings() {
         if (profile) {
           setUserName(profile.full_name || profile.name || '');
         }
+
+        // Fetch client and expo data
+        const { data: userClient } = await supabase
+            .from('user_clients')
+            .select('client_id')
+            .eq('user_id', user.id)
+            .maybeSingle();
+            
+        if (userClient) {
+            const { data: clientData } = await supabase
+                .from('clients')
+                .select('*')
+                .eq('id', userClient.client_id)
+                .single();
+            setClient(clientData);
+            
+            if (clientData && clientData.logo_path) {
+                 const { data: publicData } = supabase.storage
+                  .from('expo360-clients-assets')
+                  .getPublicUrl(clientData.logo_path);
+                 setLogoUrl(publicData.publicUrl);
+            }
+            
+            if (clientData) {
+                 const { data: expos } = await supabase
+                    .from('expos')
+                    .select('*')
+                    .eq('client_id', clientData.id)
+                    .order('created_at', { ascending: true })
+                    .limit(1);
+                 const firstExpo = expos?.[0];
+                 setExpo(firstExpo);
+
+                 if (firstExpo && firstExpo.logo_path) {
+                    const { data: publicData } = supabase.storage
+                     .from('expo360-clients-assets')
+                     .getPublicUrl(firstExpo.logo_path);
+                    setExpoLogoUrl(publicData.publicUrl);
+                 }
+            }
+        }
+
       } else {
         // Fallback to cookie for email-based admin
         const email = document.cookie
@@ -50,6 +106,88 @@ export default function AdminSettings() {
       getCurrentUser();
     }
   }, [isAuthenticated]);
+
+  const handleLogoUpload = async (event: React.ChangeEvent<HTMLInputElement>, type: 'client' | 'expo') => {
+    try {
+      setLogoError('');
+      setLogoMessage('');
+      setUploadingLogo(true);
+
+      if (!event.target.files || event.target.files.length === 0) {
+        return;
+      }
+
+      const file = event.target.files[0];
+      
+      // Validation
+      if (file.size > 3 * 1024 * 1024) {
+        throw new Error('El archivo debe pesar menos de 3MB.');
+      }
+      if (file.type !== 'image/png') {
+        throw new Error('Solo se permiten archivos PNG.');
+      }
+
+      if (!client) throw new Error('No se encontró información del cliente.');
+
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random()}.${fileExt}`;
+      const filePath = `${client.slug}/${type}_logos/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('expo360-clients-assets')
+        .upload(filePath, file);
+
+      if (uploadError) {
+        console.error('Upload Error:', uploadError);
+        throw new Error(`Error al subir: ${uploadError.message}`);
+      }
+
+      // Update DB
+      if (type === 'client') {
+        const { error: updateError } = await supabase
+          .from('clients')
+          .update({ logo_path: filePath })
+          .eq('id', client.id);
+        
+        if (updateError) {
+            throw new Error(`Error al actualizar base de datos: ${updateError.message}`);
+        }
+        
+        // Update local state
+        const { data: publicData } = supabase.storage
+            .from('expo360-clients-assets')
+            .getPublicUrl(filePath);
+        setLogoUrl(publicData.publicUrl);
+        setLogoMessage('Logotipo de empresa actualizado correctamente.');
+
+      } else {
+        if (!expo) throw new Error('No se encontró información del evento.');
+
+        const { error: updateError } = await supabase
+          .from('expos')
+          .update({ logo_path: filePath })
+          .eq('id', expo.id);
+
+        if (updateError) {
+            throw new Error(`Error al actualizar base de datos: ${updateError.message}`);
+        }
+
+        // Update local state
+        const { data: publicData } = supabase.storage
+            .from('expo360-clients-assets')
+            .getPublicUrl(filePath);
+        setExpoLogoUrl(publicData.publicUrl);
+        setLogoMessage('Logotipo del evento actualizado correctamente.');
+      }
+      
+      router.refresh();
+
+    } catch (err: any) {
+      setLogoError(err.message);
+    } finally {
+      setUploadingLogo(false);
+    }
+  };
 
   const validatePassword = (password: string): string[] => {
     const errors: string[] = [];
@@ -271,6 +409,89 @@ export default function AdminSettings() {
               )}
             </button>
           </form>
+        </div>
+
+        {/* Logo Management Section */}
+        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+          <h2 className="text-xl font-semibold text-gray-800 mb-6 pb-2 border-b border-gray-200">
+            Gestión de Logotipos
+          </h2>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {/* Company Logo */}
+            <div className="border rounded-lg p-4 bg-gray-50">
+                <h3 className="font-medium text-gray-700 mb-3">Logotipo de Empresa</h3>
+                <div className="flex flex-col items-center gap-4">
+                    <div className="w-full h-32 bg-white border border-gray-200 rounded flex items-center justify-center overflow-hidden relative">
+                        {logoUrl ? (
+                            <Image 
+                                src={logoUrl} 
+                                alt="Company Logo" 
+                                fill
+                                style={{ objectFit: 'contain', padding: '1rem' }}
+                            />
+                        ) : (
+                            <span className="text-gray-400 text-sm">Sin logotipo</span>
+                        )}
+                    </div>
+                    <label className="cursor-pointer bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-md text-sm font-medium transition-colors w-full text-center">
+                        {uploadingLogo ? 'Subiendo...' : 'Cambiar Logo Empresa'}
+                        <input 
+                            type="file" 
+                            className="hidden" 
+                            accept="image/png"
+                            disabled={uploadingLogo}
+                            onChange={(e) => handleLogoUpload(e, 'client')}
+                        />
+                    </label>
+                </div>
+            </div>
+
+            {/* Expo Logo */}
+            <div className="border rounded-lg p-4 bg-gray-50">
+                <h3 className="font-medium text-gray-700 mb-3">Logotipo de Expo #1</h3>
+                <div className="flex flex-col items-center gap-4">
+                    <div className="w-full h-32 bg-white border border-gray-200 rounded flex items-center justify-center overflow-hidden relative">
+                        {expoLogoUrl ? (
+                            <Image 
+                                src={expoLogoUrl} 
+                                alt="Expo Logo" 
+                                fill
+                                style={{ objectFit: 'contain', padding: '1rem' }}
+                            />
+                        ) : (
+                            <span className="text-gray-400 text-sm">Sin logotipo</span>
+                        )}
+                    </div>
+                    <label className="cursor-pointer bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-md text-sm font-medium transition-colors w-full text-center">
+                        {uploadingLogo ? 'Subiendo...' : 'Cambiar Logo Evento'}
+                        <input 
+                            type="file" 
+                            className="hidden" 
+                            accept="image/png"
+                            disabled={uploadingLogo}
+                            onChange={(e) => handleLogoUpload(e, 'expo')}
+                        />
+                    </label>
+                </div>
+            </div>
+          </div>
+
+          {logoError && (
+              <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
+                <p className="text-red-700 text-sm">{logoError}</p>
+              </div>
+          )}
+
+          {logoMessage && (
+              <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-md">
+                <p className="text-green-700 text-sm">{logoMessage}</p>
+              </div>
+          )}
+          
+          <p className="text-xs text-gray-500 mt-4">
+            * Solo archivos PNG. Máximo 3MB. Fondo transparente recomendado.
+          </p>
         </div>
 
         {/* Security Note */}

@@ -4,28 +4,53 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowRight, Mail, Lock, Eye, EyeOff, Github, Chrome, X } from 'lucide-react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { createBrowserClient } from '@supabase/ssr';
 
 export default function SignInPage() {
   const router = useRouter();
-  const [email, setEmail] = useState('');
+  const searchParams = useSearchParams();
+  const [email, setEmail] = useState(searchParams.get('email') || '');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(searchParams.get('message') === 'account_created' ? 'Account created! Please sign in.' : '');
+  const [successMessage, setSuccessMessage] = useState(searchParams.get('message') === 'account_created' ? 'Account created successfully! Please sign in.' : '');
+
+  // Initialize Supabase client
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setSuccessMessage('');
     setIsLoading(true);
 
     try {
-      // TODO: Add your authentication logic here
-      console.log('Sign in attempt:', { email, password });
-      // For now, just show a message
-      setError('Sign-in functionality coming soon. Contact info0@interzekt.com');
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (signInError) {
+        setError(signInError.message);
+      } else if (data.user) {
+        // Set the user email cookie for the admin layout to check
+        await fetch('/api/auth/set-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: data.user.email }),
+        });
+        // Redirect to admin dashboard
+        router.push('/admin');
+        router.refresh(); // Refresh to update server components with new session
+      }
     } catch (err) {
-      setError('An error occurred during sign-in');
+      console.error('Sign in error:', err);
+      setError('An unexpected error occurred during sign-in');
     } finally {
       setIsLoading(false);
     }
@@ -83,6 +108,28 @@ export default function SignInPage() {
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-1 -mt-20">
+              
+              {/* Messages */}
+              {error && (
+                <motion.div 
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="bg-red-500/20 border border-red-500/50 text-red-200 text-xs p-3 rounded-lg mb-4"
+                >
+                  {error}
+                </motion.div>
+              )}
+
+              {successMessage && (
+                <motion.div 
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="bg-green-500/20 border border-green-500/50 text-green-200 text-xs p-3 rounded-lg mb-4"
+                >
+                  {successMessage}
+                </motion.div>
+              )}
+
               {/* Email Field */}
               <motion.div variants={itemVariants}>
                 <label className="block text-xs font-semibold text-gray-200 mb-1">
@@ -102,7 +149,7 @@ export default function SignInPage() {
               </motion.div>
 
               {/* Password Field */}
-              <motion.div variants={itemVariants}>
+              <motion.div variants={itemVariants} className="pt-4">
                 <label className="block text-xs font-semibold text-gray-200 mb-1">
                   Contraseña
                 </label>
@@ -130,103 +177,69 @@ export default function SignInPage() {
                 </div>
               </motion.div>
 
-              {/* Remember me and forgot password */}
-              <motion.div
-                variants={itemVariants}
-                className="flex items-center justify-between text-xs"
-              >
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" className="w-4 h-4 rounded bg-white/10 border border-white/20 cursor-pointer" />
-                  <span className="text-gray-300">Recuérdame</span>
-                </label>
-                <a href="#" className="text-purple-400 hover:text-purple-300 transition">
+              {/* Forgot Password Link */}
+              <motion.div variants={itemVariants} className="flex justify-end pt-2">
+                <Link
+                  href="/forgot-password"
+                  className="text-xs text-purple-300 hover:text-purple-200 transition-colors"
+                >
                   ¿Olvidaste tu contraseña?
-                </a>
+                </Link>
               </motion.div>
 
-              {/* Error message */}
-              {error && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="p-3 bg-red-500/20 border border-red-500/50 rounded-lg text-red-300 text-sm"
+              {/* Submit Button */}
+              <motion.div variants={itemVariants} className="pt-6">
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="w-full bg-linear-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white font-bold py-2 px-4 rounded-lg shadow-lg transform transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center group"
                 >
-                  {error}
-                </motion.div>
-              )}
+                  {isLoading ? (
+                    <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  ) : (
+                    <>
+                      Iniciar Sesión
+                      <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                    </>
+                  )}
+                </button>
+              </motion.div>
+          </form>
 
-              {/* Submit button */}
-              <motion.button
-                variants={itemVariants}
-                type="submit"
-                disabled={isLoading}
-                className="w-full py-2 bg-linear-to-r from-purple-600 to-blue-600 text-white font-semibold rounded-lg hover:shadow-2xl hover:shadow-purple-600/50 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 group text-sm"
-              >
-                {isLoading ? (
-                  <>
-                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    Iniciando sesión...
-                  </>
-                ) : (
-                  <>
-                    Iniciar Sesión
-                    <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                  </>
-                )}
-              </motion.button>
-            </form>
+          {/* Divider */}
+          <motion.div variants={itemVariants} className="relative py-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-white/10"></div>
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-transparent px-2 text-gray-400">
+                O continúa con
+              </span>
+            </div>
+          </motion.div>
 
-            {/* Divider */}
-            <motion.div
-              variants={itemVariants}
-              className="my-0.5 flex items-center gap-2"
-            >
-              <div className="flex-1 h-px bg-white/20"></div>
-              <span className="text-gray-400 text-xs">O</span>
-              <div className="flex-1 h-px bg-white/20"></div>
-            </motion.div>
+          {/* Social Login */}
+          <motion.div variants={itemVariants} className="grid grid-cols-2 gap-4">
+            <button className="flex items-center justify-center px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition-all duration-200 group">
+              <Github className="w-5 h-5 text-white group-hover:scale-110 transition-transform" />
+            </button>
+            <button className="flex items-center justify-center px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition-all duration-200 group">
+              <Chrome className="w-5 h-5 text-white group-hover:scale-110 transition-transform" />
+            </button>
+          </motion.div>
 
-            {/* Social buttons */}
-            <motion.div
-              variants={itemVariants}
-              className="grid grid-cols-2 gap-1.5"
-            >
-              <button className="flex items-center justify-center gap-1 py-1.5 bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg text-white transition-all duration-300 group">
-                <Chrome className="w-3 h-3" />
-                <span className="text-xs font-semibold hidden sm:inline">Google</span>
-              </button>
-              <button className="flex items-center justify-center gap-1 py-1.5 bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg text-white transition-all duration-300 group">
-                <Github className="w-3 h-3" />
-                <span className="text-xs font-semibold hidden sm:inline">GitHub</span>
-              </button>
-            </motion.div>
-
-            {/* Sign up link */}
-            <motion.p
-              variants={itemVariants}
-              className="text-center mt-0.5 text-gray-300 text-xs"
-            >
-              ¿No tienes cuenta?{' '}
+          {/* Sign Up Link */}
+          <motion.div variants={itemVariants} className="mt-6 text-center">
+            <p className="text-xs text-gray-400">
+              ¿No tienes una cuenta?{' '}
               <Link
-                href="/"
-                className="text-purple-400 hover:text-purple-300 font-semibold transition-colors"
+                href="/onboarding"
+                className="text-purple-300 hover:text-purple-200 font-semibold transition-colors"
               >
                 Regístrate
               </Link>
-            </motion.p>
-
-            {/* Back to home */}
-            <motion.div
-              variants={itemVariants}
-              className="mt-0.5 pt-0.5 border-t border-white/10 text-center"
-            >
-              <button
-                onClick={handleClose}
-                className="inline-flex items-center gap-2 text-gray-400 hover:text-white transition-colors text-xs"
-              >
-                Cerrar ✕
-              </button>
-            </motion.div>
+            </p>
+          </motion.div>
         </div>
       </motion.div>
     </div>

@@ -1,9 +1,11 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useClient } from '@/context/ClientContext';
+import { useUserClient } from '@/hooks/useUserClient';
+import { createBrowserClient } from '@supabase/ssr';
 import BurgerMenu from './BurgerMenu';
 import AdminMenu from './AdminMenu';
 
@@ -16,79 +18,58 @@ interface SucursalCard {
   isActive: boolean;
 }
 
-const sucursalesData: SucursalCard[] = [
-  // Main Locations First (Active)
-  {
-    id: 'saltillo',
-    title: 'Saltillo',
-    description: 'Sucursal de Saltillo',
-    image: '/sucursales_y_expos/saltillo.png',
-    route: '/saltillo',
-    isActive: true
-  },
-  {
-    id: 'vasconcelos',
-    title: 'Vasconcelos',
-    description: 'Sucursal de Vasconcelos',
-    image: '/sucursales_y_expos/vasconcelos.png',
-    route: '/vasconcelos',
-    isActive: true
-  },
-  // International Exhibitions (Future)
-  {
-    id: 'salone_milano',
-    title: 'Salone Milano',
-    description: 'Exposición internacional en Milán',
-    image: '/sucursales_y_expos/salone_milano.png',
-    route: '#',
-    isActive: false
-  },
-  {
-    id: 'casualmarket_atl',
-    title: 'Casual Market Atlanta',
-    description: 'Exposición en Atlanta, Estados Unidos',
-    image: '/sucursales_y_expos/casualmarketATL.png',
-    route: '#',
-    isActive: false
-  },
-  {
-    id: 'ciff',
-    title: 'CIFF Copenhagen',
-    description: 'Copenhagen International Fashion Fair',
-    image: '/sucursales_y_expos/ciff.png',
-    route: '#',
-    isActive: false
-  },
-  {
-    id: 'movelsul',
-    title: 'Movelsul Brasil',
-    description: 'Feria de muebles en Brasil',
-    image: '/sucursales_y_expos/movelsul.png',
-    route: '#',
-    isActive: false
-  },
-  {
-    id: 'spoga_gafa',
-    title: 'Spoga+Gafa Cologne',
-    description: 'Feria internacional de jardín en Colonia',
-    image: '/sucursales_y_expos/spoga_gafa.jpg',
-    route: '#',
-    isActive: false
-  },
-  {
-    id: 'main',
-    title: 'Expo Mueble GDL',
-    description: 'La exposición original de YOUR COMPANY en Guadalajara',
-    image: '/sucursales_y_expos/expomueblegdl.png',
-    route: '/main',
-    isActive: true
-  }
-];
-
 const SucursalesGallery = () => {
   const router = useRouter();
   const [burgerOpen, setBurgerOpen] = useState(false);
   const { logoUrl: ctxLogo } = useClient();
+  const { client, loading: clientLoading } = useUserClient();
+  const [expos, setExpos] = useState<SucursalCard[]>([]);
+  const [loadingExpos, setLoadingExpos] = useState(true);
+
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
+
+  useEffect(() => {
+    async function fetchExpos() {
+      if (!client) return;
+
+      try {
+        const { data, error } = await supabase
+          .from('expos')
+          .select('*')
+          .eq('client_id', client.id)
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        if (data && data.length > 0) {
+          const mappedExpos: SucursalCard[] = data.map((expo: any) => ({
+            id: expo.id,
+            title: expo.name,
+            description: expo.location || 'Ubicación no especificada',
+            image: expo.metadata?.image || '/sucursales_y_expos/saltillo.png', // Fallback image
+            route: `/c/${client.slug}`, // Link to the client's public page for now
+            isActive: expo.status === 'active',
+          }));
+          setExpos(mappedExpos);
+        } else {
+          setExpos([]);
+        }
+      } catch (err) {
+        console.error('Error fetching expos:', err);
+      } finally {
+        setLoadingExpos(false);
+      }
+    }
+
+    if (client) {
+      fetchExpos();
+    } else if (!clientLoading) {
+      setLoadingExpos(false);
+    }
+  }, [client, clientLoading, supabase]);
 
   const handleCardClick = (card: SucursalCard) => {
     if (card.isActive && card.route !== '#') {
@@ -107,6 +88,19 @@ const SucursalesGallery = () => {
   const handleBackToAdmin = () => {
     router.push('/admin');
   };
+
+  const handleCreateExpo = () => {
+    // TODO: Implement create expo modal/page
+    alert('Create Expo feature coming soon!');
+  };
+
+  if (clientLoading || loadingExpos) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -150,14 +144,30 @@ const SucursalesGallery = () => {
 
       {/* Title */}
       <div className="text-center mb-8">
-        <h1 className="text-4xl font-bold text-gray-800 mb-2"></h1>
-        <p className="text-lg text-gray-600"></p>
+        <h1 className="text-4xl font-bold text-gray-800 mb-2">
+            {client ? `Exposiciones de ${client.name}` : 'Tus Exposiciones'}
+        </h1>
+        <p className="text-lg text-gray-600">
+            Gestiona tus eventos y sucursales
+        </p>
       </div>
 
       {/* Gallery Grid */}
       <div className="flex-1 flex items-center justify-center px-6">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl w-full">
-          {sucursalesData.map((card) => (
+          
+          {/* Create New Card */}
+          <div
+            onClick={handleCreateExpo}
+            className="relative group rounded-2xl overflow-hidden shadow-lg transition-all duration-300 transform hover:scale-105 hover:shadow-2xl cursor-pointer bg-white border-2 border-dashed border-gray-300 flex flex-col items-center justify-center aspect-4/3 min-h-[280px]"
+          >
+             <div className="text-6xl text-gray-300 group-hover:text-purple-500 transition-colors mb-4">+</div>
+             <h3 className="text-xl font-bold text-gray-500 group-hover:text-purple-600 transition-colors">
+                Nueva Exposición
+             </h3>
+          </div>
+
+          {expos.map((card) => (
             <div
               key={card.id}
               onClick={() => handleCardClick(card)}
@@ -200,7 +210,7 @@ const SucursalesGallery = () => {
                     </span>
                   ) : (
                     <span className="bg-gray-500 text-white text-xs px-2 py-1 rounded-full">
-                      Próximamente
+                      Inactivo
                     </span>
                   )}
                 </div>
@@ -224,7 +234,7 @@ const SucursalesGallery = () => {
       {/* Footer */}
       <div className="text-center py-6">
         <p className="text-sm text-gray-500">
-          © 2024 YOUR COMPANY. Selecciona una sucursal para comenzar a agregar clientes.
+          © 2024 Expo360. Selecciona una sucursal para comenzar a agregar clientes.
         </p>
       </div>
     </div>

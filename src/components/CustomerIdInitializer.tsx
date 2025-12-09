@@ -2,23 +2,30 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { supabase } from '@/utils/supabase';
 import { v4 as uuidv4 } from 'uuid';
 
 export default function CustomerIdInitializer() {
     const searchParams = useSearchParams();
     const router = useRouter();
+    const pathname = usePathname();
 
     useEffect(() => {
         const initialize = async () => {
+            // Skip initialization on client preview routes and admin routes
+            if (pathname?.startsWith('/c/') || pathname?.startsWith('/admin')) {
+                return;
+            }
+
             const customerId = localStorage.getItem('customer_id');
             const sourceQrCode = searchParams.get('source_qr_code');
             const clearSession = searchParams.get('clear_session');
 
             if (clearSession === 'true') {
                 localStorage.removeItem('customer_id');
-                router.push('/');
+                // Do not redirect to root, just clear and let the page handle the rest
+                // router.push('/'); 
                 return;
             }
 
