@@ -672,17 +672,17 @@ const LandingPage = () => {
               title: 'Regístrate',
               description: 'Crea tu cuenta de ',
               hasLogo: true,
-              descriptionAfter: ' y cuéntanos sobre tu evento. Solo toma 2 minutos.'
+              descriptionAfter: ' y cuéntanos sobre tu evento. Solo te tomará 3 minutos.'
             },
             {
               number: '02',
               title: 'Configura MyExpo360',
-              description: 'Carga tus productos, personaliza tu marca y configura tu panel de control.'
+              description: 'Sube tu logo, carga tus productos y personaliza tu panel – tu marca, tu estilo.'
             },
             {
               number: '03',
               title: 'Lanza tu Expo',
-              description: 'Ve en vivo en tu evento. Comienza a capturar clientes y a habilitar ventas en tiempo real.'
+              description: 'Activa tu expo. Captura leads. Cierra ventas. Todo en tiempo real.'
             }
           ].map((step, idx) => (
             <motion.div
@@ -716,11 +716,10 @@ const LandingPage = () => {
                   {step.description}
                   {step.hasLogo && (
                     <>
-                      <img src="/expo360_logo.png" alt="Expo360" className="inline-block h-12 mx-1 align-middle object-cover object-center" style={{aspectRatio: '3/1', objectPosition: 'center 50%'}} />
+                      <img src="/expo360.png" alt="Expo360" className="inline-block h-12 mx-1 align-middle object-cover object-center" style={{aspectRatio: '3/1', objectPosition: 'center 50%'}} />
                       {step.descriptionAfter}
                     </>
                   )}
-                  {!step.hasLogo && step.description}
                 </p>
               </div>
             </motion.div>
@@ -954,6 +953,20 @@ const LandingPage = () => {
                 ))}
               </ul>
 
+              {/* Stripe Footnote */}
+              <div className="mb-6 pt-4 border-t border-purple-300/30">
+                <p className="text-xs italic text-purple-100 leading-relaxed">
+                  <sup>*</sup> Las <span className="underline">ventas</span> en tiempo real dependerán de una cuenta Stripe existente. 
+                  <br />
+                  <a 
+                    href="/stripe-benefits"
+                    className="text-purple-300 hover:text-white underline transition-colors mt-2 inline-block"
+                  >
+                    Obtén más información sobre los beneficios de Stripe México →
+                  </a>
+                </p>
+              </div>
+
               {/* CTA */}
               <a
                 href="mailto:info0@interzekt.com?subject=Expo360%20-%20Plan%20Anual"
@@ -1027,7 +1040,7 @@ const LandingPage = () => {
           className="text-center mt-16"
         >
           <p className="text-gray-300">
-            ¿Tienes preguntas? <a href="https://wa.me/528186931122" className="text-purple-400 font-semibold hover:underline">Chatea con nosotros en WhatsApp</a>
+            ¿Tienes preguntas? <a href="https://wa.me/528186931122" className="font-semibold hover:underline" style={{ color: '#32cfa2' }}>Chatea con nosotros por WhatsApp</a>
           </p>
         </motion.div>
       </div>
@@ -1056,13 +1069,13 @@ const LandingPage = () => {
             variants={fadeInUp}
             className="text-4xl md:text-5xl font-bold text-white mb-4"
           >
-            Construido para Velocidad y Simplicidad
+            Potencia sin Complicaciones
           </motion.h2>
           <motion.p 
             variants={fadeInUp}
             className="text-xl text-gray-300 max-w-2xl mx-auto"
           >
-            Características de nivel empresarial sin complejidad
+            Todo lo que necesitas. Nada que te frene.
           </motion.p>
         </motion.div>
 
@@ -1185,9 +1198,7 @@ const LandingPage = () => {
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </a>
             <a
-              href="https://wa.me/528186931122?text=Quiero%20aprender%20más%20sobre%20Expo360"
-              target="_blank"
-              rel="noopener noreferrer"
+              href="/onboarding"
               className="px-10 py-4 border-2 border-white text-white font-semibold rounded-lg hover:bg-white/10 transition-all duration-300"
             >
               Programar una Demo
