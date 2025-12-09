@@ -63,7 +63,7 @@ const AdminMenu: React.FC<AdminMenuProps> = ({ open, setOpen, currentPage }) => 
     } else if (action === 'signout') {
       await supabase.auth.signOut();
       document.cookie = 'user_email=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-      router.push('/admin/signin');
+      router.push('/signin');
     }
     setOpen(false);
   }

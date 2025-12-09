@@ -8,7 +8,7 @@ function getCurrentUserEmail() {
   const getEmailFromCookies = async () => {
     const cookieStore = await cookies();
     const email = cookieStore.get('user_email');
-    return email?.value || null;
+    return email?.value ? decodeURIComponent(email.value) : null;
   };
   // This function is now async, so callers must await it
   return getEmailFromCookies();
