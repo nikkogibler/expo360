@@ -27,6 +27,12 @@ export default function AdminSettings() {
   const [logoError, setLogoError] = useState('');
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [expoLogoUrl, setExpoLogoUrl] = useState<string | null>(null);
+  
+  // Appearance state
+  const [bgType, setBgType] = useState<'solid' | 'gradient'>('solid');
+  const [bgColors, setBgColors] = useState<string[]>(['#ffffff', '#ffffff']);
+  const [bgDirection, setBgDirection] = useState('to bottom');
+  const [savingColor, setSavingColor] = useState(false);
 
   const router = useRouter();
   const isAuthenticated = useAdminAuth();
@@ -63,6 +69,15 @@ export default function AdminSettings() {
                 .eq('id', userClient.client_id)
                 .single();
             setClient(clientData);
+            
+            if (clientData?.theme?.backgroundConfig) {
+              setBgType(clientData.theme.backgroundConfig.type || 'solid');
+              setBgColors(clientData.theme.backgroundConfig.colors || ['#ffffff', '#ffffff']);
+              setBgDirection(clientData.theme.backgroundConfig.direction || 'to bottom');
+            } else if (clientData?.theme?.dashboardBgColor) {
+              setBgType('solid');
+              setBgColors([clientData.theme.dashboardBgColor, '#ffffff']);
+            }
             
             if (clientData && clientData.logo_path) {
                  const { data: publicData } = supabase.storage
@@ -186,6 +201,48 @@ export default function AdminSettings() {
       setLogoError(err.message);
     } finally {
       setUploadingLogo(false);
+    }
+  };
+
+  const handleColorSave = async () => {
+    if (!client) return;
+    
+    setSavingColor(true);
+    setLogoMessage('');
+    setLogoError('');
+    
+    try {
+      const backgroundConfig = {
+        type: bgType,
+        colors: bgType === 'solid' ? [bgColors[0]] : bgColors,
+        direction: bgDirection
+      };
+
+      const updatedTheme = {
+        ...(client.theme || {}),
+        backgroundConfig,
+        // Keep legacy for now, or update it to primary color
+        dashboardBgColor: bgColors[0]
+      };
+
+      const { error } = await supabase
+        .from('clients')
+        .update({ theme: updatedTheme })
+        .eq('id', client.id);
+
+      if (error) throw error;
+      
+      // Update local client state
+      setClient({ ...client, theme: updatedTheme });
+      setLogoMessage('Apariencia actualizada correctamente.');
+      
+      // Redirect to dashboard
+      router.push('/admin');
+    } catch (err: any) {
+      console.error('Error updating background color:', err);
+      setLogoError('Error al guardar la apariencia.');
+    } finally {
+      setSavingColor(false);
     }
   };
 
@@ -492,6 +549,169 @@ export default function AdminSettings() {
           <p className="text-xs text-gray-500 mt-4">
             * Solo archivos PNG. Máximo 3MB. Fondo transparente recomendado.
           </p>
+        </div>
+
+        {/* Appearance Section */}
+        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+          <h2 className="text-xl font-semibold text-gray-800 mb-6 pb-2 border-b border-gray-200">
+            Apariencia del Dashboard
+          </h2>
+          
+          <div className="space-y-6">
+            {/* Type Selector */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Tipo de Fondo</label>
+              <div className="flex gap-4">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input 
+                    type="radio" 
+                    name="bgType" 
+                    value="solid" 
+                    checked={bgType === 'solid'} 
+                    onChange={() => setBgType('solid')}
+                    className="text-amber-600 focus:ring-amber-500"
+                  />
+                  <span className="text-gray-700">Color Sólido</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input 
+                    type="radio" 
+                    name="bgType" 
+                    value="gradient" 
+                    checked={bgType === 'gradient'} 
+                    onChange={() => setBgType('gradient')}
+                    className="text-amber-600 focus:ring-amber-500"
+                  />
+                  <span className="text-gray-700">Gradiente</span>
+                </label>
+              </div>
+            </div>
+
+            {/* Color Pickers */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                {bgType === 'solid' ? 'Color' : 'Colores del Gradiente'}
+              </label>
+              
+              <div className="flex flex-wrap gap-4 items-end">
+                {/* Color 1 */}
+                <div>
+                  <span className="text-xs text-gray-500 block mb-1">Color 1</span>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={bgColors[0]}
+                      onChange={(e) => {
+                        const newColors = [...bgColors];
+                        newColors[0] = e.target.value;
+                        setBgColors(newColors);
+                      }}
+                      className="h-10 w-16 p-1 rounded border border-gray-300 cursor-pointer"
+                    />
+                    <span className="text-xs font-mono text-gray-500">{bgColors[0]}</span>
+                  </div>
+                </div>
+
+                {bgType === 'gradient' && (
+                  <>
+                    {/* Color 2 */}
+                    <div>
+                      <span className="text-xs text-gray-500 block mb-1">Color 2</span>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="color"
+                          value={bgColors[1]}
+                          onChange={(e) => {
+                            const newColors = [...bgColors];
+                            newColors[1] = e.target.value;
+                            setBgColors(newColors);
+                          }}
+                          className="h-10 w-16 p-1 rounded border border-gray-300 cursor-pointer"
+                        />
+                        <span className="text-xs font-mono text-gray-500">{bgColors[1]}</span>
+                      </div>
+                    </div>
+
+                    {/* Optional Color 3 */}
+                    <div>
+                      <span className="text-xs text-gray-500 block mb-1">Color 3 (Opcional)</span>
+                      <div className="flex items-center gap-2">
+                         {bgColors.length > 2 ? (
+                            <>
+                              <input
+                                type="color"
+                                value={bgColors[2]}
+                                onChange={(e) => {
+                                  const newColors = [...bgColors];
+                                  newColors[2] = e.target.value;
+                                  setBgColors(newColors);
+                                }}
+                                className="h-10 w-16 p-1 rounded border border-gray-300 cursor-pointer"
+                              />
+                              <button 
+                                onClick={() => setBgColors(bgColors.slice(0, 2))}
+                                className="text-red-500 hover:text-red-700 text-xs underline"
+                              >
+                                Eliminar
+                              </button>
+                            </>
+                         ) : (
+                            <button 
+                              onClick={() => setBgColors([...bgColors, '#ffffff'])}
+                              className="h-10 px-3 border border-dashed border-gray-300 rounded text-gray-500 text-xs hover:bg-gray-50"
+                            >
+                              + Agregar Color
+                            </button>
+                         )}
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* Direction Selector (Gradient Only) */}
+            {bgType === 'gradient' && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Dirección</label>
+                <select
+                  value={bgDirection}
+                  onChange={(e) => setBgDirection(e.target.value)}
+                  className="block w-full max-w-xs p-2 border border-gray-300 rounded-md shadow-sm focus:ring-amber-500 focus:border-amber-500 sm:text-sm"
+                >
+                  <option value="to bottom">Arriba hacia Abajo (↓)</option>
+                  <option value="to top">Abajo hacia Arriba (↑)</option>
+                  <option value="to right">Izquierda a Derecha (→)</option>
+                  <option value="to left">Derecha a Izquierda (←)</option>
+                  <option value="to bottom right">Diagonal (↘)</option>
+                  <option value="to top right">Diagonal (↗)</option>
+                </select>
+              </div>
+            )}
+
+            {/* Preview */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Vista Previa</label>
+              <div 
+                className="h-24 w-full rounded-lg border border-gray-200 shadow-inner"
+                style={{
+                  background: bgType === 'solid' 
+                    ? bgColors[0] 
+                    : `linear-gradient(${bgDirection}, ${bgColors.join(', ')})`
+                }}
+              />
+            </div>
+            
+            <div className="flex justify-end pt-4">
+               <button
+                onClick={handleColorSave}
+                disabled={savingColor}
+                className="bg-amber-600 hover:bg-amber-700 disabled:bg-amber-300 text-white font-medium py-2 px-6 rounded-md transition-colors duration-200"
+              >
+                {savingColor ? 'Guardando...' : 'Guardar y Aplicar'}
+              </button>
+            </div>
+          </div>
         </div>
 
         {/* Security Note */}

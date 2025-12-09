@@ -76,15 +76,42 @@ export default async function AdminPage() {
     }
   }
 
+  const backgroundConfig = client?.theme?.backgroundConfig;
+  const legacyColor = client?.theme?.dashboardBgColor;
+  
+  let backgroundImage = "url('/vine_2b.png')";
+  let backgroundSize = '400px 400px';
+  let backgroundRepeat = 'repeat';
+  
+  if (backgroundConfig) {
+    if (backgroundConfig.type === 'solid' && backgroundConfig.colors?.[0]) {
+      const color = backgroundConfig.colors[0];
+      backgroundImage = `linear-gradient(${color}E6, ${color}E6), url('/vine_2b.png')`;
+      backgroundSize = 'cover, 400px 400px';
+      backgroundRepeat = 'no-repeat, repeat';
+    } else if (backgroundConfig.type === 'gradient' && backgroundConfig.colors?.length > 0) {
+      const direction = backgroundConfig.direction || 'to bottom';
+      const colors = backgroundConfig.colors.map((c: string) => `${c}E6`).join(', ');
+      backgroundImage = `linear-gradient(${direction}, ${colors}), url('/vine_2b.png')`;
+      backgroundSize = 'cover, 400px 400px';
+      backgroundRepeat = 'no-repeat, repeat';
+    }
+  } else if (legacyColor) {
+    backgroundImage = `linear-gradient(${legacyColor}E6, ${legacyColor}E6), url('/vine_2b.png')`;
+    backgroundSize = 'cover, 400px 400px';
+    backgroundRepeat = 'no-repeat, repeat';
+  }
+
   return (
     <div
       style={{
         minHeight: '100vh',
         width: '100vw',
-        backgroundImage: "url('/vine_2b.png')",
-        backgroundRepeat: 'repeat',
-        backgroundSize: '400px 400px',
+        backgroundImage,
+        backgroundRepeat,
+        backgroundSize,
         backgroundPosition: 'center',
+        backgroundAttachment: 'fixed', // Keeps background fixed during scroll
       }}
     >
       <MagicBento client={client} logoUrl={logoUrl} />
