@@ -169,7 +169,7 @@ export default function PaymentFailurePage() {
           </p>
           <p className="text-sm text-gray-500">
             WhatsApp:{' '}
-            <a href="https://wa.me/528110000000" className="text-blue-600 hover:underline">
+            <a href="https://wa.me/528186931122" className="text-blue-600 hover:underline">
               +52 81 1000 0000
             </a>
           </p>

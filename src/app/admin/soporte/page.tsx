@@ -165,7 +165,7 @@ export default function SoporteInterzektPage() {
                 Chatea en vivo con nuestro equipo
               </p>
               <a
-                href="https://wa.me/1234567890"
+                href="https://wa.me/528186931122"
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{

@@ -467,13 +467,13 @@ const LandingPage = () => {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="hidden md:flex items-center gap-8 absolute left-1/2 transform -translate-x-1/2"
           >
-            <a href="#features" className="text-gray-300 hover:text-white transition text-sm font-medium">
+            <a href="/porque-expo360" className="text-gray-300 hover:text-white transition text-sm font-medium leading-normal py-1">
               ¿Porqué Expo360?
             </a>
-            <a href="#pricing" className="text-gray-300 hover:text-white transition text-sm font-medium">
+            <a href="#pricing" className="text-gray-300 hover:text-white transition text-sm font-medium leading-normal py-1">
               Precios
             </a>
-            <a href="#faq" className="text-gray-300 hover:text-white transition text-sm font-medium">
+            <a href="/preguntas-frecuentes" className="text-gray-300 hover:text-white transition text-sm font-medium leading-normal py-1">
               Preguntas Frecuentes
             </a>
           </motion.nav>

@@ -40,21 +40,20 @@ const StripeBenefitsPage = () => {
       category: 'Carteras Digitales',
       icon: '💳',
       methods: [
-        { name: 'Apple Pay', description: 'Pago rápido y seguro desde dispositivos Apple', logo: '/integration_logos/apple-pay-logo.png' },
+        { name: 'Apple Pay', description: 'Pago rápido y seguro desde dispositivos Apple', logo: '/integration_logos/apple_pay.png' },
         { name: 'Google Pay', description: 'Cartera digital integrada en Android y navegadores', logo: '/integration_logos/google_pay.png' },
-        { name: 'PayPal', description: 'Método de pago confiable utilizado por millones globalmente', logo: '/integration_logos/paypal-logo.png' },
-        { name: 'WeChat Pay', description: 'Acceso a mercados de Asia con la cartera digital #1', logo: '/integration_logos/wechat-pay-logo.png' },
-        { name: 'Amazon Pay', description: 'Experiencia de compra rápida con datos de Amazon', logo: '/integration_logos/amazon-pay-logo.png' }
+        { name: 'PayPal', description: 'Método de pago confiable utilizado por millones globalmente', logo: '/integration_logos/paypal.png' },
+        { name: 'Amazon Pay', description: 'Experiencia de compra rápida con datos de Amazon', logo: '/integration_logos/amazonpay-logo-rgb_rev.png' }
       ]
     },
     {
       category: 'Compra Ahora, Paga Después',
       icon: '📅',
       methods: [
-        { name: 'Klarna', description: 'Pagos flexibles en 3, 6 o 12 cuotas sin interés', logo: '/integration_logos/klarna-logo.png' },
-        { name: 'Afterpay/Clearpay', description: 'Divide pagos en 4 cuotas quincenales sin interés', logo: '/integration_logos/afterpay-logo.png' },
-        { name: 'Affirm', description: 'Opciones de pago flexible para clientes en EE.UU. y Canadá', logo: '/integration_logos/affirm-logo.png' },
-        { name: 'Zip', description: 'Planes de pago flexibles semanales, bisemanales o mensuales', logo: '/integration_logos/zip-logo.png' }
+        { name: 'Klarna', description: 'Pagos flexibles en 3, 6 o 12 cuotas sin interés', logo: '/integration_logos/klarna.png' },
+        { name: 'Afterpay/Clearpay', description: 'Divide pagos en 4 cuotas quincenales sin interés', logo: '/integration_logos/afterpay.png' },
+        { name: 'Affirm', description: 'Opciones de pago flexible para clientes en EE.UU. y Canadá', logo: '/integration_logos/affirm.png' },
+        { name: 'Zip', description: 'Planes de pago flexibles semanales, bisemanales o mensuales', logo: '/integration_logos/zip.png' }
       ]
     },
     {
@@ -68,25 +67,25 @@ const StripeBenefitsPage = () => {
       category: 'Transferencias Bancarias',
       icon: '🏦',
       methods: [
-        { name: 'SPEI', description: 'Transferencias bancarias instantáneas en México - ideal para B2B', logo: '/integration_logos/spei-logo.png' }
+        { name: 'SPEI', description: 'Transferencias bancarias instantáneas en México - ideal para B2B', logo: '/integration_logos/spei.png' }
       ]
     },
     {
       category: 'Débito Directo',
       icon: '💰',
       methods: [
-        { name: 'Débito directo SEPA', description: 'Pagos recurrentes en 36 países europeos con costos bajos', logo: '/integration_logos/sepa-logo.png' },
-        { name: 'Débito directo Bacs', description: 'Método principal en Reino Unido para pagos puntuales y recurrentes', logo: '/integration_logos/bacs-logo.png' },
-        { name: 'ACH Direct Debit', description: 'Costos de transacción reducidos para pagos en EE.UU.', logo: '/integration_logos/ach-logo.png' }
+        { name: 'Débito directo SEPA', description: 'Pagos recurrentes en 36 países europeos con costos bajos', logo: '/integration_logos/sepa.png' },
+        { name: 'Débito directo Bacs', description: 'Método principal en Reino Unido para pagos puntuales y recurrentes', logo: '/integration_logos/bacs.png' },
+        { name: 'ACH Direct Debit', description: 'Costos de transacción reducidos para pagos en EE.UU.', logo: '/integration_logos/ach.png' }
       ]
     },
     {
       category: 'Tarjetas',
       icon: '🎫',
       methods: [
-        { name: 'Visa', description: 'Red de tarjetas más grande del mundo con mayor aceptación', logo: '/integration_logos/visa-logo.png' },
-        { name: 'Mastercard', description: 'Tarjeta principal aceptada en más de 190 países', logo: '/integration_logos/mastercard-logo.png' },
-        { name: 'American Express', description: 'Tarjeta premium con clientes de alto valor en 130+ países', logo: '/integration_logos/amex-logo.png' }
+        { name: 'Visa', description: 'Red de tarjetas más grande del mundo con mayor aceptación', logo: '/integration_logos/visa.png' },
+        { name: 'Mastercard', description: 'Tarjeta principal aceptada en más de 190 países', logo: '/integration_logos/mastercard.png' },
+        { name: 'American Express', description: 'Tarjeta premium con clientes de alto valor en 130+ países', logo: '/integration_logos/amex.png' }
       ]
     },
     {
@@ -94,7 +93,7 @@ const StripeBenefitsPage = () => {
       icon: '⭐',
       methods: [
         { name: 'Meses sin intereses', description: 'Fracciona compras en pagos mensuales fijos en México', logo: null },
-        { name: 'Criptomonedas estables', description: 'Acepta monedas estables para alcance global (Preview)', logo: '/integration_logos/crypto-logo.png' },
+        { name: 'Criptomonedas estables', description: 'Acepta monedas estables para alcance global (Preview)', logo: '/integration_logos/crypto.png' },
         { name: 'Payment on invoice', description: 'Paga después con factura - ideal para B2B en Alemania (Preview)', logo: null }
       ]
     }
