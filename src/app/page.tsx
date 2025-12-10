@@ -4,16 +4,10 @@ import React, { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import Image from 'next/image';
-import dynamic from 'next/dynamic';
 import { Check, ArrowRight, Zap, Users, TrendingUp, Lock, Clock, Smartphone } from 'lucide-react';
 
 // Import LayoutGrid directly - SSR is needed for LCP images
 import { LayoutGrid } from '@/ui/layout-grid';
-
-const WavyBackground = dynamic(() => import('@/ui/wavy-background').then(mod => ({ default: mod.WavyBackground })), {
-  ssr: false,
-  loading: () => null,
-});
 
 // ==================== SKELETON COMPONENTS ====================
 const SkeletonOne = () => (
@@ -83,6 +77,7 @@ const LandingPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [statusMessage, setStatusMessage] = useState('');
   const [submissionSuccess, setSubmissionSuccess] = useState(false);
+  
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -445,11 +440,20 @@ const LandingPage = () => {
 
   // ==================== HEADER NAVIGATION ====================
   const Header = () => (
-    <header className="absolute top-0 left-0 right-0 z-50">
+    <motion.header 
+      initial={{ opacity: 0, y: -20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, ease: "easeOut" }}
+      className="absolute top-0 left-0 right-0 z-50"
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-0.5">
         <div className="flex items-center justify-between">
           {/* Logo - Left */}
-          <div>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.4, delay: 0.1, ease: "easeOut" }}
+          >
             <Image
               src="/expo360_logo.png"
               alt="Expo360 Logo"
@@ -457,10 +461,13 @@ const LandingPage = () => {
               height={120}
               className="rounded-lg scale-150"
             />
-          </div>
+          </motion.div>
 
           {/* Center Nav Links */}
-          <nav
+          <motion.nav
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.15, ease: "easeOut" }}
             className="hidden md:flex items-center gap-8 absolute left-1/2 transform -translate-x-1/2"
           >
             <a href="/porque-expo360" className="text-gray-300 hover:text-white transition text-sm font-medium leading-normal py-1">
@@ -472,10 +479,13 @@ const LandingPage = () => {
             <a href="/preguntas-frecuentes" className="text-gray-300 hover:text-white transition text-sm font-medium leading-normal py-1">
               Preguntas Frecuentes
             </a>
-          </nav>
+          </motion.nav>
 
           {/* Right Auth Buttons */}
-          <div
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.2, ease: "easeOut" }}
             className="flex gap-3"
           >
             <a
@@ -490,10 +500,10 @@ const LandingPage = () => {
             >
               Registrarse
             </a>
-          </div>
+          </motion.div>
         </div>
       </div>
-    </header>
+    </motion.header>
   );
 
   // ==================== HERO SECTION ====================
@@ -508,39 +518,59 @@ const LandingPage = () => {
       </div>
 
       {/* Floating orbs for visual interest */}
-      <div 
-        className="absolute top-20 -left-40 w-80 h-80 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20"
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 0.2 }}
+        transition={{ duration: 0.8, delay: 0.2 }}
+        className="absolute top-20 -left-40 w-80 h-80 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl"
       />
-      <div 
-        className="absolute bottom-40 -right-40 w-80 h-80 bg-blue-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20"
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 0.2 }}
+        transition={{ duration: 0.8, delay: 0.3 }}
+        className="absolute bottom-40 -right-40 w-80 h-80 bg-blue-500 rounded-full mix-blend-multiply filter blur-3xl"
       />
 
       {/* Content */}
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-32">
         <div className="text-center max-w-3xl mx-auto">
           {/* Eyebrow text */}
-          <div className="inline-block mb-6">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.1, ease: "easeOut" }}
+            className="inline-block mb-6"
+          >
             <div className="bg-purple-500/20 border border-purple-500/50 rounded-full px-4 py-2 backdrop-blur-sm">
               <p className="text-purple-200 text-sm font-semibold">🚀 Transforma Tus Exposiciones Hoy</p>
             </div>
-          </div>
+          </motion.div>
 
-          {/* Main headline - NO animation wrapper to ensure fast LCP */}
-          <h1 
+          {/* Main headline */}
+          <motion.h1 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.15, ease: "easeOut" }}
             className="text-5xl md:text-7xl font-bold text-white mb-6 leading-tight"
           >
             De Visitantes a Ventas: <span className="bg-linear-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">En Minutos, No Meses</span>
-          </h1>
+          </motion.h1>
 
           {/* Subheadline */}
-          <p 
+          <motion.p 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2, ease: "easeOut" }}
             className="text-xl md:text-2xl text-gray-300 mb-8 leading-relaxed"
           >
             Transforma tus ferias comerciales y exhibiciones en experiencias digitales interactivas que capturen datos de clientes, permitan ventas en tiempo real y proporcionen atribución post-evento instantánea.
-          </p>
+          </motion.p>
 
           {/* CTA Buttons */}
-          <div 
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.25, ease: "easeOut" }}
             className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12"
           >
             <a
@@ -558,10 +588,13 @@ const LandingPage = () => {
               Contáctanos
               <ArrowRight className="w-4 h-4" />
             </button>
-          </div>
+          </motion.div>
 
           {/* Trust badges */}
-          <div 
+          <motion.div 
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.3, ease: "easeOut" }}
             className="flex flex-col sm:flex-row justify-center items-center gap-6 text-sm text-gray-400 pt-8"
           >
             <div className="flex items-center gap-2">
@@ -578,11 +611,14 @@ const LandingPage = () => {
               <Check className="w-4 h-4 text-green-400" />
               <span>Análisis de Ventas</span>
             </div>
-          </div>
+          </motion.div>
         </div>
 
         {/* Hero visual - Layout Grid */}
-        <div
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.35, ease: "easeOut" }}
           className="mt-16 relative w-full"
         >
           <div className="bg-linear-to-br from-purple-500/10 to-blue-500/10 rounded-2xl p-1 border border-purple-500/20">
@@ -590,7 +626,7 @@ const LandingPage = () => {
               <LayoutGrid cards={heroCards} />
             </div>
           </div>
-        </div>
+        </motion.div>
       </div>
     </div>
   );
@@ -797,18 +833,14 @@ const LandingPage = () => {
 
   // ==================== PRICING SECTION ====================
   const PricingSection = () => (
-    <div id="pricing" className="relative overflow-hidden">
+    <div id="pricing" className="relative overflow-hidden min-h-fit py-20 md:py-32">
       {/* Original Gradient Background */}
       <div className="absolute inset-0 bg-linear-to-br from-slate-900 via-purple-900 to-slate-900"></div>
-      <WavyBackground
-        className="w-full"
-        containerClassName="min-h-fit py-20 md:py-32"
-        colors={["#7c3aed", "#8b5cf6", "#a78bfa", "#6366f1", "#818cf8"]}
-        waveOpacity={0.5}
-        backgroundFill="transparent"
-        blur={10}
-        speed="fast"
-      >
+      
+      {/* Subtle animated glow orbs - lightweight alternative to Vortex */}
+      <div className="absolute top-20 left-1/4 w-96 h-96 bg-purple-600/15 rounded-full blur-3xl animate-pulse"></div>
+      <div className="absolute bottom-20 right-1/4 w-80 h-80 bg-blue-600/15 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
+      
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div
           initial="hidden"
@@ -1016,7 +1048,6 @@ const LandingPage = () => {
           </p>
         </motion.div>
       </div>
-      </WavyBackground>
     </div>
   );
 
