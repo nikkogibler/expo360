@@ -134,12 +134,12 @@ const PorqueExpo360Page = () => {
               >
                 Contáctanos
               </Link>
-              <a href="/#pricing" className="text-gray-300 hover:text-white transition text-sm font-medium leading-normal py-1">
+              <Link href="/#pricing" className="text-gray-300 hover:text-white transition text-sm font-medium leading-normal py-1">
                 Precios
-              </a>
-              <a href="/preguntas-frecuentes" className="text-gray-300 hover:text-white transition text-sm font-medium leading-normal py-1">
+              </Link>
+              <Link href="/preguntas-frecuentes" className="text-gray-300 hover:text-white transition text-sm font-medium leading-normal py-1">
                 Preguntas Frecuentes
-              </a>
+              </Link>
             </motion.nav>
 
             {/* Right Auth Buttons */}
@@ -149,18 +149,18 @@ const PorqueExpo360Page = () => {
               transition={{ duration: 0.6, delay: 0.3 }}
               className="flex gap-3"
             >
-              <a
+              <Link
                 href="/signin"
                 className="hidden sm:inline-block px-6 py-2 text-sm font-semibold rounded-lg transition-all duration-300 bg-linear-to-r from-blue-400 via-cyan-400 to-pink-400 bg-clip-text text-transparent"
               >
                 Iniciar Sesión
-              </a>
-              <a
+              </Link>
+              <Link
                 href="/#pricing"
                 className="px-6 py-2 bg-linear-to-r from-purple-600 to-blue-600 text-white text-sm font-semibold rounded-lg hover:shadow-lg hover:shadow-purple-600/50 transition-all duration-300"
               >
                 Registrarse
-              </a>
+              </Link>
             </motion.div>
           </div>
         </div>

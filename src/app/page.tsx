@@ -1203,7 +1203,7 @@ const LandingPage = () => {
             className="flex flex-col sm:flex-row gap-4 justify-center items-center"
           >
             <a
-              href="mailto:info0@interzekt.com?subject=Expo360%20-%20Listo%20para%20Comenzar"
+              href="#pricing"
               className="group relative px-10 py-4 bg-white text-purple-600 font-bold rounded-lg hover:shadow-2xl transition-all duration-300 flex items-center gap-2"
             >
               <span>Comienza Ahora</span>
