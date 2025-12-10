@@ -476,6 +476,9 @@ const LandingPage = () => {
             <a href="#pricing" className="text-gray-300 hover:text-white transition text-sm font-medium leading-normal py-1">
               Precios
             </a>
+            <a href="/stripe-benefits" className="text-gray-300 hover:text-white transition text-sm font-medium leading-normal py-1">
+              Conecta Stripe
+            </a>
             <a href="/preguntas-frecuentes" className="text-gray-300 hover:text-white transition text-sm font-medium leading-normal py-1">
               Preguntas Frecuentes
             </a>

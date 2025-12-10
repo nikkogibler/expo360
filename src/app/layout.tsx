@@ -60,9 +60,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="scroll-smooth">
+    <html lang="es-MX" className="scroll-smooth">
       <head>
         <link rel="icon" href="/favicon.png" type="image/png" />
+        {/* SEO and GEO optimization meta tags */}
+        <meta name="geo.region" content="MX-NLE" />
+        <meta name="geo.placename" content="San Pedro Garza García" />
+        <meta name="geo.position" content="25.6573;-100.4020" />
+        <meta name="ICBM" content="25.6573, -100.4020" />
+        {/* AI Crawler hints for GEO */}
+        <meta name="ai-content-declaration" content="This website contains original content about virtual showrooms and payment integrations for Mexican businesses" />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}

@@ -157,27 +157,32 @@ const StripeBenefitsPage = () => {
   return (
     <div className="min-h-screen bg-black text-white overflow-hidden relative">
       {/* Page Background Gradient */}
-      <div className="absolute inset-0 bg-linear-to-br from-purple-900/20 via-black to-blue-900/20 pointer-events-none"></div>
+      <div className="absolute inset-0 bg-linear-to-br from-purple-900/20 via-black to-blue-900/20 pointer-events-none" aria-hidden="true"></div>
       <div className="relative z-10">
+      {/* Skip to main content link for accessibility */}
+      <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-purple-600 text-white px-4 py-2 rounded-lg z-[100]">
+        Saltar al contenido principal
+      </a>
       {/* Navigation Header */}
-      <header className="absolute top-0 left-0 right-0 z-50">
+      <header className="absolute top-0 left-0 right-0 z-50" role="banner">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-0.5">
           <div className="flex items-center justify-between">
             {/* Logo - Left */}
-            <div>
+            <Link href="/" className="block" aria-label="Ir a página principal de Expo360">
               <Image
                 src="/expo360_logo.png"
-                alt="Expo360 Logo"
+                alt="Expo360 - Showroom Virtual 3D"
                 width={180}
                 height={180}
                 className="rounded-lg"
                 priority
               />
-            </div>
+            </Link>
 
             {/* Center Nav Links */}
             <nav
               className="hidden md:flex items-center gap-8 absolute left-1/2 transform -translate-x-1/2"
+              aria-label="Navegación principal"
             >
               <Link href="/porque-expo360" className="text-gray-300 hover:text-white transition text-sm font-medium leading-normal py-1">
                 ¿Porqué Expo360?
@@ -209,27 +214,32 @@ const StripeBenefitsPage = () => {
         </div>
       </header>
 
+      {/* Main Content */}
+      <main id="main-content" role="main">
       {/* Hero Section */}
-      <section className="relative pt-32 md:pt-40 pb-16 md:pb-24 px-4 sm:px-6 lg:px-8 overflow-hidden">
+      <section className="relative pt-32 md:pt-40 pb-16 md:pb-24 px-4 sm:px-6 lg:px-8 overflow-hidden" aria-labelledby="hero-title">
         {/* Vortex Animation - lazy loaded to improve LCP */}
         {showVortex && (
-          <div className="absolute inset-0 z-0 pointer-events-none opacity-50">
+          <div className="absolute inset-0 z-0 pointer-events-none opacity-50" aria-hidden="true">
             <Vortex backgroundColor="transparent" baseHue={270} rangeY={150} particleCount={300} />
           </div>
         )}
         {/* Glow effects */}
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-purple-600/20 rounded-full blur-3xl opacity-50"></div>
-        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-blue-600/20 rounded-full blur-3xl opacity-50"></div>
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-purple-600/20 rounded-full blur-3xl opacity-50" aria-hidden="true"></div>
+        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-blue-600/20 rounded-full blur-3xl opacity-50" aria-hidden="true"></div>
 
         <div ref={heroAnim.ref} className="relative z-10 max-w-5xl mx-auto">
-          <div
+          <article
             className={`text-center space-y-6 transition-all duration-700 ease-out ${
               heroAnim.isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
             }`}
           >
+            {/* Primary H1 - SEO optimized with hidden text for screen readers */}
             <h1 
+              id="hero-title"
               className="text-4xl md:text-6xl font-bold leading-tight pb-2 flex items-center justify-center gap-1"
             >
+              <span className="sr-only">Integración de Stripe con Expo360 - Más de 100 métodos de pago para showrooms virtuales en México</span>
               <span className="relative inline-flex items-center translate-y-[3px]">
                 <Image
                   src="/integration_logos/stripe_logo.png"
@@ -262,73 +272,76 @@ const StripeBenefitsPage = () => {
                 heroAnim.isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
               }`}
             >
-              Con Stripe™ integrado en Expo360, accede a más de 100 métodos de pago internacionales y maximiza tus ventas en tiempo real
+              Con <strong>Stripe™</strong> integrado a <strong>Expo360</strong>, accede a más de <em>100 métodos de pago</em> internacionales incluyendo <strong>OXXO</strong>, <strong>SPEI</strong>, <strong>Apple Pay</strong>, <strong>Google Pay</strong> y <strong>meses sin intereses</strong>. Maximiza las ventas de tu showroom virtual en tiempo real.
             </p>
 
             {/* Stripe Hero Image */}
-            <div
+            <figure
               className={`mt-12 relative h-80 md:h-96 rounded-2xl border border-purple-500/30 overflow-hidden group transition-all duration-700 ease-out delay-200 ${
                 heroAnim.isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
               }`}
             >
               <Image
                 src="/stripe_hero.png"
-                alt="Stripe Payment Methods"
+                alt="Panel de métodos de pago de Stripe mostrando opciones disponibles para México: OXXO, SPEI, tarjetas de crédito, Apple Pay, Google Pay y más"
                 fill
                 className="object-cover object-top"
                 priority
                 sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 1024px"
                 fetchPriority="high"
               />
-              <div className="absolute inset-0 bg-linear-to-t from-black/40 via-transparent to-transparent"></div>
-            </div>
-          </div>
+              <div className="absolute inset-0 bg-linear-to-t from-black/40 via-transparent to-transparent" aria-hidden="true"></div>
+              <figcaption className="sr-only">Interfaz de Stripe mostrando los diferentes métodos de pago disponibles para comercios en México</figcaption>
+            </figure>
+          </article>
         </div>
       </section>
 
       {/* Key Benefits Section */}
-      <section className="relative py-16 md:py-24 px-4 sm:px-6 lg:px-8">
+      <section className="relative py-16 md:py-24 px-4 sm:px-6 lg:px-8" aria-labelledby="benefits-title">
         <div ref={benefitsAnim.ref} className="max-w-6xl mx-auto">
-          <div className={`mb-12 transition-all duration-700 ease-out ${
+          <header className={`mb-12 transition-all duration-700 ease-out ${
             benefitsAnim.isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
           }`}>
-            <h2 className="text-3xl md:text-4xl font-bold text-center mb-4">
-              Beneficios Principales
+            <h2 id="benefits-title" className="text-3xl md:text-4xl font-bold text-center mb-4">
+              Beneficios Principales de Integrar Stripe con <span className="bg-linear-to-r from-yellow-400 to-orange-400 bg-clip-text text-transparent">Expo360</span>
             </h2>
-            <div className="h-1 w-24 bg-linear-to-r from-purple-600 to-blue-600 mx-auto"></div>
-          </div>
+            <p className="text-gray-400 text-center max-w-2xl mx-auto mb-4">Descubre por qué Stripe es la mejor opción para procesar tus ventas en Expo360</p>
+            <div className="h-1 w-24 bg-linear-to-r from-purple-600 to-blue-600 mx-auto" aria-hidden="true"></div>
+          </header>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6" role="list" aria-label="Lista de beneficios">
             {benefits.map((benefit, idx) => (
-              <div
+              <article
                 key={idx}
+                role="listitem"
                 className={`bg-linear-to-br from-purple-600/10 to-blue-600/10 border border-purple-500/30 rounded-xl p-6 hover:border-purple-500/60 transition-all duration-500 ease-out ${
                   benefitsAnim.isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
                 }`}
                 style={{ transitionDelay: `${150 + idx * 100}ms` }}
               >
-                <div className="text-purple-400 mb-4">{benefit.icon}</div>
+                <div className="text-purple-400 mb-4" aria-hidden="true">{benefit.icon}</div>
                 <h3 className="text-xl font-bold mb-2">{benefit.title}</h3>
                 <p className="text-gray-300">{benefit.description}</p>
-              </div>
+              </article>
             ))}
           </div>
         </div>
       </section>
 
       {/* Payment Methods Section */}
-      <section className="relative py-16 md:py-24 px-4 sm:px-6 lg:px-8 bg-linear-to-b from-black via-purple-900/5 to-black">
+      <section id="metodos-de-pago" className="relative py-16 md:py-24 px-4 sm:px-6 lg:px-8 bg-linear-to-b from-black via-purple-900/5 to-black" aria-labelledby="payments-title">
         <div ref={paymentsAnim.ref} className="max-w-6xl mx-auto">
-          <div className={`mb-12 transition-all duration-700 ease-out ${
+          <header className={`mb-12 transition-all duration-700 ease-out ${
             paymentsAnim.isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
           }`}>
-            <h2 className="text-3xl md:text-4xl font-bold text-center mb-4">
-              Métodos de Pago Disponibles
+            <h2 id="payments-title" className="text-3xl md:text-4xl font-bold text-center mb-4">
+              Métodos de Pago Disponibles en México y el Mundo
             </h2>
             <p className="text-gray-300 text-center max-w-2xl mx-auto">
-              Más de 100 formas de pago para que tus clientes elijan la que prefieren
+              Más de <strong>100 formas de pago</strong> incluyendo <strong>OXXO</strong>, <strong>SPEI</strong>, <strong>tarjetas de crédito</strong>, <strong>Apple Pay</strong>, <strong>Google Pay</strong> y <strong>meses sin intereses</strong> para que tus clientes elijan la que prefieren
             </p>
-          </div>
+          </header>
 
           <div className="space-y-8">
             {paymentMethods.map((category, categoryIdx) => (
@@ -380,18 +393,61 @@ const StripeBenefitsPage = () => {
                             </div>
                           </div>
                         </div>
+                      ) : method.name === 'Meses sin intereses' ? (
+                        <Link href="/meses-sin-intereses" className="block h-full hover:opacity-90 transition-opacity">
+                          <div className="bg-black/40 rounded-lg p-5 border border-white/5 hover:border-purple-500/20 transition-all h-full flex flex-col items-start cursor-pointer">
+                            {method.logo && (
+                              <div className="mb-4 h-16 flex items-center">
+                                <Image
+                                  src={method.logo}
+                                  alt={method.name}
+                                  width={100}
+                                  height={64}
+                                  className="object-contain max-h-16"
+                                  loading="lazy"
+                                />
+                              </div>
+                            )}
+                            <h4 className="font-semibold text-white mb-3 text-lg">{method.name}</h4>
+                            <p className="text-gray-400 text-sm flex-grow">{method.description}</p>
+                          </div>
+                        </Link>
                       ) : (
                         <div className="bg-black/40 rounded-lg p-5 border border-white/5 hover:border-purple-500/20 transition-all h-full flex flex-col items-start">
                           {method.logo && (
                             <div className="mb-4 h-16 flex items-center">
-                              <Image
-                                src={method.logo}
-                                alt={method.name}
-                                width={100}
-                                height={64}
-                                className="object-contain max-h-16"
-                                loading="lazy"
-                              />
+                              {method.name === 'OXXO' ? (
+                                <Link href="/pagos-oxxo" className="hover:opacity-80 transition-opacity">
+                                  <Image
+                                    src={method.logo}
+                                    alt={method.name}
+                                    width={100}
+                                    height={64}
+                                    className="object-contain max-h-16 cursor-pointer"
+                                    loading="lazy"
+                                  />
+                                </Link>
+                              ) : method.name === 'SPEI' ? (
+                                <Link href="/pagos-spei" className="hover:opacity-80 transition-opacity">
+                                  <Image
+                                    src={method.logo}
+                                    alt={method.name}
+                                    width={100}
+                                    height={64}
+                                    className="object-contain max-h-16 cursor-pointer"
+                                    loading="lazy"
+                                  />
+                                </Link>
+                              ) : (
+                                <Image
+                                  src={method.logo}
+                                  alt={method.name}
+                                  width={100}
+                                  height={64}
+                                  className="object-contain max-h-16"
+                                  loading="lazy"
+                                />
+                              )}
                             </div>
                           )}
                           <h4 className="font-semibold text-white mb-3 text-lg">{method.name}</h4>
@@ -408,13 +464,13 @@ const StripeBenefitsPage = () => {
       </section>
 
       {/* CTA Section */}
-      <section className="relative py-16 md:py-24 px-4 sm:px-6 lg:px-8">
+      <section className="relative py-16 md:py-24 px-4 sm:px-6 lg:px-8" aria-labelledby="cta-title">
         <div ref={ctaAnim.ref} className="max-w-4xl mx-auto">
-          <div className={`bg-linear-to-r from-purple-600 to-blue-600 rounded-2xl p-8 md:p-12 text-center transition-all duration-700 ease-out ${
+          <aside className={`bg-linear-to-r from-purple-600 to-blue-600 rounded-2xl p-8 md:p-12 text-center transition-all duration-700 ease-out ${
             ctaAnim.isVisible ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-8 scale-95'
-          }`}>
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              ¿Listo para Maximizar tus Ventas?
+          }`} role="complementary" aria-label="Llamada a la acción">
+            <h2 id="cta-title" className="text-3xl md:text-4xl font-bold mb-4">
+              ¿Listo para Maximizar tus Ventas con Stripe y Expo360?
             </h2>
             
             <p className="text-lg text-white/90 mb-10">
@@ -453,14 +509,20 @@ const StripeBenefitsPage = () => {
                 </a>
               </div>
             </div>
-          </div>
+          </aside>
         </div>
       </section>
+      </main>
 
       {/* Footer */}
-      <footer className="relative py-8 px-4 sm:px-6 lg:px-8">
+      <footer className="relative py-8 px-4 sm:px-6 lg:px-8" role="contentinfo">
         <div className="max-w-7xl mx-auto text-center text-gray-400 text-sm">
           <p>© 2025 <span className="bg-linear-to-r from-orange-400 to-yellow-400 bg-clip-text text-transparent font-semibold">Expo360</span> por <a href="https://interzekt.com" target="_blank" rel="noopener noreferrer" className="bg-linear-to-r from-cyan-400 via-blue-400 to-pink-400 bg-clip-text text-transparent hover:opacity-80 transition font-semibold">Interzekt.com</a>. Todos los derechos reservados.</p>
+          {/* Hidden SEO content for crawlers */}
+          <div className="sr-only">
+            <p>Expo360 es una plataforma de showrooms virtuales 3D que permite a empresas mexicanas mostrar sus productos de manera interactiva. Con la integración de Stripe, aceptamos OXXO, SPEI, tarjetas de crédito y débito, Apple Pay, Google Pay, PayPal, Amazon Pay, y ofrecemos meses sin intereses. Ideal para tiendas de muebles, decoración, y productos personalizables.</p>
+            <address>Contacto: WhatsApp +52 818 693 1122 | Email: contacto@interzekt.com | San Pedro Garza García, Nuevo León, México</address>
+          </div>
         </div>
       </footer>
       </div>
