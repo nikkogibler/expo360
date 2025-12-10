@@ -4,6 +4,7 @@ import React from 'react';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import { Vortex } from '@/ui/vortex';
 import { 
   Zap, 
   Users, 
@@ -127,9 +128,12 @@ const PorqueExpo360Page = () => {
               transition={{ duration: 0.6, delay: 0.2 }}
               className="hidden md:flex items-center gap-8 absolute left-1/2 transform -translate-x-1/2"
             >
-              <span className="text-gray-300 text-sm font-medium leading-normal py-1">
+              <Link 
+                href="/onboarding"
+                className="text-gray-300 hover:text-white transition text-sm font-medium leading-normal py-1"
+              >
                 Contáctanos
-              </span>
+              </Link>
               <a href="/#pricing" className="text-gray-300 hover:text-white transition text-sm font-medium leading-normal py-1">
                 Precios
               </a>
@@ -164,6 +168,10 @@ const PorqueExpo360Page = () => {
 
       {/* Hero Section */}
       <section className="relative py-16 md:py-24 px-4 sm:px-6 lg:px-8 overflow-hidden">
+        {/* Vortex Animation */}
+        <div className="absolute inset-0 z-0 pointer-events-none opacity-50">
+          <Vortex backgroundColor="transparent" baseHue={270} rangeY={150} particleCount={400} />
+        </div>
         {/* Glow effects */}
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-purple-600/20 rounded-full blur-3xl opacity-50"></div>
         <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-blue-600/20 rounded-full blur-3xl opacity-50"></div>

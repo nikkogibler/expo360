@@ -1,10 +1,12 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import Image from 'next/image';
 import { Check, ArrowRight, Zap, Users, TrendingUp, Lock, Clock, Smartphone } from 'lucide-react';
 import { LayoutGrid } from '@/ui/layout-grid';
+import { WavyBackground } from '@/ui/wavy-background';
 
 // ==================== SKELETON COMPONENTS ====================
 const SkeletonOne = () => (
@@ -68,6 +70,7 @@ const heroCards = [
 ];
 
 const LandingPage = () => {
+  const router = useRouter();
   const [annualBillingSelected, setAnnualBillingSelected] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -577,7 +580,7 @@ const LandingPage = () => {
               <div className="absolute inset-0 bg-linear-to-r from-blue-600 to-purple-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
             </a>
             <button
-              onClick={() => setIsModalOpen(true)}
+              onClick={() => router.push('/onboarding')}
               className="px-8 py-4 border-2 border-gray-400 text-white font-semibold rounded-lg hover:border-white hover:bg-white/5 transition-all duration-300 flex items-center gap-2"
             >
               Contáctanos
@@ -669,7 +672,7 @@ const LandingPage = () => {
           {[
             {
               number: '01',
-              title: 'Regístrate',
+              title: 'Escoge tu Plan y Regístrate',
               description: 'Crea tu cuenta de ',
               hasLogo: true,
               descriptionAfter: ' y cuéntanos sobre tu evento. Solo te tomará 3 minutos.'
@@ -827,10 +830,18 @@ const LandingPage = () => {
 
   // ==================== PRICING SECTION ====================
   const PricingSection = () => (
-    <div id="pricing" className="relative py-20 md:py-32 overflow-hidden">
-      {/* Gradient Background */}
+    <div id="pricing" className="relative overflow-hidden">
+      {/* Original Gradient Background */}
       <div className="absolute inset-0 bg-linear-to-br from-slate-900 via-purple-900 to-slate-900"></div>
-
+      <WavyBackground
+        className="w-full"
+        containerClassName="min-h-fit py-20 md:py-32"
+        colors={["#7c3aed", "#8b5cf6", "#a78bfa", "#6366f1", "#818cf8"]}
+        waveOpacity={0.5}
+        backgroundFill="transparent"
+        blur={10}
+        speed="fast"
+      >
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div
           initial="hidden"
@@ -1023,7 +1034,7 @@ const LandingPage = () => {
 
               {/* CTA */}
               <button
-                onClick={() => setIsModalOpen(true)}
+                onClick={() => router.push('/onboarding')}
                 className="block w-full py-3 bg-linear-to-r from-purple-600 to-blue-600 text-white font-semibold rounded-lg text-center hover:shadow-lg hover:shadow-purple-600/50 transition-all duration-300 cursor-pointer"
               >
                 Contáctanos
@@ -1044,6 +1055,7 @@ const LandingPage = () => {
           </p>
         </motion.div>
       </div>
+      </WavyBackground>
     </div>
   );
 

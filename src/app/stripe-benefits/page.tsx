@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
 import { CreditCard, Wallet, Clock, TrendingUp, Lock, ArrowRight } from 'lucide-react';
+import { Vortex } from '@/ui/vortex';
 
 const StripeBenefitsPage = () => {
   const fadeInUp = {
@@ -123,24 +124,77 @@ const StripeBenefitsPage = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-black text-white overflow-hidden">
-      {/* Navigation */}
-      <nav className="relative z-50 py-6 px-4 sm:px-6 lg:px-8 border-b border-white/10">
-        <div className="max-w-7xl mx-auto flex justify-between items-center">
-          <Link href="/" className="text-2xl font-bold bg-linear-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
-            Expo360
-          </Link>
-          <Link href="/#pricing" className="text-gray-300 hover:text-white transition-colors">
-            Volver a Precios
-          </Link>
+    <div className="min-h-screen bg-black text-white overflow-hidden relative">
+      {/* Page Background Gradient */}
+      <div className="absolute inset-0 bg-linear-to-br from-purple-900/20 via-black to-blue-900/20 pointer-events-none"></div>
+      <div className="relative z-10">
+      {/* Navigation Header */}
+      <header className="absolute top-0 left-0 right-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-0.5">
+          <div className="flex items-center justify-between">
+            {/* Logo - Left */}
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6 }}
+            >
+              <Image
+                src="/expo360_logo.png"
+                alt="Expo360 Logo"
+                width={120}
+                height={120}
+                className="rounded-lg scale-150"
+              />
+            </motion.div>
+
+            {/* Center Nav Links */}
+            <motion.nav
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="hidden md:flex items-center gap-8 absolute left-1/2 transform -translate-x-1/2"
+            >
+              <a href="/porque-expo360" className="text-gray-300 hover:text-white transition text-sm font-medium leading-normal py-1">
+                ¿Porqué Expo360?
+              </a>
+              <a href="/#pricing" className="text-gray-300 hover:text-white transition text-sm font-medium leading-normal py-1">
+                Precios
+              </a>
+              <a href="/preguntas-frecuentes" className="text-gray-300 hover:text-white transition text-sm font-medium leading-normal py-1">
+                Preguntas Frecuentes
+              </a>
+            </motion.nav>
+
+            {/* Right Auth Buttons */}
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6, delay: 0.3 }}
+              className="flex gap-3"
+            >
+              <a
+                href="/signin"
+                className="hidden sm:inline-block px-6 py-2 text-sm font-semibold rounded-lg transition-all duration-300 bg-linear-to-r from-blue-400 via-cyan-400 to-pink-400 bg-clip-text text-transparent"
+              >
+                Iniciar Sesión
+              </a>
+              <a
+                href="/#pricing"
+                className="px-6 py-2 bg-linear-to-r from-purple-600 to-blue-600 text-white text-sm font-semibold rounded-lg hover:shadow-lg hover:shadow-purple-600/50 transition-all duration-300"
+              >
+                Registrarse
+              </a>
+            </motion.div>
+          </div>
         </div>
-      </nav>
+      </header>
 
       {/* Hero Section */}
-      <section className="relative py-16 md:py-24 px-4 sm:px-6 lg:px-8 overflow-hidden">
-        {/* Background gradient */}
-        <div className="absolute inset-0 bg-linear-to-br from-purple-900/20 via-black to-blue-900/20"></div>
-        
+      <section className="relative pt-32 md:pt-40 pb-16 md:pb-24 px-4 sm:px-6 lg:px-8 overflow-hidden">
+        {/* Vortex Animation */}
+        <div className="absolute inset-0 z-0 pointer-events-none opacity-50">
+          <Vortex backgroundColor="transparent" baseHue={270} rangeY={150} particleCount={400} />
+        </div>
         {/* Glow effects */}
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-purple-600/20 rounded-full blur-3xl opacity-50"></div>
         <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-blue-600/20 rounded-full blur-3xl opacity-50"></div>
@@ -154,9 +208,31 @@ const StripeBenefitsPage = () => {
           >
             <motion.h1 
               variants={fadeInUp}
-              className="text-4xl md:text-6xl font-bold bg-linear-to-r from-purple-400 via-blue-400 to-purple-400 bg-clip-text text-transparent"
+              className="text-4xl md:text-6xl font-bold leading-tight pb-2 flex items-center justify-center gap-1"
             >
-              Stripe: Tu Puerta a Pagos Globales
+              <span className="relative inline-flex items-center translate-y-[3px]">
+                <Image
+                  src="/integration_logos/stripe_logo.png"
+                  alt="Stripe"
+                  width={180}
+                  height={75}
+                  className="h-12 md:h-16 w-auto object-contain"
+                  style={{
+                    filter: 'brightness(0) invert(1) sepia(1) saturate(5) hue-rotate(220deg)',
+                  }}
+                />
+              </span>
+              <span className="bg-linear-to-r from-purple-400 via-blue-400 to-purple-400 bg-clip-text text-transparent">+ </span>
+              <span className="relative inline-flex items-center translate-y-[3px] ml-[60px]">
+                <Image
+                  src="/expo360_logo.png"
+                  alt="Expo360"
+                  width={1200}
+                  height={500}
+                  className="h-[30rem] md:h-[42rem] w-auto object-contain absolute top-1/2 -translate-y-1/2 -left-[15px] scale-[2.25]"
+                />
+                <span className="invisible h-12 md:h-16 w-[140px]"></span>
+              </span>
             </motion.h1>
 
             <motion.p 
@@ -343,11 +419,12 @@ const StripeBenefitsPage = () => {
       </section>
 
       {/* Footer */}
-      <footer className="relative border-t border-white/10 py-8 px-4 sm:px-6 lg:px-8">
+      <footer className="relative py-8 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto text-center text-gray-400 text-sm">
-          <p>&copy; 2025 Expo360 × Stripe Integration. Powered by Interzekt.</p>
+          <p>© 2025 <span className="bg-linear-to-r from-orange-400 to-yellow-400 bg-clip-text text-transparent font-semibold">Expo360</span> por <a href="https://interzekt.com" target="_blank" rel="noopener noreferrer" className="bg-linear-to-r from-cyan-400 via-blue-400 to-pink-400 bg-clip-text text-transparent hover:opacity-80 transition font-semibold">Interzekt.com</a>. Todos los derechos reservados.</p>
         </div>
       </footer>
+      </div>
     </div>
   );
 };

@@ -169,21 +169,68 @@ export default function OnboardingPage() {
 
   return (
     <div className="min-h-screen bg-linear-to-br from-slate-900 via-purple-900 to-slate-900">
-      {/* Header */}
-      <div className="bg-linear-to-br from-slate-900 via-purple-900 to-slate-900 border-b border-purple-800">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <Link href="/">
-            <div className="flex justify-center cursor-pointer">
-              <Image
-                src="/expo360_logo.png"
-                alt="Expo360"
-                width={240}
-                height={120}
-              />
-            </div>
-          </Link>
+      {/* Navigation Header */}
+      <header className="relative z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-0.5">
+          <div className="flex items-center justify-between">
+            {/* Logo - Left */}
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6 }}
+            >
+              <Link href="/">
+                <Image
+                  src="/expo360_logo.png"
+                  alt="Expo360 Logo"
+                  width={120}
+                  height={120}
+                  className="rounded-lg scale-150"
+                />
+              </Link>
+            </motion.div>
+
+            {/* Center Nav Links */}
+            <motion.nav
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="hidden md:flex items-center gap-8 absolute left-1/2 transform -translate-x-1/2"
+            >
+              <Link href="/porque-expo360" className="text-gray-300 hover:text-white transition text-sm font-medium leading-normal py-1">
+                ¿Porqué Expo360?
+              </Link>
+              <Link href="/#pricing" className="text-gray-300 hover:text-white transition text-sm font-medium leading-normal py-1">
+                Precios
+              </Link>
+              <Link href="/preguntas-frecuentes" className="text-gray-300 hover:text-white transition text-sm font-medium leading-normal py-1">
+                Preguntas Frecuentes
+              </Link>
+            </motion.nav>
+
+            {/* Right Auth Buttons */}
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6, delay: 0.3 }}
+              className="flex gap-3"
+            >
+              <Link
+                href="/signin"
+                className="hidden sm:inline-block px-6 py-2 text-sm font-semibold rounded-lg transition-all duration-300 bg-linear-to-r from-blue-400 via-cyan-400 to-pink-400 bg-clip-text text-transparent"
+              >
+                Iniciar Sesión
+              </Link>
+              <Link
+                href="/#pricing"
+                className="px-6 py-2 bg-linear-to-r from-purple-600 to-blue-600 text-white text-sm font-semibold rounded-lg hover:shadow-lg hover:shadow-purple-600/50 transition-all duration-300"
+              >
+                Registrarse
+              </Link>
+            </motion.div>
+          </div>
         </div>
-      </div>
+      </header>
 
       {/* Main Content */}
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
