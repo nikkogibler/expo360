@@ -4,9 +4,16 @@ import React, { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import Image from 'next/image';
+import dynamic from 'next/dynamic';
 import { Check, ArrowRight, Zap, Users, TrendingUp, Lock, Clock, Smartphone } from 'lucide-react';
+
+// Import LayoutGrid directly - SSR is needed for LCP images
 import { LayoutGrid } from '@/ui/layout-grid';
-import { WavyBackground } from '@/ui/wavy-background';
+
+const WavyBackground = dynamic(() => import('@/ui/wavy-background').then(mod => ({ default: mod.WavyBackground })), {
+  ssr: false,
+  loading: () => null,
+});
 
 // ==================== SKELETON COMPONENTS ====================
 const SkeletonOne = () => (
@@ -168,28 +175,21 @@ const LandingPage = () => {
     }
   };
 
-  // Animation variants
+  // Animation variants - NO movement, everything visible immediately
+  // This prevents ALL white flash and jumpiness on scroll
   const fadeInUp = {
-    hidden: { opacity: 0, y: 30 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.6 } }
+    hidden: { opacity: 1, y: 0 },
+    visible: { opacity: 1, y: 0 }
   };
 
-  // const fadeInDown = {
-  //   hidden: { opacity: 0, y: -30 },
-  //   visible: { opacity: 1, y: 0, transition: { duration: 0.6 } }
-  // };
-
   const staggerContainer = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: { staggerChildren: 0.15, delayChildren: 0.1 }
-    }
+    hidden: { opacity: 1 },
+    visible: { opacity: 1 }
   };
 
   const scaleIn = {
-    hidden: { opacity: 0, scale: 0.95 },
-    visible: { opacity: 1, scale: 1, transition: { duration: 0.6 } }
+    hidden: { opacity: 1, scale: 1 },
+    visible: { opacity: 1, scale: 1 }
   };
 
   // ==================== CONTACT MODAL ====================
@@ -449,11 +449,7 @@ const LandingPage = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-0.5">
         <div className="flex items-center justify-between">
           {/* Logo - Left */}
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6 }}
-          >
+          <div>
             <Image
               src="/expo360_logo.png"
               alt="Expo360 Logo"
@@ -461,13 +457,10 @@ const LandingPage = () => {
               height={120}
               className="rounded-lg scale-150"
             />
-          </motion.div>
+          </div>
 
           {/* Center Nav Links */}
-          <motion.nav
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
+          <nav
             className="hidden md:flex items-center gap-8 absolute left-1/2 transform -translate-x-1/2"
           >
             <a href="/porque-expo360" className="text-gray-300 hover:text-white transition text-sm font-medium leading-normal py-1">
@@ -479,13 +472,10 @@ const LandingPage = () => {
             <a href="/preguntas-frecuentes" className="text-gray-300 hover:text-white transition text-sm font-medium leading-normal py-1">
               Preguntas Frecuentes
             </a>
-          </motion.nav>
+          </nav>
 
           {/* Right Auth Buttons */}
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6, delay: 0.3 }}
+          <div
             className="flex gap-3"
           >
             <a
@@ -500,7 +490,7 @@ const LandingPage = () => {
             >
               Registrarse
             </a>
-          </motion.div>
+          </div>
         </div>
       </div>
     </header>
@@ -518,57 +508,39 @@ const LandingPage = () => {
       </div>
 
       {/* Floating orbs for visual interest */}
-      <motion.div 
+      <div 
         className="absolute top-20 -left-40 w-80 h-80 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20"
-        animate={{ 
-          y: [0, 30, 0],
-          x: [0, 20, 0]
-        }}
-        transition={{ duration: 8, repeat: Infinity }}
       />
-      <motion.div 
+      <div 
         className="absolute bottom-40 -right-40 w-80 h-80 bg-blue-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20"
-        animate={{ 
-          y: [0, -30, 0],
-          x: [0, -20, 0]
-        }}
-        transition={{ duration: 8, repeat: Infinity, delay: 1 }}
       />
 
       {/* Content */}
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-32">
-        <motion.div
-          className="text-center max-w-3xl mx-auto"
-          initial="hidden"
-          animate="visible"
-          variants={staggerContainer}
-        >
+        <div className="text-center max-w-3xl mx-auto">
           {/* Eyebrow text */}
-          <motion.div variants={fadeInUp} className="inline-block mb-6">
+          <div className="inline-block mb-6">
             <div className="bg-purple-500/20 border border-purple-500/50 rounded-full px-4 py-2 backdrop-blur-sm">
               <p className="text-purple-200 text-sm font-semibold">🚀 Transforma Tus Exposiciones Hoy</p>
             </div>
-          </motion.div>
+          </div>
 
-          {/* Main headline */}
-          <motion.h1 
-            variants={fadeInUp}
+          {/* Main headline - NO animation wrapper to ensure fast LCP */}
+          <h1 
             className="text-5xl md:text-7xl font-bold text-white mb-6 leading-tight"
           >
             De Visitantes a Ventas: <span className="bg-linear-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">En Minutos, No Meses</span>
-          </motion.h1>
+          </h1>
 
           {/* Subheadline */}
-          <motion.p 
-            variants={fadeInUp}
+          <p 
             className="text-xl md:text-2xl text-gray-300 mb-8 leading-relaxed"
           >
             Transforma tus ferias comerciales y exhibiciones en experiencias digitales interactivas que capturen datos de clientes, permitan ventas en tiempo real y proporcionen atribución post-evento instantánea.
-          </motion.p>
+          </p>
 
           {/* CTA Buttons */}
-          <motion.div 
-            variants={fadeInUp}
+          <div 
             className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12"
           >
             <a
@@ -586,11 +558,10 @@ const LandingPage = () => {
               Contáctanos
               <ArrowRight className="w-4 h-4" />
             </button>
-          </motion.div>
+          </div>
 
           {/* Trust badges */}
-          <motion.div 
-            variants={fadeInUp}
+          <div 
             className="flex flex-col sm:flex-row justify-center items-center gap-6 text-sm text-gray-400 pt-8"
           >
             <div className="flex items-center gap-2">
@@ -607,23 +578,19 @@ const LandingPage = () => {
               <Check className="w-4 h-4 text-green-400" />
               <span>Análisis de Ventas</span>
             </div>
-          </motion.div>
-        </motion.div>
+          </div>
+        </div>
 
         {/* Hero visual - Layout Grid */}
-        <motion.div
-          variants={fadeInUp}
+        <div
           className="mt-16 relative w-full"
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 1.5, duration: 0.8, ease: 'easeOut' }}
         >
           <div className="bg-linear-to-br from-purple-500/10 to-blue-500/10 rounded-2xl p-1 border border-purple-500/20">
             <div className="p-8">
               <LayoutGrid cards={heroCards} />
             </div>
           </div>
-        </motion.div>
+        </div>
       </div>
     </div>
   );
@@ -867,9 +834,7 @@ const LandingPage = () => {
         {/* Pricing cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto">
           {/* One-Time Card */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
+          <div
             className="bg-linear-to-br from-white/10 to-white/5 border-2 border-white/20 rounded-2xl p-6 relative overflow-hidden"
           >
               {/* Badge */}
@@ -917,12 +882,10 @@ const LandingPage = () => {
               >
                 Comienza Ahora
               </a>
-            </motion.div>
+            </div>
 
           {/* Annual Plan Card */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
+          <div
             className="bg-linear-to-br from-purple-600 to-blue-600 rounded-2xl p-6 relative overflow-hidden shadow-2xl"
           >
               {/* Badge */}
@@ -985,12 +948,10 @@ const LandingPage = () => {
               >
                 Desbloquea Acceso Ilimitado
               </a>
-            </motion.div>
+            </div>
 
           {/* Enterprise Card */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
+          <div
             className="bg-linear-to-br from-white/10 to-white/5 border-2 border-purple-500/50 rounded-2xl p-6 relative overflow-hidden"
           >
               {/* Badge */}
@@ -1039,7 +1000,7 @@ const LandingPage = () => {
               >
                 Contáctanos
               </button>
-            </motion.div>
+            </div>
         </div>
 
         {/* FAQ note */}

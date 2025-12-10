@@ -1,7 +1,7 @@
 "use client";
-import React, { useState } from "react";
-import { motion } from "framer-motion";
+import React from "react";
 import { cn } from "@/lib/utils";
+import Image from "next/image";
 
 interface Card {
   id: number;
@@ -11,38 +11,32 @@ interface Card {
 }
 
 export const LayoutGrid = ({ cards }: { cards: Card[] }) => {
-  const [selected, setSelected] = useState<number | null>(null);
-
   return (
     <div className="w-full gap-4 grid grid-cols-1 md:grid-cols-3 auto-rows-max">
       {cards.map((card, i) => (
-        <motion.div
+        <div
           key={i}
-          onClick={() => setSelected(card.id)}
           className={cn(
             card.className,
-            "relative bg-white overflow-hidden rounded-lg cursor-pointer h-60 md:h-80 w-full"
+            "relative bg-gray-900 overflow-hidden rounded-lg cursor-pointer h-60 md:h-80 w-full"
           )}
-          layoutId={`card-${card.id}`}
         >
-          <motion.div
-            className="absolute inset-0"
-            layoutId={`bg-${card.id}`}
-          >
-            <img
+          <div className="absolute inset-0">
+            <Image
               src={card.thumbnail}
               alt="thumbnail"
-              className="h-full w-full object-cover"
+              fill
+              className="object-cover"
+              sizes="(max-width: 768px) 100vw, 33vw"
+              priority={i === 0}
+              loading={i === 0 ? "eager" : "lazy"}
             />
-          </motion.div>
+          </div>
 
-          <motion.div
-            className="absolute inset-0 bg-black/40 flex items-end p-4 md:p-8"
-            layoutId={`overlay-${card.id}`}
-          >
+          <div className="absolute inset-0 bg-black/40 flex items-end p-4 md:p-8">
             {card.content}
-          </motion.div>
-        </motion.div>
+          </div>
+        </div>
       ))}
     </div>
   );
