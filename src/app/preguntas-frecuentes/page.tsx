@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { ChevronDown, HelpCircle, ArrowRight } from 'lucide-react';
@@ -135,24 +136,75 @@ const PreguntasFrecuentesPage = () => {
   let globalIndex = 0;
 
   return (
-    <div className="min-h-screen bg-black text-white overflow-hidden">
-      {/* Navigation */}
-      <nav className="relative z-50 py-6 px-4 sm:px-6 lg:px-8 border-b border-white/10">
-        <div className="max-w-7xl mx-auto flex justify-between items-center">
-          <Link href="/" className="text-2xl font-bold bg-linear-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
-            Expo360
-          </Link>
-          <Link href="/#pricing" className="text-gray-300 hover:text-white transition-colors">
-            Ver Precios
-          </Link>
+    <div className="min-h-screen bg-black text-white overflow-hidden relative">
+      {/* Page Background Gradient */}
+      <div className="absolute inset-0 bg-linear-to-br from-purple-900/20 via-black to-blue-900/20 pointer-events-none"></div>
+      <div className="relative z-10">
+      {/* Navigation Header */}
+      <header className="relative z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-0.5">
+          <div className="flex items-center justify-between">
+            {/* Logo - Left */}
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6 }}
+            >
+              <Link href="/">
+                <Image
+                  src="/expo360_logo.png"
+                  alt="Expo360 Logo"
+                  width={120}
+                  height={120}
+                  className="rounded-lg scale-150"
+                />
+              </Link>
+            </motion.div>
+
+            {/* Center Nav Links */}
+            <motion.nav
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="hidden md:flex items-center gap-8 absolute left-1/2 transform -translate-x-1/2"
+            >
+              <a href="/porque-expo360" className="text-gray-300 hover:text-white transition text-sm font-medium leading-normal py-1">
+                ¿Porqué Expo360?
+              </a>
+              <a href="/#pricing" className="text-gray-300 hover:text-white transition text-sm font-medium leading-normal py-1">
+                Precios
+              </a>
+              <span className="text-gray-300 text-sm font-medium leading-normal py-1">
+                Contáctanos
+              </span>
+            </motion.nav>
+
+            {/* Right Auth Buttons */}
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6, delay: 0.3 }}
+              className="flex gap-3"
+            >
+              <a
+                href="/signin"
+                className="hidden sm:inline-block px-6 py-2 text-sm font-semibold rounded-lg transition-all duration-300 bg-linear-to-r from-blue-400 via-cyan-400 to-pink-400 bg-clip-text text-transparent"
+              >
+                Iniciar Sesión
+              </a>
+              <a
+                href="/#pricing"
+                className="px-6 py-2 bg-linear-to-r from-purple-600 to-blue-600 text-white text-sm font-semibold rounded-lg hover:shadow-lg hover:shadow-purple-600/50 transition-all duration-300"
+              >
+                Registrarse
+              </a>
+            </motion.div>
+          </div>
         </div>
-      </nav>
+      </header>
 
       {/* Hero Section */}
       <section className="relative py-16 md:py-24 px-4 sm:px-6 lg:px-8 overflow-hidden">
-        {/* Background gradient */}
-        <div className="absolute inset-0 bg-linear-to-br from-purple-900/20 via-black to-blue-900/20"></div>
-        
         {/* Glow effects */}
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-purple-600/20 rounded-full blur-3xl opacity-50"></div>
         <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-blue-600/20 rounded-full blur-3xl opacity-50"></div>
@@ -295,11 +347,54 @@ const PreguntasFrecuentesPage = () => {
       </section>
 
       {/* Footer */}
-      <footer className="relative border-t border-white/10 py-8 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto text-center text-gray-400 text-sm">
-          <p>&copy; 2025 Expo360. Powered by Interzekt.</p>
+      <footer className="bg-transparent py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-12">
+            <div>
+              <h4 className="text-white font-semibold mb-4">Producto</h4>
+              <ul className="space-y-2 text-sm text-gray-400">
+                <li><a href="#" className="hover:text-white transition">Características</a></li>
+                <li><a href="#" className="hover:text-white transition">Precios</a></li>
+                <li><a href="#" className="hover:text-white transition">Seguridad</a></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="text-white font-semibold mb-4">Empresa</h4>
+              <ul className="space-y-2 text-sm text-gray-400">
+                <li><a href="#" className="hover:text-white transition">Acerca de</a></li>
+                <li><a href="#" className="hover:text-white transition">Blog</a></li>
+                <li><a href="#" className="hover:text-white transition">Carreras</a></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="text-white font-semibold mb-4">Recursos</h4>
+              <ul className="space-y-2 text-sm text-gray-400">
+                <li><a href="#" className="hover:text-white transition">Centro de Ayuda</a></li>
+                <li><a href="#" className="hover:text-white transition">Documentación</a></li>
+                <li><a href="#" className="hover:text-white transition">Estado</a></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="text-white font-semibold mb-4">Legal</h4>
+              <ul className="space-y-2 text-sm text-gray-400">
+                <li><a href="#" className="hover:text-white transition">Privacidad</a></li>
+                <li><a href="#" className="hover:text-white transition">Términos</a></li>
+                <li><a href="#" className="hover:text-white transition">Contacto</a></li>
+              </ul>
+            </div>
+          </div>
+
+          <div className="border-t border-slate-800 pt-8 flex flex-col md:flex-row justify-between items-center text-sm text-gray-400">
+            <p>© 2025 <span className="bg-linear-to-r from-orange-400 to-yellow-400 bg-clip-text text-transparent font-semibold">Expo360</span> por <a href="https://interzekt.com" target="_blank" rel="noopener noreferrer" className="bg-linear-to-r from-cyan-400 via-blue-400 to-pink-400 bg-clip-text text-transparent hover:opacity-80 transition font-semibold">Interzekt.com</a>. Todos los derechos reservados.</p>
+            <div className="flex gap-6 mt-4 md:mt-0">
+              <a href="#" className="hover:text-white transition">Twitter</a>
+              <a href="#" className="hover:text-white transition">LinkedIn</a>
+              <a href="#" className="hover:text-white transition">Instagram</a>
+            </div>
+          </div>
         </div>
       </footer>
+      </div>
     </div>
   );
 };
