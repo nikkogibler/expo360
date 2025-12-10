@@ -1,14 +1,26 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import Image from 'next/image';
 import { Check, ArrowRight, Zap, Users, TrendingUp, Lock, Clock, Smartphone } from 'lucide-react';
+import { buildPageMetadata } from '@/lib/metadata';
 
 // Import LayoutGrid directly - SSR is needed for LCP images
 import { LayoutGrid } from '@/ui/layout-grid';
+
+/**
+ * Dynamic Metadata Generation
+ * This pulls metadata from src/config/seo-metadata.ts
+ * Updates to SEO content don't require code changes or redeployment!
+ * ISR revalidate: 60 seconds
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  return buildPageMetadata('home');
+}
 
 // ==================== SKELETON COMPONENTS ====================
 const SkeletonOne = () => (

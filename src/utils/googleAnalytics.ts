@@ -1,5 +1,6 @@
 // Google Analytics 4 integration utilities
 // This file handles both tracking events and retrieving analytics data
+// Supports multiple measurement IDs for different properties
 
 declare global {
   interface Window {
@@ -8,51 +9,58 @@ declare global {
   }
 }
 
-export const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
+// Your property measurement ID
+export const GA_MEASUREMENT_ID = 'G-E8NCY2YTP3';
+
+// All measurement IDs to track
+export const GA_MEASUREMENT_IDS = [GA_MEASUREMENT_ID].filter(Boolean);
 
 // Initialize Google Analytics
 export const initGA = () => {
-  if (!GA_MEASUREMENT_ID) {
-    console.warn('Google Analytics Measurement ID not found');
+  if (!GA_MEASUREMENT_IDS.length) {
+    console.warn('No Google Analytics Measurement IDs found');
     return;
   }
 
-  // Load gtag script
-  const script1 = document.createElement('script');
-  script1.async = true;
-  script1.src = `https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`;
-  document.head.appendChild(script1);
-
-  // Initialize gtag
+  // Initialize dataLayer once
   window.dataLayer = window.dataLayer || [];
   window.gtag = function gtag(...args: unknown[]) {
     window.dataLayer.push(args);
   };
   window.gtag('js', new Date());
-  window.gtag('config', GA_MEASUREMENT_ID, {
-    page_title: document.title,
-    page_location: window.location.href,
+
+  // Configure all measurement IDs
+  GA_MEASUREMENT_IDS.forEach((id) => {
+    window.gtag('config', id, {
+      page_title: document.title,
+      page_location: window.location.href,
+    });
   });
 
-  console.log('✅ Google Analytics initialized with ID:', GA_MEASUREMENT_ID);
+  console.log('✅ Google Analytics initialized with IDs:', GA_MEASUREMENT_IDS);
 };
 
-// Track page views
+// Track page views across all measurement IDs
 export const trackPageView = (url: string, title?: string) => {
   if (typeof window !== 'undefined' && window.gtag) {
-    window.gtag('config', GA_MEASUREMENT_ID, {
-      page_path: url,
-      page_title: title,
+    GA_MEASUREMENT_IDS.forEach((id) => {
+      window.gtag('config', id, {
+        page_path: url,
+        page_title: title,
+      });
     });
   }
 };
 
-// Track custom events
+// Track custom events across all measurement IDs
 export const trackEvent = (eventName: string, parameters?: Record<string, unknown>) => {
   if (typeof window !== 'undefined' && window.gtag) {
-    window.gtag('event', eventName, {
-      ...parameters,
-      send_to: GA_MEASUREMENT_ID,
+    // Track event in all configured measurement IDs
+    GA_MEASUREMENT_IDS.forEach((id) => {
+      window.gtag('event', eventName, {
+        ...parameters,
+        send_to: id,
+      });
     });
   }
 };

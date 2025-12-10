@@ -7,8 +7,10 @@ import "./globals.css";
 import CustomerIdInitializer from '../components/CustomerIdInitializer'; // This is the correct import location
 import GoogleAnalytics from '../components/GoogleAnalytics'; // NEW: Import Google Analytics
 import StructuredData from '../components/StructuredData'; // NEW: Import StructuredData
+import HrefLangMeta from '../components/HrefLangMeta'; // NEW: Import HrefLangMeta for multi-regional SEO
 import { Suspense } from 'react'; // <--- NEW: Import Suspense
 import { Analytics } from "@vercel/analytics/next";
+import { generateHrefLangLinks, hrefLangToMetadata } from '@/lib/hreflang'; // NEW: Import hreflang utilities
 
 export const metadata: Metadata = {
   title: "Expo360 - Interactive Showroom",
@@ -16,6 +18,14 @@ export const metadata: Metadata = {
   metadataBase: new URL('https://expo360.vercel.app'),
   icons: {
     icon: '/favicon.png',
+  },
+  alternates: {
+    // Hreflang links for international SEO
+    languages: {
+      'es-MX': 'https://expo360.vercel.app/',
+      'en': 'https://expo360.vercel.app/en/',
+      'x-default': 'https://expo360.vercel.app/',
+    },
   },
   openGraph: {
     title: "Expo360 - Interactive Showroom",
@@ -75,6 +85,8 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        {/* HrefLangMeta for multi-regional SEO - updates on client navigation */}
+        <HrefLangMeta />
         {/* CORRECT LOCATION for Suspense: Wrap CustomerIdInitializer here */}
         <Suspense fallback={null}> {/* `null` for fallback as this component renders no UI */}
           <CustomerIdInitializer /> 

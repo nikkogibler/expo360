@@ -1,11 +1,13 @@
 'use client';
 
 import React from 'react';
+import type { Metadata } from 'next';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { Vortex } from '@/ui/vortex';
 import FactSheet from '@/components/FactSheet';
+import { buildPageMetadata } from '@/lib/metadata';
 import { 
   Zap, 
   Users, 
@@ -19,6 +21,15 @@ import {
   CheckCircle,
   ArrowRight
 } from 'lucide-react';
+
+/**
+ * Dynamic Metadata Generation
+ * Pulls from centralized seo-metadata.ts config
+ * ISR revalidate: 60 seconds
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  return buildPageMetadata('porque-expo360');
+}
 
 const PorqueExpo360Page = () => {
   const fadeInUp = {
