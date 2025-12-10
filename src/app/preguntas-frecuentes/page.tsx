@@ -146,21 +146,16 @@ const PreguntasFrecuentesPage = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-0.5">
           <div className="flex items-center justify-between">
             {/* Logo - Left */}
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6 }}
-            >
-              <Link href="/">
-                <Image
-                  src="/expo360_logo.png"
-                  alt="Expo360 Logo"
-                  width={120}
-                  height={120}
-                  className="rounded-lg scale-150"
-                />
-              </Link>
-            </motion.div>
+            <Link href="/" className="block" aria-label="Ir a página principal de Expo360">
+              <Image
+                src="/expo360_logo.png"
+                alt="Expo360 - Showroom Virtual 3D"
+                width={180}
+                height={180}
+                className="rounded-lg"
+                priority
+              />
+            </Link>
 
             {/* Center Nav Links */}
             <motion.nav
@@ -260,41 +255,22 @@ const PreguntasFrecuentesPage = () => {
               return (
                 <motion.div key={catIdx} variants={fadeInUp}>
                   <h2 className="text-2xl font-bold mb-6 text-purple-300">{category.category}</h2>
-                  <div className="space-y-4">
+                  <div className="space-y-8">
                     {category.questions.map((faq, qIdx) => {
                       const currentIndex = globalIndex++;
                       return (
-                        <div
+                        <article
                           key={qIdx}
-                          className="bg-white/5 border border-white/10 rounded-xl overflow-hidden hover:border-purple-500/30 transition-all"
+                          className="bg-white/5 border border-white/10 rounded-xl p-6 hover:border-purple-500/30 transition-all"
                         >
-                          <button
-                            onClick={() => toggleQuestion(currentIndex)}
-                            className="w-full flex items-center justify-between p-6 text-left"
-                          >
-                            <span className="font-semibold text-white pr-4">{faq.question}</span>
-                            <ChevronDown 
-                              className={`w-5 h-5 text-purple-400 shrink-0 transition-transform duration-300 ${
-                                openIndex === currentIndex ? 'rotate-180' : ''
-                              }`}
-                            />
-                          </button>
-                          <AnimatePresence>
-                            {openIndex === currentIndex && (
-                              <motion.div
-                                initial={{ height: 0, opacity: 0 }}
-                                animate={{ height: 'auto', opacity: 1 }}
-                                exit={{ height: 0, opacity: 0 }}
-                                transition={{ duration: 0.3 }}
-                                className="overflow-hidden"
-                              >
-                                <p className="px-6 pb-6 text-gray-300 leading-relaxed">
-                                  {faq.answer}
-                                </p>
-                              </motion.div>
-                            )}
-                          </AnimatePresence>
-                        </div>
+                          <h3 className="text-lg font-bold text-white mb-3 flex items-start gap-3">
+                            <HelpCircle className="w-5 h-5 text-purple-400 shrink-0 mt-1" />
+                            {faq.question}
+                          </h3>
+                          <p className="text-gray-300 leading-relaxed">
+                            {faq.answer}
+                          </p>
+                        </article>
                       );
                     })}
                   </div>
@@ -393,7 +369,7 @@ const PreguntasFrecuentesPage = () => {
           </div>
 
           <div className="border-t border-slate-800 pt-8 flex flex-col md:flex-row justify-between items-center text-sm text-gray-400">
-            <p>© 2025 <a href="/" className="bg-linear-to-r from-orange-400 to-yellow-400 bg-clip-text text-transparent hover:opacity-80 transition font-semibold">Expo360</a> por <a href="https://interzekt.com" target="_blank" rel="noopener noreferrer" className="bg-linear-to-r from-cyan-400 via-blue-400 to-pink-400 bg-clip-text text-transparent hover:opacity-80 transition font-semibold">Interzekt.com</a>. Todos los derechos reservados.</p>
+            <p>© 2025 <Link href="/" className="bg-linear-to-r from-orange-400 to-yellow-400 bg-clip-text text-transparent hover:opacity-80 transition font-semibold">Expo360</Link> por <a href="https://interzekt.com" target="_blank" rel="noopener noreferrer" className="bg-linear-to-r from-cyan-400 via-blue-400 to-pink-400 bg-clip-text text-transparent hover:opacity-80 transition font-semibold">Interzekt.com</a>. Todos los derechos reservados.</p>
             <div className="flex gap-6 mt-4 md:mt-0">
               <a href="#" className="hover:text-white transition">Twitter</a>
               <a href="#" className="hover:text-white transition">LinkedIn</a>

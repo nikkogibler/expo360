@@ -3,7 +3,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { CreditCard, TrendingUp, Users, ShoppingCart, ArrowRight, CheckCircle2, HelpCircle, Calendar, Percent } from 'lucide-react';
+import { CreditCard, TrendingUp, Users, ShoppingCart, ArrowRight, CheckCircle2, HelpCircle, Calendar, Percent, Clock, Shield } from 'lucide-react';
+import FactSheet from '@/components/FactSheet';
 
 function useScrollAnimation() {
   const ref = useRef<HTMLDivElement>(null);
@@ -392,7 +393,7 @@ const MesesSinInteresesPage = () => {
             </div>
           </section>
 
-          {/* FAQ Section */}
+          {/* FAQ Section - Direct Answer Blocks */}
           <section className="relative py-16 md:py-24 px-4 sm:px-6 lg:px-8 bg-linear-to-b from-black via-green-900/5 to-black" aria-labelledby="faq-title">
             <div ref={faqAnim.ref} className="max-w-3xl mx-auto">
               <header className={`mb-12 transition-all duration-700 ease-out ${faqAnim.isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
@@ -402,32 +403,43 @@ const MesesSinInteresesPage = () => {
                 <div className="h-1 w-24 bg-linear-to-r from-green-600 to-emerald-600 mx-auto" aria-hidden="true"></div>
               </header>
 
-              <div className="space-y-4">
+              <div className="space-y-8">
                 {faqs.map((faq, idx) => (
-                  <div
+                  <article
                     key={idx}
-                    className={`border border-green-500/30 rounded-xl overflow-hidden transition-all duration-500 ease-out ${faqAnim.isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
+                    className={`border-b border-green-500/20 pb-8 last:border-0 transition-all duration-500 ease-out ${faqAnim.isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
                     style={{ transitionDelay: `${150 + idx * 50}ms` }}
                   >
-                    <button
-                      onClick={() => setOpenFaq(openFaq === idx ? null : idx)}
-                      className="w-full p-5 flex items-center justify-between text-left hover:bg-green-600/10 transition-all"
-                      aria-expanded={openFaq === idx}
-                    >
-                      <span className="font-semibold flex items-center gap-3">
-                        <HelpCircle className="w-5 h-5 text-green-400 shrink-0" />
-                        {faq.question}
-                      </span>
-                      <CheckCircle2 className={`w-5 h-5 text-emerald-400 transition-transform duration-300 ${openFaq === idx ? 'rotate-180' : ''}`} />
-                    </button>
-                    <div className={`overflow-hidden transition-all duration-300 ${openFaq === idx ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
-                      <p className="p-5 pt-0 text-gray-300 border-t border-green-500/20">
-                        {faq.answer}
-                      </p>
-                    </div>
-                  </div>
+                    <h3 className="text-xl font-bold text-white mb-3 flex items-center gap-2">
+                      <HelpCircle className="w-5 h-5 text-green-400 shrink-0" />
+                      {faq.question}
+                    </h3>
+                    <p className="text-gray-300 leading-relaxed">
+                      {faq.answer}
+                    </p>
+                  </article>
                 ))}
               </div>
+            </div>
+          </section>
+
+          {/* Quick Reference Section */}
+          <section className="relative py-16 md:py-24 px-4 sm:px-6 lg:px-8 bg-linear-to-b from-black via-green-900/5 to-black" aria-labelledby="reference-title">
+            <div className="max-w-4xl mx-auto">
+              <header className="mb-12 text-center">
+                <h2 id="reference-title" className="text-3xl md:text-4xl font-bold mb-4">Meses Sin Intereses de Un Vistazo</h2>
+                <p className="text-gray-400">Todos los números que necesitas saber</p>
+              </header>
+              <FactSheet 
+                title="Resumen de Meses Sin Intereses"
+                className="max-w-2xl mx-auto mb-8"
+                facts={[
+                  { label: 'Plazos Disponibles', value: '3, 6, 9, 12, 18, 24 meses', icon: <Calendar className="w-5 h-5" /> },
+                  { label: 'Tarjetas Aceptadas', value: 'Visa, Mastercard, Amex', icon: <CreditCard className="w-5 h-5" /> },
+                  { label: 'Cobro para Ti', value: 'Inmediato (Total de la venta)', icon: <CheckCircle2 className="w-5 h-5" /> },
+                  { label: 'Comisión Base', value: '~4% - 15% (según plazo)', icon: <Percent className="w-5 h-5" /> },
+                ]}
+              />
             </div>
           </section>
 
@@ -466,7 +478,7 @@ const MesesSinInteresesPage = () => {
         {/* Footer */}
         <footer className="relative py-8 px-4 sm:px-6 lg:px-8" role="contentinfo">
           <div className="max-w-7xl mx-auto text-center text-gray-400 text-sm">
-            <p>© 2025 <a href="/" className="bg-linear-to-r from-orange-400 to-yellow-400 bg-clip-text text-transparent hover:opacity-80 transition font-semibold">Expo360</a> por <a href="https://interzekt.com" target="_blank" rel="noopener noreferrer" className="bg-linear-to-r from-cyan-400 via-blue-400 to-pink-400 bg-clip-text text-transparent hover:opacity-80 transition font-semibold">Interzekt.com</a></p>
+            <p>© 2025 <Link href="/" className="bg-linear-to-r from-orange-400 to-yellow-400 bg-clip-text text-transparent hover:opacity-80 transition font-semibold">Expo360</Link> por <a href="https://interzekt.com" target="_blank" rel="noopener noreferrer" className="bg-linear-to-r from-cyan-400 via-blue-400 to-pink-400 bg-clip-text text-transparent hover:opacity-80 transition font-semibold">Interzekt.com</a></p>
             <div className="mt-4 flex justify-center gap-6 text-xs">
               <Link href="/stripe-benefits" className="hover:text-white transition">Stripe + Expo360</Link>
               <Link href="/pagos-oxxo" className="hover:text-white transition">Pagos OXXO</Link>

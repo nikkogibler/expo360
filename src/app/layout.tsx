@@ -6,6 +6,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import CustomerIdInitializer from '../components/CustomerIdInitializer'; // This is the correct import location
 import GoogleAnalytics from '../components/GoogleAnalytics'; // NEW: Import Google Analytics
+import StructuredData from '../components/StructuredData'; // NEW: Import StructuredData
 import { Suspense } from 'react'; // <--- NEW: Import Suspense
 import { Analytics } from "@vercel/analytics/next";
 
@@ -79,6 +80,7 @@ export default function RootLayout({
           <CustomerIdInitializer /> 
           <GoogleAnalytics /> {/* NEW: Add Google Analytics tracking */}
         </Suspense>
+        <StructuredData />
         {children}
         <Analytics />
       </body>

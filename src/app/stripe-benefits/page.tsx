@@ -4,7 +4,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
-import { Wallet, Clock, TrendingUp, Lock, ArrowRight, ChevronDown } from 'lucide-react';
+import { Wallet, Clock, TrendingUp, Lock, ArrowRight, ChevronDown, Globe, Shield, Zap } from 'lucide-react';
+import FactSheet from '@/components/FactSheet';
 
 // Lazy load heavy Vortex animation to improve LCP
 const Vortex = dynamic(() => import('@/ui/vortex').then(mod => ({ default: mod.Vortex })), {
@@ -248,32 +249,33 @@ const StripeBenefitsPage = () => {
                   height={75}
                   className="h-12 md:h-16 w-auto object-contain"
                   priority
-                  style={{
-                    filter: 'brightness(0) invert(1) sepia(1) saturate(5) hue-rotate(220deg)',
-                  }}
                 />
               </span>
-              <span className="bg-linear-to-r from-purple-400 via-blue-400 to-purple-400 bg-clip-text text-transparent">+ </span>
-              <span className="relative inline-flex items-center translate-y-[3px] ml-[60px]">
-                <Image
-                  src="/expo360_logo.png"
-                  alt="Expo360"
-                  width={300}
-                  height={125}
-                  className="h-120 md:h-168 w-auto object-contain absolute top-1/2 -translate-y-1/2 -left-[15px] scale-[2.25]"
-                  priority
-                />
-                <span className="invisible h-12 md:h-16 w-[140px]"></span>
+              <span className="text-white mx-2">+</span>
+              <span className="bg-linear-to-r from-purple-400 via-pink-400 to-blue-400 bg-clip-text text-transparent">
+                Expo360
               </span>
             </h1>
 
-            <p 
-              className={`text-xl md:text-2xl text-gray-300 max-w-3xl mx-auto leading-relaxed transition-all duration-700 ease-out delay-100 ${
-                heroAnim.isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-              }`}
-            >
-              Con <strong>Stripe™</strong> integrado a <strong>Expo360</strong>, accede a más de <em>100 métodos de pago</em> internacionales incluyendo <strong>OXXO</strong>, <strong>SPEI</strong>, <strong>Apple Pay</strong>, <strong>Google Pay</strong> y <strong>meses sin intereses</strong>. Maximiza las ventas de tu showroom virtual en tiempo real.
+            <p className="text-xl md:text-2xl text-gray-300 max-w-3xl mx-auto leading-relaxed">
+              La plataforma de pagos más potente del mundo, integrada nativamente en tu showroom virtual. Acepta <strong>tarjetas, OXXO, SPEI</strong> y más.
             </p>
+
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-8">
+              <Link
+                href="/signup"
+                className="inline-flex items-center justify-center px-8 py-4 text-base font-bold text-white transition-all duration-200 bg-purple-600 border border-transparent rounded-lg hover:bg-purple-700 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 shadow-lg shadow-purple-900/20"
+              >
+                Comenzar Ahora
+                <ArrowRight className="ml-2 -mr-1 w-5 h-5" />
+              </Link>
+              <Link
+                href="#benefits"
+                className="inline-flex items-center justify-center px-8 py-4 text-base font-bold text-gray-300 transition-all duration-200 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 hover:text-white focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 backdrop-blur-sm"
+              >
+                Ver Beneficios
+              </Link>
+            </div>
 
             {/* Stripe Hero Image */}
             <figure
@@ -463,6 +465,26 @@ const StripeBenefitsPage = () => {
         </div>
       </section>
 
+      {/* Quick Reference Section */}
+      <section className="relative py-16 md:py-24 px-4 sm:px-6 lg:px-8 bg-linear-to-b from-black via-purple-900/5 to-black" aria-labelledby="reference-title">
+        <div className="max-w-4xl mx-auto">
+          <header className="mb-12 text-center">
+            <h2 id="reference-title" className="text-3xl md:text-4xl font-bold mb-4">Integración Stripe + Expo360 de Un Vistazo</h2>
+            <p className="text-gray-400">Todos los números que necesitas saber</p>
+          </header>
+          <FactSheet 
+            title="Resumen de Integración Stripe"
+            className="max-w-2xl mx-auto mb-8"
+            facts={[
+              { label: 'Métodos de Pago', value: '+100 (Tarjetas, OXXO, SPEI)', icon: <Wallet className="w-5 h-5" /> },
+              { label: 'Comisión Estándar', value: '3.6% + $3 MXN (Tarjetas)', icon: <TrendingUp className="w-5 h-5" /> },
+              { label: 'Seguridad', value: 'Nivel Bancario (PCI DSS)', icon: <Shield className="w-5 h-5" /> },
+              { label: 'Disponibilidad', value: 'Inmediata (Setup < 5 min)', icon: <Zap className="w-5 h-5" /> },
+            ]}
+          />
+        </div>
+      </section>
+
       {/* CTA Section */}
       <section className="relative py-16 md:py-24 px-4 sm:px-6 lg:px-8" aria-labelledby="cta-title">
         <div ref={ctaAnim.ref} className="max-w-4xl mx-auto">
@@ -517,7 +539,7 @@ const StripeBenefitsPage = () => {
       {/* Footer */}
       <footer className="relative py-8 px-4 sm:px-6 lg:px-8" role="contentinfo">
         <div className="max-w-7xl mx-auto text-center text-gray-400 text-sm">
-          <p>© 2025 <a href="/" className="bg-linear-to-r from-orange-400 to-yellow-400 bg-clip-text text-transparent hover:opacity-80 transition font-semibold">Expo360</a> por <a href="https://interzekt.com" target="_blank" rel="noopener noreferrer" className="bg-linear-to-r from-cyan-400 via-blue-400 to-pink-400 bg-clip-text text-transparent hover:opacity-80 transition font-semibold">Interzekt.com</a>. Todos los derechos reservados.</p>
+          <p>© 2025 <Link href="/" className="bg-linear-to-r from-orange-400 to-yellow-400 bg-clip-text text-transparent hover:opacity-80 transition font-semibold">Expo360</Link> por <a href="https://interzekt.com" target="_blank" rel="noopener noreferrer" className="bg-linear-to-r from-cyan-400 via-blue-400 to-pink-400 bg-clip-text text-transparent hover:opacity-80 transition font-semibold">Interzekt.com</a>. Todos los derechos reservados.</p>
           {/* Hidden SEO content for crawlers */}
           <div className="sr-only">
             <p>Expo360 es una plataforma de showrooms virtuales 3D que permite a empresas mexicanas mostrar sus productos de manera interactiva. Con la integración de Stripe, aceptamos OXXO, SPEI, tarjetas de crédito y débito, Apple Pay, Google Pay, PayPal, Amazon Pay, y ofrecemos meses sin intereses. Ideal para tiendas de muebles, decoración, y productos personalizables.</p>

@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { Vortex } from '@/ui/vortex';
+import FactSheet from '@/components/FactSheet';
 import { 
   Zap, 
   Users, 
@@ -365,6 +366,26 @@ const PorqueExpo360Page = () => {
         </div>
       </section>
 
+      {/* Quick Reference Section */}
+      <section className="relative py-16 md:py-24 px-4 sm:px-6 lg:px-8 bg-linear-to-b from-black via-purple-900/5 to-black" aria-labelledby="reference-title">
+        <div className="max-w-4xl mx-auto">
+          <header className="mb-12 text-center">
+            <h2 id="reference-title" className="text-3xl md:text-4xl font-bold mb-4">Expo360 de Un Vistazo</h2>
+            <p className="text-gray-400">Los números clave que debes conocer</p>
+          </header>
+          <FactSheet 
+            title="Capacidades de Expo360"
+            className="max-w-2xl mx-auto mb-8"
+            facts={[
+              { label: 'Productos por Cuenta', value: 'Hasta 500+', icon: <BarChart3 className="w-5 h-5" /> },
+              { label: 'Ubicaciones Físicas', value: 'Hasta 5 sucursales', icon: <Globe className="w-5 h-5" /> },
+              { label: 'Capturas de Clientes', value: 'Ilimitadas', icon: <Users className="w-5 h-5" /> },
+              { label: 'Métodos de Pago', value: '100+ opciones integradas', icon: <TrendingUp className="w-5 h-5" /> },
+            ]}
+          />
+        </div>
+      </section>
+
       {/* Footer */}
       <footer className="bg-transparent py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -404,7 +425,7 @@ const PorqueExpo360Page = () => {
           </div>
 
           <div className="border-t border-slate-800 pt-8 flex flex-col md:flex-row justify-between items-center text-sm text-gray-400">
-            <p>© 2025 <a href="/" className="bg-linear-to-r from-orange-400 to-yellow-400 bg-clip-text text-transparent hover:opacity-80 transition font-semibold">Expo360</a> por <a href="https://interzekt.com" target="_blank" rel="noopener noreferrer" className="bg-linear-to-r from-cyan-400 via-blue-400 to-pink-400 bg-clip-text text-transparent hover:opacity-80 transition font-semibold">Interzekt.com</a>. Todos los derechos reservados.</p>
+            <p>© 2025 <Link href="/" className="bg-linear-to-r from-orange-400 to-yellow-400 bg-clip-text text-transparent hover:opacity-80 transition font-semibold">Expo360</Link> por <a href="https://interzekt.com" target="_blank" rel="noopener noreferrer" className="bg-linear-to-r from-cyan-400 via-blue-400 to-pink-400 bg-clip-text text-transparent hover:opacity-80 transition font-semibold">Interzekt.com</a>. Todos los derechos reservados.</p>
             <div className="flex gap-6 mt-4 md:mt-0">
               <a href="#" className="hover:text-white transition">Twitter</a>
               <a href="#" className="hover:text-white transition">LinkedIn</a>
