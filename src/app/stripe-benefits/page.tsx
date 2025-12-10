@@ -1,13 +1,44 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
-import { CreditCard, Wallet, Clock, TrendingUp, Lock, ArrowRight } from 'lucide-react';
+import { CreditCard, Wallet, Clock, TrendingUp, Lock, ArrowRight, ChevronDown } from 'lucide-react';
 import { Vortex } from '@/ui/vortex';
 
 const StripeBenefitsPage = () => {
+  const [isCardsDropdownOpen, setIsCardsDropdownOpen] = useState(false);
+
+  const supportedCardIssuers = [
+    'Visa',
+    'Mastercard',
+    'American Express',
+    'Afirme',
+    'BanBajío',
+    'Banjercito',
+    'BBVA',
+    'Banca Mifel',
+    'Banco Azteca',
+    'Banco Famsa',
+    'Banco Invex',
+    'Banco Multiva',
+    'Banorte',
+    'Banregio',
+    'Caja Morelia Valladolid',
+    'Citibanamex',
+    'Falabella',
+    'Hey Banco',
+    'Inbursa',
+    'Klar',
+    'Konfio',
+    'Liverpool',
+    'NanoPay',
+    'Nubank',
+    'Santander',
+    'Scotiabank',
+    'Suburbia'
+  ];
   const fadeInUp = {
     hidden: { opacity: 0, y: 20 },
     visible: { opacity: 1, y: 0, transition: { duration: 0.6 } }
@@ -48,56 +79,29 @@ const StripeBenefitsPage = () => {
       ]
     },
     {
-      category: 'Compra Ahora, Paga Después',
-      icon: '📅',
+      category: 'Pagos Locales en México',
+      icon: '🇲🇽',
       methods: [
-        { name: 'Klarna', description: 'Pagos flexibles en 3, 6 o 12 cuotas sin interés', logo: '/integration_logos/klarna.png' },
-        { name: 'Afterpay/Clearpay', description: 'Divide pagos en 4 cuotas quincenales sin interés', logo: '/integration_logos/afterpay.png' },
-        { name: 'Affirm', description: 'Opciones de pago flexible para clientes en EE.UU. y Canadá', logo: '/integration_logos/affirm.png' },
-        { name: 'Zip', description: 'Planes de pago flexibles semanales, bisemanales o mensuales', logo: '/integration_logos/zip.png' }
-      ]
-    },
-    {
-      category: 'Vales para Pago en Efectivo',
-      icon: '🏪',
-      methods: [
-        { name: 'OXXO', description: 'Paga en más de 19,000 tiendas OXXO en México - 30%+ de transacciones locales', logo: '/integration_logos/oxxo-logo-vector-01.png' }
-      ]
-    },
-    {
-      category: 'Transferencias Bancarias',
-      icon: '🏦',
-      methods: [
-        { name: 'SPEI', description: 'Transferencias bancarias instantáneas en México - ideal para B2B', logo: '/integration_logos/spei.png' }
-      ]
-    },
-    {
-      category: 'Débito Directo',
-      icon: '💰',
-      methods: [
-        { name: 'Débito directo SEPA', description: 'Pagos recurrentes en 36 países europeos con costos bajos', logo: '/integration_logos/sepa.png' },
-        { name: 'Débito directo Bacs', description: 'Método principal en Reino Unido para pagos puntuales y recurrentes', logo: '/integration_logos/bacs.png' },
-        { name: 'ACH Direct Debit', description: 'Costos de transacción reducidos para pagos en EE.UU.', logo: '/integration_logos/ach.png' }
+        { name: 'OXXO', description: 'Paga en más de 19,000 tiendas OXXO en México - 30%+ de transacciones locales', logo: '/integration_logos/oxxo-logo-vector-01.png' },
+        { name: 'SPEI', description: 'Transferencias bancarias instantáneas en México - ideal para B2B', logo: '/integration_logos/spei-logo_brandlogos.net_xlhsk.png' }
       ]
     },
     {
       category: 'Tarjetas',
       icon: '🎫',
       methods: [
-        { name: 'Visa', description: 'Red de tarjetas más grande del mundo con mayor aceptación', logo: '/integration_logos/visa.png' },
-        { name: 'Mastercard', description: 'Tarjeta principal aceptada en más de 190 países', logo: '/integration_logos/mastercard.png' },
-        { name: 'American Express', description: 'Tarjeta premium con clientes de alto valor en 130+ países', logo: '/integration_logos/amex.png' }
+        { name: 'Todas las Tarjetas Aceptadas', description: 'Explora todos los bancos y redes de tarjetas soportadas', logo: null, isDropdown: true },
+        { name: 'Meses sin intereses', description: 'Fracciona compras en 3, 6, 9, 12, 18 o 24 meses - aceptado en la mayoría de tarjetas de crédito mexicanas', logo: null }
       ]
     },
     {
-      category: 'Métodos Especiales',
-      icon: '⭐',
+      category: 'Pagos Internacionales',
+      icon: '🌍',
       methods: [
-        { name: 'Meses sin intereses', description: 'Fracciona compras en pagos mensuales fijos en México', logo: null },
-        { name: 'Criptomonedas estables', description: 'Acepta monedas estables para alcance global (Preview)', logo: '/integration_logos/crypto.png' },
-        { name: 'Payment on invoice', description: 'Paga después con factura - ideal para B2B en Alemania (Preview)', logo: null }
+        { name: 'Débito directo SEPA', description: 'Pagos recurrentes en 36 países europeos con costos bajos', logo: '/integration_logos/Flag_of_Europe.svg.png' },
+        { name: 'ACH Direct Debit', description: 'Costos de transacción reducidos para pagos en EE.UU.', logo: '/integration_logos/usaflag.svg' }
       ]
-    }
+    },
   ];
 
   const benefits = [
@@ -239,7 +243,7 @@ const StripeBenefitsPage = () => {
               variants={fadeInUp}
               className="text-xl md:text-2xl text-gray-300 max-w-3xl mx-auto leading-relaxed"
             >
-              Con Stripe integrado en Expo360, accede a más de 100 métodos de pago internacionales y maximiza tus ventas en tiempo real
+              Con Stripe™ integrado en Expo360, accede a más de 100 métodos de pago internacionales y maximiza tus ventas en tiempo real
             </motion.p>
 
             {/* Stripe Hero Image */}
@@ -348,21 +352,61 @@ const StripeBenefitsPage = () => {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {category.methods.map((method, methodIdx) => (
-                    <div key={methodIdx} className="bg-black/40 rounded-lg p-4 border border-white/5 hover:border-purple-500/20 transition-all">
-                      {method.logo && (
-                        <div className="mb-3 h-12 flex items-center justify-center bg-white/5 rounded-md p-2">
-                          <img 
-                            src={method.logo} 
-                            alt={method.name}
-                            className="max-h-10 max-w-full object-contain"
-                            onError={(e) => {
-                              e.currentTarget.style.display = 'none';
-                            }}
-                          />
+                    <div key={methodIdx}>
+                      {method.isDropdown ? (
+                        <div className="bg-gradient-to-br from-purple-600/20 to-blue-600/20 rounded-lg border-2 border-purple-500/50 hover:border-purple-500/80 transition-all overflow-hidden cursor-pointer">
+                          <button
+                            onClick={() => setIsCardsDropdownOpen(!isCardsDropdownOpen)}
+                            className="w-full p-5 flex items-center justify-between hover:bg-purple-600/15 transition-all"
+                          >
+                            <div className="text-left flex-1">
+                              <h4 className="font-bold text-white mb-2 text-lg">{method.name}</h4>
+                              <p className="text-gray-300 text-sm">{method.description}</p>
+                            </div>
+                            <div className="ml-4 flex-shrink-0">
+                              <motion.div
+                                animate={{ rotate: isCardsDropdownOpen ? 180 : 0 }}
+                                transition={{ duration: 0.3 }}
+                              >
+                                <ChevronDown className="w-6 h-6 text-purple-400" />
+                              </motion.div>
+                            </div>
+                          </button>
+                          
+                          {isCardsDropdownOpen && (
+                            <motion.div
+                              initial={{ opacity: 0, height: 0 }}
+                              animate={{ opacity: 1, height: 'auto' }}
+                              exit={{ opacity: 0, height: 0 }}
+                              className="bg-purple-600/10 border-t-2 border-purple-500/30 p-5"
+                            >
+                              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                                {supportedCardIssuers.map((issuer, idx) => (
+                                  <div key={idx} className="text-sm text-gray-200 py-2 px-3 bg-purple-600/20 rounded-lg border border-purple-500/30 hover:border-purple-500/60 transition-all hover:bg-purple-600/30">
+                                    {issuer}
+                                  </div>
+                                ))}
+                              </div>
+                            </motion.div>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="bg-black/40 rounded-lg p-5 border border-white/5 hover:border-purple-500/20 transition-all h-full flex flex-col items-start">
+                          {method.logo && (
+                            <div className="mb-4 h-16 flex items-center">
+                              <Image
+                                src={method.logo}
+                                alt={method.name}
+                                width={100}
+                                height={64}
+                                className="object-contain max-h-16"
+                              />
+                            </div>
+                          )}
+                          <h4 className="font-semibold text-white mb-3 text-lg">{method.name}</h4>
+                          <p className="text-gray-400 text-sm flex-grow">{method.description}</p>
                         </div>
                       )}
-                      <h4 className="font-semibold text-white mb-2">{method.name}</h4>
-                      <p className="text-gray-400 text-sm">{method.description}</p>
                     </div>
                   ))}
                 </div>
@@ -391,28 +435,45 @@ const StripeBenefitsPage = () => {
             
             <motion.p 
               variants={fadeInUp}
-              className="text-lg text-white/90 mb-8"
+              className="text-lg text-white/90 mb-10"
             >
-              Elige el Plan Anual y desbloquea todas las capacidades de Stripe con Expo360
+              Elige el Plan Anual y desbloquea todas las capacidades de Stripe™ con Expo360
             </motion.p>
 
             <motion.div
               variants={fadeInUp}
-              className="flex flex-col sm:flex-row gap-4 justify-center"
+              className="flex flex-col items-center gap-4"
             >
+              {/* Primary Button */}
               <a
                 href="/#pricing"
-                className="inline-flex items-center justify-center gap-2 px-8 py-3 bg-white text-purple-600 font-semibold rounded-lg hover:bg-gray-100 transition-all duration-300"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-10 py-4 bg-white text-purple-600 font-bold rounded-xl hover:bg-gray-100 hover:scale-105 transition-all duration-300 shadow-lg text-lg"
               >
-                Ver Planes de Precios
+                Ver Planes de Precios Expo360
                 <ArrowRight className="w-5 h-5" />
               </a>
-              <a
-                href="mailto:info0@interzekt.com?subject=Stripe%20Mexico%20Benefits"
-                className="inline-flex items-center justify-center gap-2 px-8 py-3 bg-white/20 text-white font-semibold rounded-lg border border-white/30 hover:bg-white/30 transition-all duration-300"
-              >
-                Contactar Soporte
-              </a>
+              
+              {/* Secondary Buttons Row */}
+              <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto mt-2">
+                <a
+                  href="https://stripe.com/mx"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-white/20 text-white font-semibold rounded-lg border border-white/40 hover:bg-white/30 hover:border-white/60 transition-all duration-300"
+                >
+                  Crea Tu Cuenta con Stripe
+                  <ArrowRight className="w-4 h-4" />
+                </a>
+                <a
+                  href="https://wa.me/528186931122?text=Estoy%20interesado%20en%20saber%20m%C3%A1s%20acerca%20de%20Expo360%20by%20Interzekt%20y%20su%20integraci%C3%B3n%20con%20Stripe%E2%84%A2"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-[#32dbbf]/10 font-semibold rounded-lg border border-[#32dbbf] hover:bg-[#32dbbf]/20 transition-all duration-300"
+                  style={{ color: '#32dbbf' }}
+                >
+                  Escríbenos por WhatsApp
+                </a>
+              </div>
             </motion.div>
           </motion.div>
         </div>
