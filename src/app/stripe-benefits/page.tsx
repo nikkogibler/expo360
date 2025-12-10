@@ -410,8 +410,8 @@ const StripeBenefitsPage = () => {
                                 />
                               </div>
                             )}
-                            <h4 className="font-semibold text-white mb-3 text-lg">{method.name}</h4>
-                            <p className="text-gray-300 text-sm grow">{method.description}</p>
+                            <h4 className="font-semibold mb-3 text-lg" style={{ color: '#35d44f' }}>{method.name}</h4>
+                            <p className="text-sm grow" style={{ color: '#35d44f' }}>{method.description}</p>
                           </div>
                         </Link>
                       ) : (
