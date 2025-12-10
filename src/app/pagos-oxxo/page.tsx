@@ -113,11 +113,11 @@ const PagosOxxoPage = () => {
   return (
     <div className="min-h-screen bg-black text-white overflow-hidden relative">
       {/* Page Background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-red-900/10 via-black to-yellow-900/10 pointer-events-none" aria-hidden="true"></div>
+      <div className="absolute inset-0 bg-linear-to-br from-red-900/10 via-black to-yellow-900/10 pointer-events-none" aria-hidden="true"></div>
       
       <div className="relative z-10">
         {/* Skip Link */}
-        <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-red-600 text-white px-4 py-2 rounded-lg z-[100]">
+        <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-red-600 text-white px-4 py-2 rounded-lg z-100">
           Saltar al contenido principal
         </a>
 
@@ -149,10 +149,10 @@ const PagosOxxoPage = () => {
               </nav>
 
               <div className="flex gap-3">
-                <Link href="/signin" className="hidden sm:inline-block px-6 py-2 text-sm font-semibold rounded-lg bg-gradient-to-r from-red-400 via-yellow-400 to-red-400 bg-clip-text text-transparent">
+                <Link href="/signin" className="hidden sm:inline-block px-6 py-2 text-sm font-semibold rounded-lg bg-linear-to-r from-red-400 via-yellow-400 to-red-400 bg-clip-text text-transparent">
                   Iniciar Sesión
                 </Link>
-                <Link href="/#pricing" className="px-6 py-2 bg-gradient-to-r from-red-600 to-yellow-600 text-white text-sm font-semibold rounded-lg hover:shadow-lg hover:shadow-red-600/50 transition-all duration-300">
+                <Link href="/#pricing" className="px-6 py-2 bg-linear-to-r from-red-600 to-yellow-600 text-white text-sm font-semibold rounded-lg hover:shadow-lg hover:shadow-red-600/50 transition-all duration-300">
                   Registrarse
                 </Link>
               </div>
@@ -186,7 +186,7 @@ const PagosOxxoPage = () => {
                 </div>
 
                 <h1 id="hero-title" className="text-4xl md:text-6xl font-bold leading-tight">
-                  <span className="bg-gradient-to-r from-red-400 via-yellow-400 to-red-400 bg-clip-text text-transparent">
+                  <span className="bg-linear-to-r from-red-400 via-yellow-400 to-red-400 bg-clip-text text-transparent">
                     Acepta Pagos en Efectivo
                   </span>
                   <br />
@@ -199,15 +199,15 @@ const PagosOxxoPage = () => {
 
                 {/* Stats */}
                 <div className={`grid grid-cols-3 gap-4 max-w-2xl mx-auto mt-12 transition-all duration-700 ease-out delay-200 ${heroAnim.isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-                  <div className="bg-gradient-to-br from-red-600/20 to-yellow-600/20 rounded-xl p-4 border border-red-500/30">
+                  <div className="bg-linear-to-br from-red-600/20 to-yellow-600/20 rounded-xl p-4 border border-red-500/30">
                     <div className="text-3xl md:text-4xl font-bold text-red-400">19K+</div>
                     <div className="text-sm text-gray-400">Tiendas OXXO</div>
                   </div>
-                  <div className="bg-gradient-to-br from-red-600/20 to-yellow-600/20 rounded-xl p-4 border border-red-500/30">
+                  <div className="bg-linear-to-br from-red-600/20 to-yellow-600/20 rounded-xl p-4 border border-red-500/30">
                     <div className="text-3xl md:text-4xl font-bold text-yellow-400">30%+</div>
                     <div className="text-sm text-gray-400">Pagos en Efectivo</div>
                   </div>
-                  <div className="bg-gradient-to-br from-red-600/20 to-yellow-600/20 rounded-xl p-4 border border-red-500/30">
+                  <div className="bg-linear-to-br from-red-600/20 to-yellow-600/20 rounded-xl p-4 border border-red-500/30">
                     <div className="text-3xl md:text-4xl font-bold text-red-400">24/7</div>
                     <div className="text-sm text-gray-400">Disponibilidad</div>
                   </div>
@@ -226,14 +226,14 @@ const PagosOxxoPage = () => {
                 <p className="text-gray-400 text-center max-w-2xl mx-auto">
                   Aumenta tus ventas alcanzando a clientes que prefieren o solo pueden pagar en efectivo
                 </p>
-                <div className="h-1 w-24 bg-gradient-to-r from-red-600 to-yellow-600 mx-auto mt-4" aria-hidden="true"></div>
+                <div className="h-1 w-24 bg-linear-to-r from-red-600 to-yellow-600 mx-auto mt-4" aria-hidden="true"></div>
               </header>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {benefits.map((benefit, idx) => (
                   <article
                     key={idx}
-                    className={`bg-gradient-to-br from-red-600/10 to-yellow-600/10 border border-red-500/30 rounded-xl p-6 hover:border-red-500/60 transition-all duration-500 ease-out ${benefitsAnim.isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
+                    className={`bg-linear-to-br from-red-600/10 to-yellow-600/10 border border-red-500/30 rounded-xl p-6 hover:border-red-500/60 transition-all duration-500 ease-out ${benefitsAnim.isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
                     style={{ transitionDelay: `${150 + idx * 100}ms` }}
                   >
                     <div className="text-red-400 mb-4">{benefit.icon}</div>
@@ -246,7 +246,7 @@ const PagosOxxoPage = () => {
           </section>
 
           {/* How It Works Section */}
-          <section className="relative py-16 md:py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-black via-red-900/5 to-black" aria-labelledby="how-it-works-title">
+          <section className="relative py-16 md:py-24 px-4 sm:px-6 lg:px-8 bg-linear-to-b from-black via-red-900/5 to-black" aria-labelledby="how-it-works-title">
             <div ref={howItWorksAnim.ref} className="max-w-6xl mx-auto">
               <header className={`mb-12 transition-all duration-700 ease-out ${howItWorksAnim.isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
                 <h2 id="how-it-works-title" className="text-3xl md:text-4xl font-bold text-center mb-4">
@@ -266,10 +266,10 @@ const PagosOxxoPage = () => {
                   >
                     {/* Connector line */}
                     {idx < steps.length - 1 && (
-                      <div className="hidden md:block absolute top-8 left-[60%] w-[80%] h-0.5 bg-gradient-to-r from-red-500/50 to-yellow-500/50" aria-hidden="true"></div>
+                      <div className="hidden md:block absolute top-8 left-[60%] w-[80%] h-0.5 bg-linear-to-r from-red-500/50 to-yellow-500/50" aria-hidden="true"></div>
                     )}
                     
-                    <div className="relative z-10 w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-red-600 to-yellow-600 flex items-center justify-center text-2xl font-bold">
+                    <div className="relative z-10 w-16 h-16 mx-auto mb-4 rounded-full bg-linear-to-br from-red-600 to-yellow-600 flex items-center justify-center text-2xl font-bold">
                       {step.number}
                     </div>
                     <h3 className="text-lg font-bold mb-2">{step.title}</h3>
@@ -287,7 +287,7 @@ const PagosOxxoPage = () => {
                 <h2 id="faq-title" className="text-3xl md:text-4xl font-bold text-center mb-4">
                   Preguntas Frecuentes sobre OXXO
                 </h2>
-                <div className="h-1 w-24 bg-gradient-to-r from-red-600 to-yellow-600 mx-auto" aria-hidden="true"></div>
+                <div className="h-1 w-24 bg-linear-to-r from-red-600 to-yellow-600 mx-auto" aria-hidden="true"></div>
               </header>
 
               <div className="space-y-4">
@@ -303,7 +303,7 @@ const PagosOxxoPage = () => {
                       aria-expanded={openFaq === idx}
                     >
                       <span className="font-semibold flex items-center gap-3">
-                        <HelpCircle className="w-5 h-5 text-red-400 flex-shrink-0" />
+                        <HelpCircle className="w-5 h-5 text-red-400 shrink-0" />
                         {faq.question}
                       </span>
                       <CheckCircle2 className={`w-5 h-5 text-yellow-400 transition-transform duration-300 ${openFaq === idx ? 'rotate-180' : ''}`} />
@@ -322,7 +322,7 @@ const PagosOxxoPage = () => {
           {/* CTA Section */}
           <section className="relative py-16 md:py-24 px-4 sm:px-6 lg:px-8" aria-labelledby="cta-title">
             <div ref={ctaAnim.ref} className="max-w-4xl mx-auto">
-              <aside className={`bg-gradient-to-r from-red-600 to-yellow-600 rounded-2xl p-8 md:p-12 text-center transition-all duration-700 ease-out ${ctaAnim.isVisible ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-8 scale-95'}`}>
+              <aside className={`bg-linear-to-r from-red-600 to-yellow-600 rounded-2xl p-8 md:p-12 text-center transition-all duration-700 ease-out ${ctaAnim.isVisible ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-8 scale-95'}`}>
                 <h2 id="cta-title" className="text-3xl md:text-4xl font-bold mb-4">
                   Empieza a Aceptar Pagos con OXXO Hoy
                 </h2>
@@ -354,7 +354,7 @@ const PagosOxxoPage = () => {
         {/* Footer */}
         <footer className="relative py-8 px-4 sm:px-6 lg:px-8" role="contentinfo">
           <div className="max-w-7xl mx-auto text-center text-gray-400 text-sm">
-            <p>© 2025 <span className="bg-gradient-to-r from-orange-400 to-yellow-400 bg-clip-text text-transparent font-semibold">Expo360</span> por <a href="https://interzekt.com" target="_blank" rel="noopener noreferrer" className="bg-gradient-to-r from-cyan-400 via-blue-400 to-pink-400 bg-clip-text text-transparent hover:opacity-80 transition font-semibold">Interzekt.com</a></p>
+            <p>© 2025 <a href="/" className="bg-linear-to-r from-orange-400 to-yellow-400 bg-clip-text text-transparent hover:opacity-80 transition font-semibold">Expo360</a> por <a href="https://interzekt.com" target="_blank" rel="noopener noreferrer" className="bg-linear-to-r from-cyan-400 via-blue-400 to-pink-400 bg-clip-text text-transparent hover:opacity-80 transition font-semibold">Interzekt.com</a></p>
             <div className="mt-4 flex justify-center gap-6 text-xs">
               <Link href="/stripe-benefits" className="hover:text-white transition">Stripe + Expo360</Link>
               <Link href="/pagos-spei" className="hover:text-white transition">Pagos SPEI</Link>

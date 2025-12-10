@@ -119,11 +119,11 @@ const MesesSinInteresesPage = () => {
   return (
     <div className="min-h-screen bg-black text-white overflow-hidden relative">
       {/* Page Background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-green-900/10 via-black to-emerald-900/10 pointer-events-none" aria-hidden="true"></div>
+      <div className="absolute inset-0 bg-linear-to-br from-green-900/10 via-black to-emerald-900/10 pointer-events-none" aria-hidden="true"></div>
       
       <div className="relative z-10">
         {/* Skip Link */}
-        <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-green-600 text-white px-4 py-2 rounded-lg z-[100]">
+        <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-green-600 text-white px-4 py-2 rounded-lg z-100">
           Saltar al contenido principal
         </a>
 
@@ -155,10 +155,10 @@ const MesesSinInteresesPage = () => {
               </nav>
 
               <div className="flex gap-3">
-                <Link href="/signin" className="hidden sm:inline-block px-6 py-2 text-sm font-semibold rounded-lg bg-gradient-to-r from-green-400 via-emerald-400 to-green-400 bg-clip-text text-transparent">
+                <Link href="/signin" className="hidden sm:inline-block px-6 py-2 text-sm font-semibold rounded-lg bg-linear-to-r from-green-400 via-emerald-400 to-green-400 bg-clip-text text-transparent">
                   Iniciar Sesión
                 </Link>
-                <Link href="/#pricing" className="px-6 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white text-sm font-semibold rounded-lg hover:shadow-lg hover:shadow-green-600/50 transition-all duration-300">
+                <Link href="/#pricing" className="px-6 py-2 bg-linear-to-r from-green-600 to-emerald-600 text-white text-sm font-semibold rounded-lg hover:shadow-lg hover:shadow-green-600/50 transition-all duration-300">
                   Registrarse
                 </Link>
               </div>
@@ -179,7 +179,7 @@ const MesesSinInteresesPage = () => {
                 
                 {/* MSI Badge */}
                 <div className="flex justify-center mb-8">
-                  <div className="bg-gradient-to-r from-green-600 to-emerald-600 rounded-2xl px-8 py-4 shadow-2xl shadow-green-500/20">
+                  <div className="bg-linear-to-r from-green-600 to-emerald-600 rounded-2xl px-8 py-4 shadow-2xl shadow-green-500/20">
                     <div className="flex items-center gap-3">
                       <Calendar className="w-10 h-10 text-white" />
                       <div className="text-left">
@@ -191,7 +191,7 @@ const MesesSinInteresesPage = () => {
                 </div>
 
                 <h1 id="hero-title" className="text-4xl md:text-6xl font-bold leading-tight">
-                  <span className="bg-gradient-to-r from-green-400 via-emerald-400 to-green-400 bg-clip-text text-transparent">
+                  <span className="bg-linear-to-r from-green-400 via-emerald-400 to-green-400 bg-clip-text text-transparent">
                     Meses Sin Intereses
                   </span>
                   <br />
@@ -204,15 +204,15 @@ const MesesSinInteresesPage = () => {
 
                 {/* Stats */}
                 <div className={`grid grid-cols-3 gap-4 max-w-2xl mx-auto mt-12 transition-all duration-700 ease-out delay-200 ${heroAnim.isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-                  <div className="bg-gradient-to-br from-green-600/20 to-emerald-600/20 rounded-xl p-4 border border-green-500/30">
+                  <div className="bg-linear-to-br from-green-600/20 to-emerald-600/20 rounded-xl p-4 border border-green-500/30">
                     <div className="text-3xl md:text-4xl font-bold text-green-400">+40%</div>
                     <div className="text-sm text-gray-400">Ticket Promedio</div>
                   </div>
-                  <div className="bg-gradient-to-br from-green-600/20 to-emerald-600/20 rounded-xl p-4 border border-green-500/30">
+                  <div className="bg-linear-to-br from-green-600/20 to-emerald-600/20 rounded-xl p-4 border border-green-500/30">
                     <div className="text-3xl md:text-4xl font-bold text-emerald-400">24</div>
                     <div className="text-sm text-gray-400">Meses Máximo</div>
                   </div>
-                  <div className="bg-gradient-to-br from-green-600/20 to-emerald-600/20 rounded-xl p-4 border border-green-500/30">
+                  <div className="bg-linear-to-br from-green-600/20 to-emerald-600/20 rounded-xl p-4 border border-green-500/30">
                     <div className="text-3xl md:text-4xl font-bold text-green-400">0%</div>
                     <div className="text-sm text-gray-400">Interés al Cliente</div>
                   </div>
@@ -222,7 +222,7 @@ const MesesSinInteresesPage = () => {
           </section>
 
           {/* Interactive Calculator Section */}
-          <section className="relative py-16 md:py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-black via-green-900/5 to-black">
+          <section className="relative py-16 md:py-24 px-4 sm:px-6 lg:px-8 bg-linear-to-b from-black via-green-900/5 to-black">
             <div className="max-w-4xl mx-auto">
               <h2 className="text-3xl md:text-4xl font-bold text-center mb-4">
                 Calculadora de Mensualidades
@@ -231,7 +231,7 @@ const MesesSinInteresesPage = () => {
                 Muestra a tus clientes cuánto pagarían al mes
               </p>
               
-              <div className="bg-gradient-to-br from-green-600/10 to-emerald-600/10 border border-green-500/30 rounded-2xl p-8">
+              <div className="bg-linear-to-br from-green-600/10 to-emerald-600/10 border border-green-500/30 rounded-2xl p-8">
                 {/* Sale Amount Slider */}
                 <div className="mb-8">
                   <label className="block text-sm text-gray-400 mb-2">Monto de la venta</label>
@@ -278,7 +278,7 @@ const MesesSinInteresesPage = () => {
                 </div>
 
                 {/* Result */}
-                <div className="bg-gradient-to-r from-green-600 to-emerald-600 rounded-xl p-6 text-center">
+                <div className="bg-linear-to-r from-green-600 to-emerald-600 rounded-xl p-6 text-center">
                   <div className="text-sm text-green-100 mb-2">Tu cliente pagaría</div>
                   <div className="text-5xl font-bold text-white mb-2">
                     ${monthlyPayment.toLocaleString('es-MX', { maximumFractionDigits: 0 })} <span className="text-2xl">MXN/mes</span>
@@ -301,14 +301,14 @@ const MesesSinInteresesPage = () => {
                 <p className="text-gray-400 text-center max-w-2xl mx-auto">
                   El método de pago favorito de los mexicanos para compras importantes
                 </p>
-                <div className="h-1 w-24 bg-gradient-to-r from-green-600 to-emerald-600 mx-auto mt-4" aria-hidden="true"></div>
+                <div className="h-1 w-24 bg-linear-to-r from-green-600 to-emerald-600 mx-auto mt-4" aria-hidden="true"></div>
               </header>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {benefits.map((benefit, idx) => (
                   <article
                     key={idx}
-                    className={`bg-gradient-to-br from-green-600/10 to-emerald-600/10 border border-green-500/30 rounded-xl p-6 hover:border-green-500/60 transition-all duration-500 ease-out ${benefitsAnim.isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
+                    className={`bg-linear-to-br from-green-600/10 to-emerald-600/10 border border-green-500/30 rounded-xl p-6 hover:border-green-500/60 transition-all duration-500 ease-out ${benefitsAnim.isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
                     style={{ transitionDelay: `${150 + idx * 100}ms` }}
                   >
                     <div className="text-green-400 mb-4">{benefit.icon}</div>
@@ -321,7 +321,7 @@ const MesesSinInteresesPage = () => {
           </section>
 
           {/* Installment Plans Section */}
-          <section className="relative py-16 md:py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-black via-green-900/5 to-black" aria-labelledby="plans-title">
+          <section className="relative py-16 md:py-24 px-4 sm:px-6 lg:px-8 bg-linear-to-b from-black via-green-900/5 to-black" aria-labelledby="plans-title">
             <div ref={plansAnim.ref} className="max-w-4xl mx-auto">
               <header className={`mb-12 transition-all duration-700 ease-out ${plansAnim.isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
                 <h2 id="plans-title" className="text-3xl md:text-4xl font-bold text-center mb-4">
@@ -336,7 +336,7 @@ const MesesSinInteresesPage = () => {
                 {installmentPlans.map((plan, idx) => (
                   <div
                     key={idx}
-                    className={`relative bg-gradient-to-br from-green-600/10 to-emerald-600/10 border rounded-xl p-6 text-center ${
+                    className={`relative bg-linear-to-br from-green-600/10 to-emerald-600/10 border rounded-xl p-6 text-center ${
                       plan.popular ? 'border-green-500 ring-2 ring-green-500/50' : 'border-green-500/30'
                     }`}
                   >
@@ -378,7 +378,7 @@ const MesesSinInteresesPage = () => {
                 {compatibleBanks.map((bank, idx) => (
                   <div
                     key={idx}
-                    className="bg-gradient-to-br from-green-600/10 to-emerald-600/10 border border-green-500/20 rounded-lg p-4 text-center hover:border-green-500/50 transition-all"
+                    className="bg-linear-to-br from-green-600/10 to-emerald-600/10 border border-green-500/20 rounded-lg p-4 text-center hover:border-green-500/50 transition-all"
                   >
                     <span className="text-2xl mb-2 block">{bank.logo}</span>
                     <span className="text-sm text-gray-300">{bank.name}</span>
@@ -393,13 +393,13 @@ const MesesSinInteresesPage = () => {
           </section>
 
           {/* FAQ Section */}
-          <section className="relative py-16 md:py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-black via-green-900/5 to-black" aria-labelledby="faq-title">
+          <section className="relative py-16 md:py-24 px-4 sm:px-6 lg:px-8 bg-linear-to-b from-black via-green-900/5 to-black" aria-labelledby="faq-title">
             <div ref={faqAnim.ref} className="max-w-3xl mx-auto">
               <header className={`mb-12 transition-all duration-700 ease-out ${faqAnim.isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
                 <h2 id="faq-title" className="text-3xl md:text-4xl font-bold text-center mb-4">
                   Preguntas Frecuentes sobre MSI
                 </h2>
-                <div className="h-1 w-24 bg-gradient-to-r from-green-600 to-emerald-600 mx-auto" aria-hidden="true"></div>
+                <div className="h-1 w-24 bg-linear-to-r from-green-600 to-emerald-600 mx-auto" aria-hidden="true"></div>
               </header>
 
               <div className="space-y-4">
@@ -415,7 +415,7 @@ const MesesSinInteresesPage = () => {
                       aria-expanded={openFaq === idx}
                     >
                       <span className="font-semibold flex items-center gap-3">
-                        <HelpCircle className="w-5 h-5 text-green-400 flex-shrink-0" />
+                        <HelpCircle className="w-5 h-5 text-green-400 shrink-0" />
                         {faq.question}
                       </span>
                       <CheckCircle2 className={`w-5 h-5 text-emerald-400 transition-transform duration-300 ${openFaq === idx ? 'rotate-180' : ''}`} />
@@ -434,7 +434,7 @@ const MesesSinInteresesPage = () => {
           {/* CTA Section */}
           <section className="relative py-16 md:py-24 px-4 sm:px-6 lg:px-8" aria-labelledby="cta-title">
             <div ref={ctaAnim.ref} className="max-w-4xl mx-auto">
-              <aside className={`bg-gradient-to-r from-green-600 to-emerald-600 rounded-2xl p-8 md:p-12 text-center transition-all duration-700 ease-out ${ctaAnim.isVisible ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-8 scale-95'}`}>
+              <aside className={`bg-linear-to-r from-green-600 to-emerald-600 rounded-2xl p-8 md:p-12 text-center transition-all duration-700 ease-out ${ctaAnim.isVisible ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-8 scale-95'}`}>
                 <h2 id="cta-title" className="text-3xl md:text-4xl font-bold mb-4">
                   Activa Meses Sin Intereses Hoy
                 </h2>
@@ -466,7 +466,7 @@ const MesesSinInteresesPage = () => {
         {/* Footer */}
         <footer className="relative py-8 px-4 sm:px-6 lg:px-8" role="contentinfo">
           <div className="max-w-7xl mx-auto text-center text-gray-400 text-sm">
-            <p>© 2025 <span className="bg-gradient-to-r from-orange-400 to-yellow-400 bg-clip-text text-transparent font-semibold">Expo360</span> por <a href="https://interzekt.com" target="_blank" rel="noopener noreferrer" className="bg-gradient-to-r from-cyan-400 via-blue-400 to-pink-400 bg-clip-text text-transparent hover:opacity-80 transition font-semibold">Interzekt.com</a></p>
+            <p>© 2025 <a href="/" className="bg-linear-to-r from-orange-400 to-yellow-400 bg-clip-text text-transparent hover:opacity-80 transition font-semibold">Expo360</a> por <a href="https://interzekt.com" target="_blank" rel="noopener noreferrer" className="bg-linear-to-r from-cyan-400 via-blue-400 to-pink-400 bg-clip-text text-transparent hover:opacity-80 transition font-semibold">Interzekt.com</a></p>
             <div className="mt-4 flex justify-center gap-6 text-xs">
               <Link href="/stripe-benefits" className="hover:text-white transition">Stripe + Expo360</Link>
               <Link href="/pagos-oxxo" className="hover:text-white transition">Pagos OXXO</Link>

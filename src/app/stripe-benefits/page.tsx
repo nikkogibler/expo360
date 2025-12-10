@@ -160,7 +160,7 @@ const StripeBenefitsPage = () => {
       <div className="absolute inset-0 bg-linear-to-br from-purple-900/20 via-black to-blue-900/20 pointer-events-none" aria-hidden="true"></div>
       <div className="relative z-10">
       {/* Skip to main content link for accessibility */}
-      <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-purple-600 text-white px-4 py-2 rounded-lg z-[100]">
+      <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-purple-600 text-white px-4 py-2 rounded-lg z-100">
         Saltar al contenido principal
       </a>
       {/* Navigation Header */}
@@ -260,7 +260,7 @@ const StripeBenefitsPage = () => {
                   alt="Expo360"
                   width={300}
                   height={125}
-                  className="h-[30rem] md:h-[42rem] w-auto object-contain absolute top-1/2 -translate-y-1/2 -left-[15px] scale-[2.25]"
+                  className="h-120 md:h-168 w-auto object-contain absolute top-1/2 -translate-y-1/2 -left-[15px] scale-[2.25]"
                   priority
                 />
                 <span className="invisible h-12 md:h-16 w-[140px]"></span>
@@ -347,7 +347,7 @@ const StripeBenefitsPage = () => {
             {paymentMethods.map((category, categoryIdx) => (
               <div
                 key={categoryIdx}
-                className={`bg-linear-to-br from-white/5 to-white/[0.02] border border-white/10 rounded-xl p-6 hover:border-purple-500/30 transition-all duration-500 ease-out ${
+                className={`bg-linear-to-br from-white/5 to-white/2 border border-white/10 rounded-xl p-6 hover:border-purple-500/30 transition-all duration-500 ease-out ${
                   paymentsAnim.isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
                 }`}
                 style={{ transitionDelay: `${150 + categoryIdx * 100}ms` }}
@@ -361,7 +361,7 @@ const StripeBenefitsPage = () => {
                   {category.methods.map((method, methodIdx) => (
                     <div key={methodIdx}>
                       {method.isDropdown ? (
-                        <div className="bg-gradient-to-br from-purple-600/20 to-blue-600/20 rounded-lg border-2 border-purple-500/50 hover:border-purple-500/80 transition-all overflow-hidden cursor-pointer">
+                        <div className="bg-linear-to-br from-purple-600/20 to-blue-600/20 rounded-lg border-2 border-purple-500/50 hover:border-purple-500/80 transition-all overflow-hidden cursor-pointer">
                           <button
                             onClick={() => setIsCardsDropdownOpen(!isCardsDropdownOpen)}
                             className="w-full p-5 flex items-center justify-between hover:bg-purple-600/15 transition-all"
@@ -370,7 +370,7 @@ const StripeBenefitsPage = () => {
                               <h4 className="font-bold text-white mb-2 text-lg">{method.name}</h4>
                               <p className="text-gray-300 text-sm">{method.description}</p>
                             </div>
-                            <div className="ml-4 flex-shrink-0">
+                            <div className="ml-4 shrink-0">
                               <ChevronDown 
                                 className={`w-6 h-6 text-purple-400 transition-transform duration-300 ${
                                   isCardsDropdownOpen ? 'rotate-180' : ''
@@ -409,7 +409,7 @@ const StripeBenefitsPage = () => {
                               </div>
                             )}
                             <h4 className="font-semibold text-white mb-3 text-lg">{method.name}</h4>
-                            <p className="text-gray-400 text-sm flex-grow">{method.description}</p>
+                            <p className="text-gray-300 text-sm grow">{method.description}</p>
                           </div>
                         </Link>
                       ) : (
@@ -451,7 +451,7 @@ const StripeBenefitsPage = () => {
                             </div>
                           )}
                           <h4 className="font-semibold text-white mb-3 text-lg">{method.name}</h4>
-                          <p className="text-gray-400 text-sm flex-grow">{method.description}</p>
+                          <p className="text-gray-400 text-sm grow">{method.description}</p>
                         </div>
                       )}
                     </div>
@@ -517,7 +517,7 @@ const StripeBenefitsPage = () => {
       {/* Footer */}
       <footer className="relative py-8 px-4 sm:px-6 lg:px-8" role="contentinfo">
         <div className="max-w-7xl mx-auto text-center text-gray-400 text-sm">
-          <p>© 2025 <span className="bg-linear-to-r from-orange-400 to-yellow-400 bg-clip-text text-transparent font-semibold">Expo360</span> por <a href="https://interzekt.com" target="_blank" rel="noopener noreferrer" className="bg-linear-to-r from-cyan-400 via-blue-400 to-pink-400 bg-clip-text text-transparent hover:opacity-80 transition font-semibold">Interzekt.com</a>. Todos los derechos reservados.</p>
+          <p>© 2025 <a href="/" className="bg-linear-to-r from-orange-400 to-yellow-400 bg-clip-text text-transparent hover:opacity-80 transition font-semibold">Expo360</a> por <a href="https://interzekt.com" target="_blank" rel="noopener noreferrer" className="bg-linear-to-r from-cyan-400 via-blue-400 to-pink-400 bg-clip-text text-transparent hover:opacity-80 transition font-semibold">Interzekt.com</a>. Todos los derechos reservados.</p>
           {/* Hidden SEO content for crawlers */}
           <div className="sr-only">
             <p>Expo360 es una plataforma de showrooms virtuales 3D que permite a empresas mexicanas mostrar sus productos de manera interactiva. Con la integración de Stripe, aceptamos OXXO, SPEI, tarjetas de crédito y débito, Apple Pay, Google Pay, PayPal, Amazon Pay, y ofrecemos meses sin intereses. Ideal para tiendas de muebles, decoración, y productos personalizables.</p>

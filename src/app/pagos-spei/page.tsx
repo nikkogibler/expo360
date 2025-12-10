@@ -132,11 +132,11 @@ const PagosSpeiPage = () => {
   return (
     <div className="min-h-screen bg-black text-white overflow-hidden relative">
       {/* Page Background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-blue-900/10 via-black to-cyan-900/10 pointer-events-none" aria-hidden="true"></div>
+      <div className="absolute inset-0 bg-linear-to-br from-blue-900/10 via-black to-cyan-900/10 pointer-events-none" aria-hidden="true"></div>
       
       <div className="relative z-10">
         {/* Skip Link */}
-        <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-blue-600 text-white px-4 py-2 rounded-lg z-[100]">
+        <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-blue-600 text-white px-4 py-2 rounded-lg z-100">
           Saltar al contenido principal
         </a>
 
@@ -168,10 +168,10 @@ const PagosSpeiPage = () => {
               </nav>
 
               <div className="flex gap-3">
-                <Link href="/signin" className="hidden sm:inline-block px-6 py-2 text-sm font-semibold rounded-lg bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-400 bg-clip-text text-transparent">
+                <Link href="/signin" className="hidden sm:inline-block px-6 py-2 text-sm font-semibold rounded-lg bg-linear-to-r from-blue-400 via-cyan-400 to-blue-400 bg-clip-text text-transparent">
                   Iniciar Sesión
                 </Link>
-                <Link href="/#pricing" className="px-6 py-2 bg-gradient-to-r from-blue-600 to-cyan-600 text-white text-sm font-semibold rounded-lg hover:shadow-lg hover:shadow-blue-600/50 transition-all duration-300">
+                <Link href="/#pricing" className="px-6 py-2 bg-linear-to-r from-blue-600 to-cyan-600 text-white text-sm font-semibold rounded-lg hover:shadow-lg hover:shadow-blue-600/50 transition-all duration-300">
                   Registrarse
                 </Link>
               </div>
@@ -205,7 +205,7 @@ const PagosSpeiPage = () => {
                 </div>
 
                 <h1 id="hero-title" className="text-4xl md:text-6xl font-bold leading-tight">
-                  <span className="bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-400 bg-clip-text text-transparent">
+                  <span className="bg-linear-to-r from-blue-400 via-cyan-400 to-blue-400 bg-clip-text text-transparent">
                     Transferencias SPEI
                   </span>
                   <br />
@@ -218,15 +218,15 @@ const PagosSpeiPage = () => {
 
                 {/* Stats */}
                 <div className={`grid grid-cols-3 gap-4 max-w-2xl mx-auto mt-12 transition-all duration-700 ease-out delay-200 ${heroAnim.isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-                  <div className="bg-gradient-to-br from-blue-600/20 to-cyan-600/20 rounded-xl p-4 border border-blue-500/30">
+                  <div className="bg-linear-to-br from-blue-600/20 to-cyan-600/20 rounded-xl p-4 border border-blue-500/30">
                     <div className="text-3xl md:text-4xl font-bold text-blue-400">~1%</div>
                     <div className="text-sm text-gray-400">Comisión</div>
                   </div>
-                  <div className="bg-gradient-to-br from-blue-600/20 to-cyan-600/20 rounded-xl p-4 border border-blue-500/30">
+                  <div className="bg-linear-to-br from-blue-600/20 to-cyan-600/20 rounded-xl p-4 border border-blue-500/30">
                     <div className="text-3xl md:text-4xl font-bold text-cyan-400">&lt;30s</div>
                     <div className="text-sm text-gray-400">Confirmación</div>
                   </div>
-                  <div className="bg-gradient-to-br from-blue-600/20 to-cyan-600/20 rounded-xl p-4 border border-blue-500/30">
+                  <div className="bg-linear-to-br from-blue-600/20 to-cyan-600/20 rounded-xl p-4 border border-blue-500/30">
                     <div className="text-3xl md:text-4xl font-bold text-blue-400">24/7</div>
                     <div className="text-sm text-gray-400">Disponible</div>
                   </div>
@@ -245,14 +245,14 @@ const PagosSpeiPage = () => {
                 <p className="text-gray-400 text-center max-w-2xl mx-auto">
                   El método preferido por empresas y clientes que buscan seguridad y bajas comisiones
                 </p>
-                <div className="h-1 w-24 bg-gradient-to-r from-blue-600 to-cyan-600 mx-auto mt-4" aria-hidden="true"></div>
+                <div className="h-1 w-24 bg-linear-to-r from-blue-600 to-cyan-600 mx-auto mt-4" aria-hidden="true"></div>
               </header>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {benefits.map((benefit, idx) => (
                   <article
                     key={idx}
-                    className={`bg-gradient-to-br from-blue-600/10 to-cyan-600/10 border border-blue-500/30 rounded-xl p-6 hover:border-blue-500/60 transition-all duration-500 ease-out ${benefitsAnim.isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
+                    className={`bg-linear-to-br from-blue-600/10 to-cyan-600/10 border border-blue-500/30 rounded-xl p-6 hover:border-blue-500/60 transition-all duration-500 ease-out ${benefitsAnim.isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
                     style={{ transitionDelay: `${150 + idx * 100}ms` }}
                   >
                     <div className="text-blue-400 mb-4">{benefit.icon}</div>
@@ -265,13 +265,13 @@ const PagosSpeiPage = () => {
           </section>
 
           {/* Cost Comparison Section */}
-          <section className="relative py-16 md:py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-black via-blue-900/5 to-black">
+          <section className="relative py-16 md:py-24 px-4 sm:px-6 lg:px-8 bg-linear-to-b from-black via-blue-900/5 to-black">
             <div className="max-w-4xl mx-auto">
               <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">
                 Compara el Ahorro con SPEI
               </h2>
               
-              <div className="bg-gradient-to-br from-blue-600/10 to-cyan-600/10 border border-blue-500/30 rounded-2xl p-8">
+              <div className="bg-linear-to-br from-blue-600/10 to-cyan-600/10 border border-blue-500/30 rounded-2xl p-8">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   {/* Tarjeta de Crédito */}
                   <div className="text-center p-6 bg-black/40 rounded-xl border border-white/10">
@@ -285,7 +285,7 @@ const PagosSpeiPage = () => {
                   </div>
                   
                   {/* SPEI */}
-                  <div className="text-center p-6 bg-gradient-to-br from-blue-600/20 to-cyan-600/20 rounded-xl border-2 border-blue-500/50">
+                  <div className="text-center p-6 bg-linear-to-br from-blue-600/20 to-cyan-600/20 rounded-xl border-2 border-blue-500/50">
                     <div className="text-blue-400 mb-2 font-semibold">SPEI</div>
                     <div className="text-4xl font-bold text-white mb-2">~1%</div>
                     <div className="text-sm text-gray-400">Por transacción</div>
@@ -326,10 +326,10 @@ const PagosSpeiPage = () => {
                     style={{ transitionDelay: `${150 + idx * 100}ms` }}
                   >
                     {idx < steps.length - 1 && (
-                      <div className="hidden md:block absolute top-8 left-[60%] w-[80%] h-0.5 bg-gradient-to-r from-blue-500/50 to-cyan-500/50" aria-hidden="true"></div>
+                      <div className="hidden md:block absolute top-8 left-[60%] w-[80%] h-0.5 bg-linear-to-r from-blue-500/50 to-cyan-500/50" aria-hidden="true"></div>
                     )}
                     
-                    <div className="relative z-10 w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-blue-600 to-cyan-600 flex items-center justify-center text-2xl font-bold">
+                    <div className="relative z-10 w-16 h-16 mx-auto mb-4 rounded-full bg-linear-to-br from-blue-600 to-cyan-600 flex items-center justify-center text-2xl font-bold">
                       {step.number}
                     </div>
                     <h3 className="text-lg font-bold mb-2">{step.title}</h3>
@@ -341,7 +341,7 @@ const PagosSpeiPage = () => {
           </section>
 
           {/* Compatible Banks Section */}
-          <section className="relative py-16 md:py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-black via-blue-900/5 to-black" aria-labelledby="banks-title">
+          <section className="relative py-16 md:py-24 px-4 sm:px-6 lg:px-8 bg-linear-to-b from-black via-blue-900/5 to-black" aria-labelledby="banks-title">
             <div ref={banksAnim.ref} className="max-w-4xl mx-auto">
               <header className={`mb-12 transition-all duration-700 ease-out ${banksAnim.isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
                 <h2 id="banks-title" className="text-3xl md:text-4xl font-bold text-center mb-4">
@@ -356,7 +356,7 @@ const PagosSpeiPage = () => {
                 {compatibleBanks.map((bank, idx) => (
                   <div
                     key={idx}
-                    className="bg-gradient-to-br from-blue-600/10 to-cyan-600/10 border border-blue-500/20 rounded-lg p-3 text-center text-sm text-gray-300 hover:border-blue-500/50 transition-all"
+                    className="bg-linear-to-br from-blue-600/10 to-cyan-600/10 border border-blue-500/20 rounded-lg p-3 text-center text-sm text-gray-300 hover:border-blue-500/50 transition-all"
                   >
                     {bank}
                   </div>
@@ -376,7 +376,7 @@ const PagosSpeiPage = () => {
                 <h2 id="faq-title" className="text-3xl md:text-4xl font-bold text-center mb-4">
                   Preguntas Frecuentes sobre SPEI
                 </h2>
-                <div className="h-1 w-24 bg-gradient-to-r from-blue-600 to-cyan-600 mx-auto" aria-hidden="true"></div>
+                <div className="h-1 w-24 bg-linear-to-r from-blue-600 to-cyan-600 mx-auto" aria-hidden="true"></div>
               </header>
 
               <div className="space-y-4">
@@ -392,7 +392,7 @@ const PagosSpeiPage = () => {
                       aria-expanded={openFaq === idx}
                     >
                       <span className="font-semibold flex items-center gap-3">
-                        <HelpCircle className="w-5 h-5 text-blue-400 flex-shrink-0" />
+                        <HelpCircle className="w-5 h-5 text-blue-400 shrink-0" />
                         {faq.question}
                       </span>
                       <CheckCircle2 className={`w-5 h-5 text-cyan-400 transition-transform duration-300 ${openFaq === idx ? 'rotate-180' : ''}`} />
@@ -411,7 +411,7 @@ const PagosSpeiPage = () => {
           {/* CTA Section */}
           <section className="relative py-16 md:py-24 px-4 sm:px-6 lg:px-8" aria-labelledby="cta-title">
             <div ref={ctaAnim.ref} className="max-w-4xl mx-auto">
-              <aside className={`bg-gradient-to-r from-blue-600 to-cyan-600 rounded-2xl p-8 md:p-12 text-center transition-all duration-700 ease-out ${ctaAnim.isVisible ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-8 scale-95'}`}>
+              <aside className={`bg-linear-to-r from-blue-600 to-cyan-600 rounded-2xl p-8 md:p-12 text-center transition-all duration-700 ease-out ${ctaAnim.isVisible ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-8 scale-95'}`}>
                 <h2 id="cta-title" className="text-3xl md:text-4xl font-bold mb-4">
                   Empieza a Ahorrar con Pagos SPEI
                 </h2>
@@ -443,7 +443,7 @@ const PagosSpeiPage = () => {
         {/* Footer */}
         <footer className="relative py-8 px-4 sm:px-6 lg:px-8" role="contentinfo">
           <div className="max-w-7xl mx-auto text-center text-gray-400 text-sm">
-            <p>© 2025 <span className="bg-gradient-to-r from-orange-400 to-yellow-400 bg-clip-text text-transparent font-semibold">Expo360</span> por <a href="https://interzekt.com" target="_blank" rel="noopener noreferrer" className="bg-gradient-to-r from-cyan-400 via-blue-400 to-pink-400 bg-clip-text text-transparent hover:opacity-80 transition font-semibold">Interzekt.com</a></p>
+            <p>© 2025 <a href="/" className="bg-linear-to-r from-orange-400 to-yellow-400 bg-clip-text text-transparent hover:opacity-80 transition font-semibold">Expo360</a> por <a href="https://interzekt.com" target="_blank" rel="noopener noreferrer" className="bg-linear-to-r from-cyan-400 via-blue-400 to-pink-400 bg-clip-text text-transparent hover:opacity-80 transition font-semibold">Interzekt.com</a></p>
             <div className="mt-4 flex justify-center gap-6 text-xs">
               <Link href="/stripe-benefits" className="hover:text-white transition">Stripe + Expo360</Link>
               <Link href="/pagos-oxxo" className="hover:text-white transition">Pagos OXXO</Link>
