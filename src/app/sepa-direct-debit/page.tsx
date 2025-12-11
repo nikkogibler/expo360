@@ -176,11 +176,11 @@ const SEPADirectDebitPage = () => {
                 <div className="flex justify-center mb-8">
                   <div className="p-8">
                     <Image
-                      src="/integration_logos/Flag_of_Europe.svg.png"
+                      src="/integration_logos/european_union.svg"
                       alt="SEPA - Europa"
-                      width={280}
-                      height={120}
-                      className="h-24 md:h-32 w-auto object-contain"
+                      width={560}
+                      height={240}
+                      className="h-48 md:h-64 w-auto object-contain"
                       priority
                     />
                   </div>
