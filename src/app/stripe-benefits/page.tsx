@@ -126,8 +126,8 @@ const StripeBenefitsPage = () => {
       category: 'Pagos Internacionales',
       icon: '🌍',
       methods: [
-        { name: 'Débito directo SEPA', description: 'Pagos recurrentes en 36 países europeos con costos bajos', logo: '/integration_logos/Flag_of_Europe.svg.png' },
-        { name: 'ACH Direct Debit', description: 'Costos de transacción reducidos para pagos en EE.UU.', logo: '/integration_logos/usaflag.svg' }
+        { name: 'Débito directo SEPA', description: 'Pagos recurrentes en 36 países europeos con costos bajos', logo: '/integration_logos/Flag_of_Europe.svg.png' }
+        // { name: 'ACH Direct Debit', description: 'Costos de transacción reducidos para pagos en EE.UU.', logo: '/integration_logos/usaflag.svg' }
       ]
     },
   ];
@@ -414,33 +414,11 @@ const StripeBenefitsPage = () => {
                             <p className="text-sm grow" style={{ color: '#35d44f' }}>{method.description}</p>
                           </div>
                         </Link>
-                      ) : (
-                        <div className="bg-black/40 rounded-lg p-5 border border-white/5 hover:border-purple-500/20 transition-all h-full flex flex-col items-start">
-                          {method.logo && (
-                            <div className="mb-4 h-16 flex items-center">
-                              {method.name === 'OXXO' ? (
-                                <Link href="/pagos-oxxo" className="hover:opacity-80 transition-opacity">
-                                  <Image
-                                    src={method.logo}
-                                    alt={method.name}
-                                    width={100}
-                                    height={64}
-                                    className="object-contain max-h-16 cursor-pointer"
-                                    loading="lazy"
-                                  />
-                                </Link>
-                              ) : method.name === 'SPEI' ? (
-                                <Link href="/pagos-spei" className="hover:opacity-80 transition-opacity">
-                                  <Image
-                                    src={method.logo}
-                                    alt={method.name}
-                                    width={100}
-                                    height={64}
-                                    className="object-contain max-h-16 cursor-pointer"
-                                    loading="lazy"
-                                  />
-                                </Link>
-                              ) : (
+                      ) : method.name === 'OXXO' ? (
+                        <Link href="/pagos-oxxo" className="block h-full hover:opacity-90 transition-opacity">
+                          <div className="bg-black/40 rounded-lg p-5 border border-white/5 hover:border-purple-500/20 transition-all h-full flex flex-col items-start cursor-pointer">
+                            {method.logo && (
+                              <div className="mb-4 h-16 flex items-center">
                                 <Image
                                   src={method.logo}
                                   alt={method.name}
@@ -449,7 +427,138 @@ const StripeBenefitsPage = () => {
                                   className="object-contain max-h-16"
                                   loading="lazy"
                                 />
-                              )}
+                              </div>
+                            )}
+                            <h4 className="font-semibold text-white mb-3 text-lg">{method.name}</h4>
+                            <p className="text-gray-400 text-sm grow">{method.description}</p>
+                          </div>
+                        </Link>
+                      ) : method.name === 'SPEI' ? (
+                        <Link href="/pagos-spei" className="block h-full hover:opacity-90 transition-opacity">
+                          <div className="bg-black/40 rounded-lg p-5 border border-white/5 hover:border-purple-500/20 transition-all h-full flex flex-col items-start cursor-pointer">
+                            {method.logo && (
+                              <div className="mb-4 h-16 flex items-center">
+                                <Image
+                                  src={method.logo}
+                                  alt={method.name}
+                                  width={100}
+                                  height={64}
+                                  className="object-contain max-h-16"
+                                  loading="lazy"
+                                />
+                              </div>
+                            )}
+                            <h4 className="font-semibold text-white mb-3 text-lg">{method.name}</h4>
+                            <p className="text-gray-400 text-sm grow">{method.description}</p>
+                          </div>
+                        </Link>
+                      ) : method.name === 'Apple Pay' ? (
+                        <Link href="/apple-pay" className="block h-full hover:opacity-90 transition-opacity">
+                          <div className="bg-black/40 rounded-lg p-5 border border-white/5 hover:border-purple-500/20 transition-all h-full flex flex-col items-start cursor-pointer">
+                            {method.logo && (
+                              <div className="mb-4 h-16 flex items-center">
+                                <Image
+                                  src={method.logo}
+                                  alt={method.name}
+                                  width={100}
+                                  height={64}
+                                  className="object-contain max-h-16"
+                                  loading="lazy"
+                                />
+                              </div>
+                            )}
+                            <h4 className="font-semibold text-white mb-3 text-lg">{method.name}</h4>
+                            <p className="text-gray-400 text-sm grow">{method.description}</p>
+                          </div>
+                        </Link>
+                      ) : method.name === 'Google Pay' ? (
+                        <Link href="/google-pay" className="block h-full hover:opacity-90 transition-opacity">
+                          <div className="bg-black/40 rounded-lg p-5 border border-white/5 hover:border-purple-500/20 transition-all h-full flex flex-col items-start cursor-pointer">
+                            {method.logo && (
+                              <div className="mb-4 h-16 flex items-center">
+                                <Image
+                                  src={method.logo}
+                                  alt={method.name}
+                                  width={100}
+                                  height={64}
+                                  className="object-contain max-h-16"
+                                  loading="lazy"
+                                />
+                              </div>
+                            )}
+                            <h4 className="font-semibold text-white mb-3 text-lg">{method.name}</h4>
+                            <p className="text-gray-400 text-sm grow">{method.description}</p>
+                          </div>
+                        </Link>
+                      ) : method.name === 'PayPal' ? (
+                        <Link href="/paypal" className="block h-full hover:opacity-90 transition-opacity">
+                          <div className="bg-black/40 rounded-lg p-5 border border-white/5 hover:border-purple-500/20 transition-all h-full flex flex-col items-start cursor-pointer">
+                            {method.logo && (
+                              <div className="mb-4 h-16 flex items-center">
+                                <Image
+                                  src={method.logo}
+                                  alt={method.name}
+                                  width={100}
+                                  height={64}
+                                  className="object-contain max-h-16"
+                                  loading="lazy"
+                                />
+                              </div>
+                            )}
+                            <h4 className="font-semibold text-white mb-3 text-lg">{method.name}</h4>
+                            <p className="text-gray-400 text-sm grow">{method.description}</p>
+                          </div>
+                        </Link>
+                      ) : method.name === 'Amazon Pay' ? (
+                        <Link href="/amazon-pay" className="block h-full hover:opacity-90 transition-opacity">
+                          <div className="bg-black/40 rounded-lg p-5 border border-white/5 hover:border-purple-500/20 transition-all h-full flex flex-col items-start cursor-pointer">
+                            {method.logo && (
+                              <div className="mb-4 h-16 flex items-center">
+                                <Image
+                                  src={method.logo}
+                                  alt={method.name}
+                                  width={100}
+                                  height={64}
+                                  className="object-contain max-h-16"
+                                  loading="lazy"
+                                />
+                              </div>
+                            )}
+                            <h4 className="font-semibold text-white mb-3 text-lg">{method.name}</h4>
+                            <p className="text-gray-400 text-sm grow">{method.description}</p>
+                          </div>
+                        </Link>
+                      ) : method.name === 'Débito directo SEPA' ? (
+                        <Link href="/sepa-direct-debit" className="block h-full hover:opacity-90 transition-opacity">
+                          <div className="bg-black/40 rounded-lg p-5 border border-white/5 hover:border-purple-500/20 transition-all h-full flex flex-col items-start cursor-pointer">
+                            {method.logo && (
+                              <div className="mb-4 h-16 flex items-center">
+                                <Image
+                                  src={method.logo}
+                                  alt={method.name}
+                                  width={100}
+                                  height={64}
+                                  className="object-contain max-h-16"
+                                  loading="lazy"
+                                />
+                              </div>
+                            )}
+                            <h4 className="font-semibold text-white mb-3 text-lg">{method.name}</h4>
+                            <p className="text-gray-400 text-sm grow">{method.description}</p>
+                          </div>
+                        </Link>
+                      ) : (
+                        <div className="bg-black/40 rounded-lg p-5 border border-white/5 hover:border-purple-500/20 transition-all h-full flex flex-col items-start">
+                          {method.logo && (
+                            <div className="mb-4 h-16 flex items-center">
+                              <Image
+                                src={method.logo}
+                                alt={method.name}
+                                width={100}
+                                height={64}
+                                className="object-contain max-h-16"
+                                loading="lazy"
+                              />
                             </div>
                           )}
                           <h4 className="font-semibold text-white mb-3 text-lg">{method.name}</h4>
