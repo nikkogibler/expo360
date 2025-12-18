@@ -258,7 +258,7 @@ const StripeBenefitsPage = () => {
             </h1>
 
             <p className="text-xl md:text-2xl text-gray-300 max-w-3xl mx-auto leading-relaxed">
-              La plataforma de pagos más potente del mundo, integrada nativamente en tu showroom virtual. Acepta <strong>tarjetas, OXXO, SPEI</strong> y más.
+              La plataforma de pagos más potente del mundo, integrada nativamente en tu showroom virtual. Acepta pagos con <strong>tarjetas de crédito, Apple Pay, Google Pay, OXXO, SPEI</strong> y más.
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-8">
