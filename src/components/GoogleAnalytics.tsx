@@ -1,62 +1,59 @@
 'use client';
 
 import Script from 'next/script';
+import { usePathname, useSearchParams } from 'next/navigation';
+import { useEffect } from 'react';
 import { GA_MEASUREMENT_ID } from '../utils/googleAnalytics';
 
 export default function GoogleAnalytics() {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    if (!GA_MEASUREMENT_ID || typeof window === 'undefined' || !window.gtag) return;
+
+    // Track page views on route changes
+    window.gtag('config', GA_MEASUREMENT_ID, {
+      page_path: pathname,
+      debug_mode: true
+    });
+
+    // Explicitly handle UTMs if present during navigation
+    const utmSource = searchParams.get('utm_source');
+    if (utmSource) {
+      window.gtag('event', 'page_view', {
+        campaign_source: utmSource,
+        campaign_medium: searchParams.get('utm_medium') || 'referral',
+        campaign_name: searchParams.get('utm_campaign') || 'partner_commissions',
+        debug_mode: true
+      });
+    }
+  }, [pathname, searchParams]);
+
   if (!GA_MEASUREMENT_ID) {
     return null;
   }
 
   return (
     <>
+      {/* Load Global Site Tag (gtag.js) */}
       <Script
         src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
         strategy="afterInteractive"
       />
+      {/* Standard GA4 Initialization Script */}
       <Script id="google-analytics" strategy="afterInteractive">
         {`
           window.dataLayer = window.dataLayer || [];
           function gtag(){dataLayer.push(arguments);}
           gtag('js', new Date());
-          
-          // Parse UTM params from URL
-          var urlParams = new URLSearchParams(window.location.search);
-          var utmSource = urlParams.get('utm_source');
-          var utmMedium = urlParams.get('utm_medium');
-          var utmCampaign = urlParams.get('utm_campaign');
-          
-          // Debug logs
-          if (utmSource) console.log('GA4: Captured utm_source:', utmSource);
-          
-          // Set campaign params directly using 'set' command - Primary Method
-          var campaignData = {};
-          if (utmSource) campaignData.source = utmSource;
-          if (utmMedium) campaignData.medium = utmMedium;
-          if (utmCampaign) campaignData.name = utmCampaign;
-          
-          if (Object.keys(campaignData).length > 0) {
-            gtag('set', 'campaign', campaignData);
-            console.log('GA4: Set campaign context:', campaignData);
-          }
-          
-          // Build config object
-          var configObj = {
-            page_location: window.location.href,
-            page_path: window.location.pathname + window.location.search,
-            cookie_domain: 'expo360.vercel.app',
-            cookie_flags: 'SameSite=None;Secure',
-            debug_mode: true 
-          };
 
-          // Also add to config object as Backup Method
-          if (utmSource) configObj.campaign_source = utmSource;
-          if (utmMedium) configObj.campaign_medium = utmMedium;
-          if (utmCampaign) configObj.campaign_name = utmCampaign;
-          
-          console.log('GA4: Sending config to', '${GA_MEASUREMENT_ID}' ,'with debug_mode: true');
-          
-          gtag('config', '${GA_MEASUREMENT_ID}', configObj);
+          // Config with cookie domain fix for vercel.app
+          gtag('config', '${GA_MEASUREMENT_ID}', {
+            page_path: window.location.pathname,
+            cookie_domain: window.location.hostname.includes('vercel.app') ? window.location.hostname : 'auto',
+            debug_mode: true
+          });
         `}
       </Script>
     </>
