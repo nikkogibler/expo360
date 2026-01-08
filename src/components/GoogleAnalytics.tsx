@@ -22,7 +22,7 @@ export default function GoogleAnalytics() {
     const utmId = searchParams.get('utm_id');
 
     // Build event parameters using GA4's standard naming convention
-    const eventParams = {
+    const eventParams: Record<string, any> = {
       page_path: pathname,
       page_location: window.location.href,
       // Standard GA4 campaign attribution keys
