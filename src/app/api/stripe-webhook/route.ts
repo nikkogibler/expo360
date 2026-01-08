@@ -41,23 +41,10 @@ export async function POST(request: NextRequest) {
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session;
         
-        // Extract metadata
-        const credits = parseInt(session.metadata?.credits || '0');
-        const packageName = session.metadata?.packageName;
-
-        if (!credits) {
-          console.error('No credits found in session metadata');
-          return NextResponse.json(
-            { error: 'Invalid credits in metadata' },
-            { status: 400 }
-          );
-        }
-
-        // Add credits to the database
-        // Note: You'll need to determine how to identify the user
-        // This could be done through customer_email or by storing user_id in metadata
+        // Determine purchase type from metadata
+        const purchaseType = session.metadata?.type || 'credits';
         const customerEmail = session.customer_details?.email;
-        
+
         if (!customerEmail) {
           console.error('No customer email found in checkout session');
           return NextResponse.json(
@@ -66,8 +53,8 @@ export async function POST(request: NextRequest) {
           );
         }
 
-        // Find the user by email (you may need to adjust this based on your user table structure)
-        const { data: user, error: userError } = await supabaseAdmin.auth.admin.listUsers();
+        // Find the user by email
+        const { data: userData, error: userError } = await supabaseAdmin.auth.admin.listUsers();
         
         if (userError) {
           console.error('Error fetching users:', userError);
@@ -77,13 +64,81 @@ export async function POST(request: NextRequest) {
           );
         }
 
-        const targetUser = user.users.find((u) => u.email === customerEmail);
+        const targetUser = userData.users.find((u) => u.email === customerEmail);
         
         if (!targetUser) {
           console.error('User not found for email:', customerEmail);
           return NextResponse.json(
             { error: 'User not found' },
             { status: 404 }
+          );
+        }
+
+        // Handle EVENT PASS purchase
+        if (purchaseType === 'event_pass') {
+          const passId = session.metadata?.passId;
+          const passName = session.metadata?.passName;
+          const billingType = session.metadata?.billingType;
+          
+          console.log(`Processing event pass purchase: ${passName} (${passId}) for ${customerEmail}`);
+
+          // Find the user's client
+          const { data: userClient, error: clientError } = await supabaseAdmin
+            .from('user_clients')
+            .select('client_id')
+            .eq('user_id', targetUser.id)
+            .maybeSingle();
+
+          if (clientError || !userClient) {
+            console.error('Error finding user client:', clientError);
+            return NextResponse.json(
+              { error: 'User client not found' },
+              { status: 404 }
+            );
+          }
+
+          // Calculate subscription end date
+          let subscriptionEndDate: string;
+          if (passId === 'single-event') {
+            // 60 days for single event
+            subscriptionEndDate = new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString();
+          } else {
+            // 12 months for yearly plans
+            subscriptionEndDate = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString();
+          }
+
+          // Update client subscription status
+          const { error: updateError } = await supabaseAdmin
+            .from('clients')
+            .update({
+              subscription_status: 'active',
+              subscription_end_date: subscriptionEndDate,
+              trial_status: 'upgraded',
+              upgraded_at: new Date().toISOString(),
+            })
+            .eq('id', userClient.client_id);
+
+          if (updateError) {
+            console.error('Error updating client subscription:', updateError);
+            return NextResponse.json(
+              { error: 'Failed to update subscription status' },
+              { status: 500 }
+            );
+          }
+
+          console.log(`Successfully activated ${passName} for client ${userClient.client_id}. Expires: ${subscriptionEndDate}`);
+          break;
+        }
+
+        // Handle CREDITS purchase (legacy)
+        const credits = parseInt(session.metadata?.credits || '0');
+        const packageName = session.metadata?.packageName;
+
+        if (!credits) {
+          console.error('No credits found in session metadata');
+          return NextResponse.json(
+            { error: 'Invalid credits in metadata' },
+            { status: 400 }
           );
         }
 
@@ -143,6 +198,30 @@ export async function POST(request: NextRequest) {
         // Log the successful purchase
         console.log(`Successfully added ${credits} credits to user ${customerEmail} for package ${packageName}`);
         
+        break;
+      }
+
+      // Handle subscription events (for monthly billing)
+      case 'invoice.payment_succeeded': {
+        const invoice = event.data.object as Stripe.Invoice;
+        
+        // Only process subscription invoices (not one-time payments)
+        // @ts-expect-error - Stripe API version mismatch
+        if (invoice.subscription || invoice.billing_reason === 'subscription_cycle') {
+          const customerEmail = invoice.customer_email;
+          console.log(`Subscription payment received for ${customerEmail}`);
+          // The subscription stays active, no action needed
+        }
+        break;
+      }
+
+      case 'customer.subscription.deleted': {
+        const subscription = event.data.object as Stripe.Subscription;
+        console.log(`Subscription cancelled: ${subscription.id}`);
+        
+        // Find user and deactivate their subscription
+        // This would require storing stripe_customer_id in your database
+        // For now, just log it - manual intervention may be needed
         break;
       }
 

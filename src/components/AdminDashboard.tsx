@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import BurgerMenu from './BurgerMenu';
 import AdminMenu from './AdminMenu';
 import ImageStandardizer from './ImageStandardizer';
+import PublishEventModal from './PublishEventModal';
 import { gsap } from 'gsap';
 
 export interface BentoCardProps {
@@ -555,8 +556,14 @@ const MagicBento: React.FC<BentoProps & { client?: any; logoUrl?: string }> = ({
   const shouldDisableAnimations = disableAnimations || isMobile;
 
   const [showImageEditor, setShowImageEditor] = useState(false);
+  const [showPublishModal, setShowPublishModal] = useState(false);
   const { logoUrl: ctxLogo } = useClient();
   const [burgerOpen, setBurgerOpen] = useState(false);
+
+  // Check if client is in draft mode (not yet paid)
+  const isDraftMode = !client?.subscription_status || client?.subscription_status === 'none';
+  // Check if Stripe Connect is needed (paid but no bank account linked)
+  const needsStripeConnect = client?.subscription_status === 'active' && !client?.stripe_connect_complete;
 
   // Handle card navigation
   const handleCardClick = (cardLabel: string) => {
@@ -749,6 +756,60 @@ const MagicBento: React.FC<BentoProps & { client?: any; logoUrl?: string }> = ({
             <AdminMenu open={burgerOpen} setOpen={setBurgerOpen} currentPage="admin" />
           </div>
         </div>
+
+        {/* Draft Mode Banner */}
+        {isDraftMode && (
+          <div className="mx-auto max-w-4xl px-4 mb-4">
+            <div className="bg-linear-to-r from-amber-500/20 via-yellow-500/20 to-amber-500/20 border border-amber-500/40 rounded-2xl p-4 backdrop-blur-sm">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-amber-500/20 rounded-full">
+                    <svg className="w-6 h-6 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-amber-200">🎨 Modo Borrador</p>
+                    <p className="text-sm text-amber-300/80">Configura tu showroom. Cuando esté listo, publícalo.</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowPublishModal(true)}
+                  className="px-6 py-2.5 bg-linear-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-semibold rounded-xl shadow-lg shadow-purple-500/30 transition-all duration-200 hover:scale-105 whitespace-nowrap"
+                >
+                  🚀 Publicar Evento
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Stripe Connect Banner */}
+        {needsStripeConnect && (
+          <div className="mx-auto max-w-4xl px-4 mb-4">
+            <div className="bg-linear-to-r from-blue-500/20 via-cyan-500/20 to-blue-500/20 border border-blue-500/40 rounded-2xl p-4 backdrop-blur-sm">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-blue-500/20 rounded-full">
+                    <svg className="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-blue-200">🏦 Acción Requerida</p>
+                    <p className="text-sm text-blue-300/80">Vincula tu cuenta bancaria para recibir pagos de tus clientes.</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => window.open('/admin/settings?tab=stripe', '_self')}
+                  className="px-6 py-2.5 bg-linear-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-semibold rounded-xl shadow-lg shadow-blue-500/30 transition-all duration-200 hover:scale-105 whitespace-nowrap"
+                >
+                  Conectar Stripe →
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
         <div style={{ flex: 1, width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
           {showImageEditor ? (
             <ImageStandardizer onBack={() => setShowImageEditor(false)} />
@@ -1076,6 +1137,12 @@ const MagicBento: React.FC<BentoProps & { client?: any; logoUrl?: string }> = ({
       </span>
     </span>
   </footer>
+
+  {/* Publish Event Modal */}
+  <PublishEventModal 
+    isOpen={showPublishModal} 
+    onClose={() => setShowPublishModal(false)} 
+  />
   </>
 );
 };

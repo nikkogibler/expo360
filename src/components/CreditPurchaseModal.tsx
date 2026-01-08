@@ -131,7 +131,7 @@ export default function CreditPurchaseModal({
                         whileTap={{ scale: 0.98 }}
                         className={`relative p-4 border rounded-2xl cursor-pointer transition-all duration-200 ${
                           pkg.popular 
-                            ? 'border-cyan-400 bg-gradient-to-br from-cyan-50 via-purple-50 to-blue-50 ring-2 ring-gradient-to-r ring-from-cyan-200 ring-to-blue-200' 
+                            ? 'border-cyan-400 bg-linear-to-br from-cyan-50 via-purple-50 to-blue-50 ring-2 ring-linear-to-r ring-from-cyan-200 ring-to-blue-200' 
                             : 'border-gray-200 hover:border-gray-300 hover:shadow-lg bg-white'
                         } ${isLoading ? 'opacity-75 cursor-not-allowed' : ''}`}
                         onClick={() => !isLoading && handlePurchase(pkg)}
@@ -140,7 +140,7 @@ export default function CreditPurchaseModal({
                         {pkg.badge && (
                           <div className={`absolute -top-3 left-4 px-3 py-1 rounded-full text-xs font-semibold ${
                             pkg.badge === 'Más Elegido' 
-                              ? 'bg-gradient-to-r from-cyan-500 via-purple-500 to-blue-500 text-white shadow-lg' 
+                              ? 'bg-linear-to-r from-cyan-500 via-purple-500 to-blue-500 text-white shadow-lg' 
                               : 'bg-green-500 text-white'
                           }`}>
                             {pkg.badge}
@@ -160,7 +160,7 @@ export default function CreditPurchaseModal({
                           </h3>
                           
                           <div className="mb-3">
-                            <div className={`text-2xl font-bold ${pkg.popular ? 'text-transparent bg-clip-text bg-gradient-to-r from-cyan-600 via-purple-600 to-blue-600' : 'text-gray-900'}`}>
+                            <div className={`text-2xl font-bold ${pkg.popular ? 'text-transparent bg-clip-text bg-linear-to-r from-cyan-600 via-purple-600 to-blue-600' : 'text-gray-900'}`}>
                               {pkg.credits}
                             </div>
                             <div className="text-xs text-gray-600">créditos</div>
@@ -186,7 +186,7 @@ export default function CreditPurchaseModal({
 
                           <div className={`w-full py-2 px-3 rounded-lg font-medium transition-all duration-200 text-sm ${
                             pkg.popular
-                              ? 'bg-gradient-to-r from-cyan-600 via-purple-600 to-blue-600 hover:from-cyan-700 hover:via-purple-700 hover:to-blue-700 text-white shadow-lg'
+                              ? 'bg-linear-to-r from-cyan-600 via-purple-600 to-blue-600 hover:from-cyan-700 hover:via-purple-700 hover:to-blue-700 text-white shadow-lg'
                               : 'bg-gray-900 hover:bg-black text-white'
                           } ${isLoading ? 'cursor-not-allowed opacity-50' : 'hover:shadow-lg transform hover:scale-105'}`}>
                             {isLoading ? 'Abriendo pago seguro...' : 'Recargar Ahora →'}
