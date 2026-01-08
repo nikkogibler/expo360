@@ -12,20 +12,20 @@ declare global {
 }
 
 export default function GoogleAnalytics() {
-  // Return null if measurement ID is not configured
-  if (!GA_MEASUREMENT_ID) {
-    return null;
-  }
-
   // Initialize GA4 after script loads
   useEffect(() => {
-    if (typeof window !== 'undefined' && window.gtag) {
+    if (GA_MEASUREMENT_ID && typeof window !== 'undefined' && window.gtag) {
       window.gtag('config', GA_MEASUREMENT_ID, {
         page_location: window.location.href,
         page_path: window.location.pathname + window.location.search,
       });
     }
   }, []);
+
+  // Return null if measurement ID is not configured
+  if (!GA_MEASUREMENT_ID) {
+    return null;
+  }
 
   return (
     <>
