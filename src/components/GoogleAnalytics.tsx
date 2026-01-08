@@ -19,7 +19,24 @@ export default function GoogleAnalytics() {
           window.dataLayer = window.dataLayer || [];
           function gtag(){dataLayer.push(arguments);}
           gtag('js', new Date());
-          gtag('config', '${GA_MEASUREMENT_ID}');
+          
+          // Parse UTM params and set them before config
+          var params = new URLSearchParams(window.location.search);
+          var source = params.get('utm_source');
+          var medium = params.get('utm_medium');
+          var campaign = params.get('utm_campaign');
+          
+          if (source || medium || campaign) {
+            gtag('set', 'campaign', {
+              source: source || '(direct)',
+              medium: medium || '(none)',
+              name: campaign || '(not set)'
+            });
+          }
+          
+          gtag('config', '${GA_MEASUREMENT_ID}', {
+            page_location: window.location.href
+          });
         `}
       </Script>
     </>
