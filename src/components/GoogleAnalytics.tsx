@@ -25,6 +25,7 @@ export default function GoogleAnalytics() {
     const eventParams: Record<string, any> = {
       page_path: pathname,
       page_location: window.location.href,
+      transport_type: 'beacon', // Force browser to send even if page unloads
       // Standard GA4 campaign attribution keys (short form)
       source: utmSource || undefined,
       medium: utmMedium || undefined,
@@ -67,9 +68,9 @@ export default function GoogleAnalytics() {
             page_referrer: document.referrer,
             anonymize_ip: false,
             send_page_view: false,
-            cookie_domain: 'expo360.vercel.app',
+            cookie_domain: 'none',
             cookie_flags: 'SameSite=None;Secure',
-            update_via_area: true
+            debug_mode: true
           });
         `}
       </Script>
