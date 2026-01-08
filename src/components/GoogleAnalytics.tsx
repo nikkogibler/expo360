@@ -66,8 +66,9 @@ export default function GoogleAnalytics() {
             page_path: window.location.pathname,
             anonymize_ip: false,
             send_page_view: false,
-            cookie_domain: 'auto',
-            cookie_flags: 'SameSite=None;Secure'
+            cookie_domain: 'expo360.vercel.app',
+            cookie_flags: 'SameSite=None;Secure',
+            update_via_area: true
           });
         `}
       </Script>
