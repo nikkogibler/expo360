@@ -23,17 +23,36 @@ export default function GoogleAnalytics() {
     const utmMedium = urlParams.get('utm_medium');
     const utmCampaign = urlParams.get('utm_campaign');
 
-    // Build config with campaign params if present
-    const config: Record<string, string> = {
+    // Disable automatic page view - we'll send it manually with UTM params
+    gtag('config', GA_MEASUREMENT_ID, {
+      send_page_view: false,
+    });
+
+    // Send page view event with UTM parameters explicitly set
+    const eventParams: Record<string, string> = {
       page_location: window.location.href,
       page_path: window.location.pathname + window.location.search,
+      page_title: document.title,
     };
 
-    if (utmSource) config.campaign_source = utmSource;
-    if (utmMedium) config.campaign_medium = utmMedium;
-    if (utmCampaign) config.campaign_name = utmCampaign;
+    // Add campaign parameters if present
+    if (utmSource) {
+      eventParams.campaign_source = utmSource;
+      eventParams.source = utmSource;
+    }
+    if (utmMedium) {
+      eventParams.campaign_medium = utmMedium;
+      eventParams.medium = utmMedium;
+    }
+    if (utmCampaign) {
+      eventParams.campaign_name = utmCampaign;
+      eventParams.campaign = utmCampaign;
+    }
 
-    gtag('config', GA_MEASUREMENT_ID, config);
+    // Log for debugging
+    console.log('📊 GA4 page_view with params:', eventParams);
+
+    gtag('event', 'page_view', eventParams);
   };
 
   return (
