@@ -21,12 +21,12 @@ export async function GET(
 
   // Generate tracked URL using the same origin as the request
   const origin = request.nextUrl.origin;
-  const params = new URLSearchParams({
+  const utmParams = new URLSearchParams({
     utm_source: code,
     utm_medium: 'referral',
     utm_campaign: 'partner_commissions',
   });
 
   // Redirect to tracked URL
-  return NextResponse.redirect(new URL(`/expo360?${params.toString()}`, origin));
+  return NextResponse.redirect(new URL(`/expo360?${utmParams.toString()}`, origin));
 }
