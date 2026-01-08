@@ -64,6 +64,7 @@ export default function GoogleAnalytics() {
           gtag('js', new Date());
           gtag('config', '${GA_ID}', {
             page_path: window.location.pathname,
+            page_referrer: document.referrer,
             anonymize_ip: false,
             send_page_view: false,
             cookie_domain: 'expo360.vercel.app',
