@@ -13,23 +13,34 @@ export default function GoogleAnalytics() {
   useEffect(() => {
     if (!GA_ID || typeof window === 'undefined' || !window.gtag) return;
 
-    // Track page views whenever route changes
-    window.gtag('event', 'page_view', {
+    // Capture UTM parameters
+    const utmSource = searchParams.get('utm_source');
+    const utmMedium = searchParams.get('utm_medium');
+    const utmCampaign = searchParams.get('utm_campaign');
+    const utmTerm = searchParams.get('utm_term');
+    const utmContent = searchParams.get('utm_content');
+    const utmId = searchParams.get('utm_id');
+
+    // Build event parameters using GA4's standard naming convention
+    const eventParams = {
       page_path: pathname,
       page_location: window.location.href,
-    });
+      // Standard GA4 campaign attribution keys
+      campaign_source: utmSource || undefined,
+      campaign_medium: utmMedium || 'organic',
+      campaign_name: utmCampaign || undefined,
+      campaign_term: utmTerm || undefined,
+      campaign_content: utmContent || undefined,
+      campaign_id: utmId || undefined,
+    };
 
-    // If UTM parameters are present, ensure they are set for the session
-    const utmSource = searchParams.get('utm_source');
-    if (utmSource) {
-      window.gtag('set', {
-        'campaign': {
-          'source': utmSource,
-          'medium': searchParams.get('utm_medium') || 'referral',
-          'name': searchParams.get('utm_campaign') || 'organic',
-        }
-      });
-    }
+    // Remove undefined values to avoid GA4 confusion
+    Object.keys(eventParams).forEach(key => eventParams[key] === undefined && delete eventParams[key]);
+
+    // Track page view with campaign parameters
+    window.gtag('event', 'page_view', eventParams);
+    
+    console.log('GA4 page_view sent with params:', eventParams);
   }, [pathname, searchParams]);
 
   if (!GA_ID) {
@@ -54,6 +65,7 @@ export default function GoogleAnalytics() {
           gtag('config', '${GA_ID}', {
             page_path: window.location.pathname,
             anonymize_ip: false,
+            send_page_view: false
           });
         `}
       </Script>
