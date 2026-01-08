@@ -85,12 +85,13 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        {/* Google Analytics - load first to capture UTM params */}
+        <GoogleAnalytics />
         {/* HrefLangMeta for multi-regional SEO - updates on client navigation */}
         <HrefLangMeta />
         {/* CORRECT LOCATION for Suspense: Wrap CustomerIdInitializer here */}
         <Suspense fallback={null}> {/* `null` for fallback as this component renders no UI */}
           <CustomerIdInitializer /> 
-          <GoogleAnalytics /> {/* NEW: Add Google Analytics tracking */}
         </Suspense>
         <StructuredData />
         {children}
