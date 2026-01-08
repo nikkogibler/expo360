@@ -65,7 +65,9 @@ export default function GoogleAnalytics() {
           gtag('config', '${GA_ID}', {
             page_path: window.location.pathname,
             anonymize_ip: false,
-            send_page_view: false
+            send_page_view: false,
+            cookie_domain: 'expo360.vercel.app',
+            cookie_flags: 'SameSite=None;Secure'
           });
         `}
       </Script>
