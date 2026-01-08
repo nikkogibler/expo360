@@ -19,12 +19,14 @@ export async function GET(
     return NextResponse.redirect(new URL('/expo360', request.url));
   }
 
-  // Generate tracked URL
-  const trackedUrl = generateTrackingUrl(code);
-
-  // TODO: Optional - Log click in Supabase for detailed analytics
-  // await logReferralClick(code);
+  // Generate tracked URL using the same origin as the request
+  const origin = request.nextUrl.origin;
+  const params = new URLSearchParams({
+    utm_source: code,
+    utm_medium: 'referral',
+    utm_campaign: 'partner_commissions',
+  });
 
   // Redirect to tracked URL
-  return NextResponse.redirect(trackedUrl);
+  return NextResponse.redirect(new URL(`/expo360?${params.toString()}`, origin));
 }
