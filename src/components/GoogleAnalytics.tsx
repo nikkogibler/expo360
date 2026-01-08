@@ -43,7 +43,9 @@ export default function GoogleAnalytics() {
           // Build config object
           var configObj = {
             page_location: window.location.href,
-            page_path: window.location.pathname + window.location.search
+            page_path: window.location.pathname + window.location.search,
+            cookie_domain: window.location.hostname,
+            cookie_flags: 'SameSite=None;Secure'
           };
           
           console.log('GA4: Sending config with location:', configObj.page_location);
