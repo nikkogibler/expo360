@@ -44,8 +44,9 @@ export default function GoogleAnalytics() {
           var configObj = {
             page_location: window.location.href,
             page_path: window.location.pathname + window.location.search,
-            cookie_domain: 'expo360.vercel.app', // Hardcoded for stability
-            cookie_flags: 'max-age=7200;secure;samesite=none'
+            cookie_domain: 'expo360.vercel.app',
+            cookie_flags: 'SameSite=None;Secure',
+            debug_mode: true 
           };
 
           // Also add to config object as Backup Method
@@ -53,7 +54,7 @@ export default function GoogleAnalytics() {
           if (utmMedium) configObj.campaign_medium = utmMedium;
           if (utmCampaign) configObj.campaign_name = utmCampaign;
           
-          console.log('GA4: Sending config to', '${GA_MEASUREMENT_ID}' ,'with cookie_domain:', configObj.cookie_domain);
+          console.log('GA4: Sending config to', '${GA_MEASUREMENT_ID}' ,'with debug_mode: true');
           
           gtag('config', '${GA_MEASUREMENT_ID}', configObj);
         `}
