@@ -5,6 +5,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import CustomerIdInitializer from '../components/CustomerIdInitializer'; // This is the correct import location
+import GoogleAnalytics from '../components/GoogleAnalytics'; // Google Analytics
 import StructuredData from '../components/StructuredData'; // NEW: Import StructuredData
 import HrefLangMeta from '../components/HrefLangMeta'; // NEW: Import HrefLangMeta for multi-regional SEO
 import { Suspense } from 'react'; // <--- NEW: Import Suspense
@@ -89,6 +90,7 @@ export default function RootLayout({
         {/* CORRECT LOCATION for Suspense: Wrap CustomerIdInitializer here */}
         <Suspense fallback={null}> {/* `null` for fallback as this component renders no UI */}
           <CustomerIdInitializer /> 
+          <GoogleAnalytics />
         </Suspense>
         <StructuredData />
         {children}
