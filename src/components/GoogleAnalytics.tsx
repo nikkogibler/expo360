@@ -25,12 +25,12 @@ export default function GoogleAnalytics() {
     const eventParams: Record<string, any> = {
       page_path: pathname,
       page_location: window.location.href,
-      // Standard GA4 campaign attribution keys
-      campaign_source: utmSource || undefined,
-      campaign_medium: utmMedium || 'organic',
-      campaign_name: utmCampaign || undefined,
-      campaign_term: utmTerm || undefined,
-      campaign_content: utmContent || undefined,
+      // Standard GA4 campaign attribution keys (short form)
+      source: utmSource || undefined,
+      medium: utmMedium || undefined,
+      campaign: utmCampaign || undefined,
+      term: utmTerm || undefined,
+      content: utmContent || undefined,
       campaign_id: utmId || undefined,
     };
 
@@ -66,7 +66,7 @@ export default function GoogleAnalytics() {
             page_path: window.location.pathname,
             anonymize_ip: false,
             send_page_view: false,
-            cookie_domain: 'expo360.vercel.app',
+            cookie_domain: 'auto',
             cookie_flags: 'SameSite=None;Secure'
           });
         `}
