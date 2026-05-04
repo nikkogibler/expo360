@@ -685,13 +685,14 @@ function LeadWorkspace({
               Kanban
             </button>
           </div>
-          <a
+          <Link
             href="/api/studio/leads/export"
+            prefetch={false}
             className="inline-flex h-10 items-center gap-2 rounded-md border border-[#d8d1c2] px-3 text-sm font-medium transition hover:border-[#155e75]"
           >
             <Download className="h-4 w-4" />
             Exportar CSV
-          </a>
+          </Link>
           <button
             type="button"
             onClick={onRefresh}
