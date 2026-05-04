@@ -3,21 +3,40 @@
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { motion } from 'framer-motion';
 import { signOut } from 'firebase/auth';
 import {
   Building2,
   CheckCircle2,
   Eye,
   ExternalLink,
+  Globe,
   Lock,
   LogOut,
   Plus,
   RefreshCw,
   UserPlus,
+  Users,
+  LayoutGrid,
+  Layers,
 } from 'lucide-react';
 
 import { getFirebaseClientAuth } from '@/lib/firebase/client';
 import type { ClientSummary } from '@/lib/expo360/types';
+
+const container = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.07 } },
+};
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 18 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { type: 'spring' as const, stiffness: 90, damping: 20 },
+  },
+};
 
 interface AdminConsoleProps {
   adminEmail: string;
@@ -134,8 +153,8 @@ export default function AdminConsole({ adminEmail, initialClients }: AdminConsol
 
       setNotice(
         published
-          ? 'Event landing page published.'
-          : 'Event landing page returned to draft.'
+          ? 'Página de evento publicada.'
+          : 'Página regresada a borrador.'
       );
       router.refresh();
     } catch (publishError) {
@@ -157,151 +176,220 @@ export default function AdminConsole({ adminEmail, initialClients }: AdminConsol
   }
 
   return (
-    <main className="min-h-screen bg-[#f4f1ea] text-[#111827]">
-      <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-5 py-6 lg:px-8">
-        <header className="flex flex-col gap-4 border-b border-[#d8d1c2] pb-6 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[#155e75]">
-              Interzekt Admin
-            </p>
-            <h1 className="mt-2 text-3xl font-semibold">Expo360 master console</h1>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-[#4b5563]">
-              Create SMB customer workspaces, watch publish readiness, and manually
-              activate event landing pages for v1 demos.
-            </p>
+    <div className="relative min-h-dvh bg-[#08071a] text-white" style={{ zoom: 1.1 }}>
+      {/* Ambient blobs */}
+      <div className="pointer-events-none fixed inset-0" aria-hidden>
+        <div className="absolute -left-32 -top-32 h-[680px] w-[680px] rounded-full bg-purple-700/20 blur-[160px]" />
+        <div className="absolute -bottom-24 right-0 h-[560px] w-[560px] rounded-full bg-indigo-600/15 blur-[130px]" />
+        <div className="absolute left-[45%] top-[35%] h-80 w-80 rounded-full bg-violet-500/8 blur-[90px]" />
+      </div>
+
+      {/* Dot grid */}
+      <div
+        className="pointer-events-none fixed inset-0 opacity-30"
+        style={{
+          backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.065) 1px, transparent 1px)',
+          backgroundSize: '28px 28px',
+        }}
+        aria-hidden
+      />
+
+      <motion.div
+        initial="hidden"
+        animate="visible"
+        variants={container}
+        className="relative mx-auto w-full max-w-7xl px-5 py-6 lg:px-8"
+      >
+        {/* Header */}
+        <motion.header
+          variants={fadeUp}
+          className="mb-8 flex flex-col gap-4 border-b border-white/8 pb-6 lg:flex-row lg:items-center lg:justify-between"
+        >
+          <div className="flex items-center gap-4">
+            <Link href="/" className="shrink-0 overflow-hidden">
+              <img
+                src="/expo360_logo.png"
+                alt="Platform"
+                className="h-16 w-auto scale-[1.35] object-contain drop-shadow-[0_2px_16px_rgba(139,92,246,0.5)]"
+              />
+            </Link>
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-purple-300/55">
+                Acceso privado
+              </p>
+              <h1 className="text-xl font-semibold tracking-tight text-white">
+                Master Console
+              </h1>
+            </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded-md border border-[#d8d1c2] bg-white px-3 py-2 text-xs text-[#4b5563]">
+            <span className="rounded-xl border border-white/8 bg-white/4 px-3 py-1.5 text-xs text-white/40 backdrop-blur-sm">
               {adminEmail}
             </span>
             <button
               type="button"
               onClick={refreshClients}
-              className="inline-flex h-9 items-center gap-2 rounded-md border border-[#d8d1c2] bg-white px-3 text-sm font-medium text-[#111827] transition hover:border-[#155e75]"
+              className="inline-flex h-9 items-center gap-2 rounded-xl border border-white/8 bg-white/4 px-3.5 text-sm font-medium text-white/70 backdrop-blur-sm transition-all hover:border-purple-400/30 hover:bg-white/8 hover:text-white active:scale-[0.98]"
             >
-              <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-              Refresh
+              <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? 'animate-spin' : ''}`} strokeWidth={1.5} />
+              Actualizar
             </button>
             <button
               type="button"
               onClick={handleSignOut}
-              className="inline-flex h-9 items-center gap-2 rounded-md bg-[#111827] px-3 text-sm font-medium text-white transition hover:bg-[#155e75]"
+              className="inline-flex h-9 items-center gap-2 rounded-xl border border-white/8 bg-white/4 px-3.5 text-sm font-medium text-white/70 backdrop-blur-sm transition-all hover:border-red-400/30 hover:bg-red-500/8 hover:text-red-300 active:scale-[0.98]"
             >
-              <LogOut className="h-4 w-4" />
-              Sign out
+              <LogOut className="h-3.5 w-3.5" strokeWidth={1.5} />
+              Salir
             </button>
           </div>
-        </header>
+        </motion.header>
 
-        <section className="grid gap-3 md:grid-cols-4">
-          <Metric label="SMB customers" value={clients.length} />
-          <Metric label="Published pages" value={stats.published} />
-          <Metric label="Products loaded" value={stats.products} />
-          <Metric label="Leads captured" value={stats.leads} />
-        </section>
+        {/* Stats */}
+        <motion.section variants={fadeUp} className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <Metric icon={Building2} label="Clientes SMB" value={clients.length} />
+          <Metric icon={Globe} label="Páginas publicadas" value={stats.published} accent />
+          <Metric icon={Layers} label="Productos cargados" value={stats.products} />
+          <Metric icon={Users} label="Leads capturados" value={stats.leads} />
+        </motion.section>
 
-        <section className="grid gap-6 lg:grid-cols-[380px_1fr]">
-          <form
+        {/* Main grid */}
+        <section className="grid gap-5 lg:grid-cols-[360px_1fr]">
+          {/* Create form */}
+          <motion.form
+            variants={fadeUp}
             onSubmit={createClient}
-            className="rounded-lg border border-[#d8d1c2] bg-white p-5 shadow-sm"
+            className="h-fit rounded-2xl border border-white/8 bg-white/4 p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.07)] backdrop-blur-2xl"
           >
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-md bg-[#155e75] text-white">
-                <UserPlus className="h-5 w-5" />
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-purple-400/20 bg-purple-500/11">
+                <UserPlus className="h-4 w-4 text-purple-300/70" strokeWidth={1.5} />
               </div>
               <div>
-                <h2 className="text-lg font-semibold">Create SMB customer</h2>
-                <p className="text-sm text-[#6b7280]">One admin, one event landing page.</p>
+                <h2 className="text-base font-semibold text-white">Nuevo cliente</h2>
+                <p className="text-xs text-white/35">Un admin, una página de evento.</p>
               </div>
             </div>
 
             {error ? (
-              <div className="mt-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+              <motion.div
+                initial={{ opacity: 0, y: -6 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mt-4 rounded-xl border border-red-400/20 bg-red-500/8 px-4 py-3 text-sm text-red-200/80"
+              >
                 {error}
-              </div>
+              </motion.div>
             ) : null}
 
             {createdPassword ? (
-              <div className="mt-4 rounded-md border border-[#b7d7c7] bg-[#eef8f1] px-3 py-2 text-sm text-[#166534]">
-                Temporary SMB password: <span className="font-mono">{createdPassword}</span>
-              </div>
+              <motion.div
+                initial={{ opacity: 0, y: -6 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mt-4 rounded-xl border border-purple-400/20 bg-purple-500/8 px-4 py-3 text-sm text-purple-200/80"
+              >
+                Contraseña temporal:{' '}
+                <span className="font-mono text-purple-100">{createdPassword}</span>
+              </motion.div>
             ) : null}
 
             <div className="mt-5 space-y-4">
-              <Input
-                label="SMB customer name"
+              <GlassInput
+                label="Nombre del cliente"
                 value={form.name}
-                onChange={(value) => setForm((current) => ({ ...current, name: value }))}
+                onChange={(value) => setForm((c) => ({ ...c, name: value }))}
                 required
               />
-              <Input
-                label="SMB admin email"
+              <GlassInput
+                label="Email del admin SMB"
                 type="email"
                 value={form.adminEmail}
-                onChange={(value) => setForm((current) => ({ ...current, adminEmail: value }))}
+                onChange={(value) => setForm((c) => ({ ...c, adminEmail: value }))}
                 required
               />
-              <Input
-                label="SMB admin name"
+              <GlassInput
+                label="Nombre del admin"
                 value={form.adminName}
-                onChange={(value) => setForm((current) => ({ ...current, adminName: value }))}
+                onChange={(value) => setForm((c) => ({ ...c, adminName: value }))}
               />
-              <Input
-                label="Public slug"
+              <GlassInput
+                label="Slug público"
                 value={form.slug}
-                onChange={(value) => setForm((current) => ({ ...current, slug: value }))}
-                placeholder="optional"
+                onChange={(value) => setForm((c) => ({ ...c, slug: value }))}
+                placeholder="opcional"
               />
             </div>
 
             <button
               type="submit"
               disabled={isCreating}
-              className="mt-5 inline-flex h-10 w-full items-center justify-center gap-2 rounded-md bg-[#111827] px-4 text-sm font-semibold text-white transition hover:bg-[#155e75] disabled:cursor-not-allowed disabled:opacity-60"
+              className="group mt-5 inline-flex h-11 w-full items-center justify-center gap-2.5 rounded-xl bg-purple-600 px-5 text-sm font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.14),0_4px_24px_-4px_rgba(124,58,237,0.5)] transition-all hover:bg-purple-500 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-45"
             >
-              <Plus className="h-4 w-4" />
-              {isCreating ? 'Creating...' : 'Create workspace'}
+              <Plus className="h-4 w-4 transition-transform group-hover:rotate-90 duration-200" strokeWidth={2} />
+              {isCreating ? 'Creando...' : 'Crear workspace'}
             </button>
-          </form>
+          </motion.form>
 
-          <div className="overflow-hidden rounded-lg border border-[#d8d1c2] bg-white shadow-sm">
-            <div className="border-b border-[#e7e0d2] px-5 py-4">
-              <h2 className="text-lg font-semibold">SMB customers</h2>
+          {/* Client list */}
+          <motion.div
+            variants={fadeUp}
+            className="overflow-hidden rounded-2xl border border-white/8 bg-white/4 shadow-[inset_0_1px_0_rgba(255,255,255,0.07)] backdrop-blur-2xl"
+          >
+            <div className="flex items-center justify-between border-b border-white/6 px-6 py-4">
+              <div className="flex items-center gap-2.5">
+                <LayoutGrid className="h-4 w-4 text-purple-300/60" strokeWidth={1.5} />
+                <h2 className="text-base font-semibold text-white">Clientes SMB</h2>
+              </div>
               {notice ? (
-                <p className="mt-2 rounded-md border border-[#b7d7c7] bg-[#eef8f1] px-3 py-2 text-sm text-[#166534]" aria-live="polite">
+                <motion.p
+                  initial={{ opacity: 0, x: 8 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  className="text-xs text-purple-300/70"
+                  aria-live="polite"
+                >
                   {notice}
-                </p>
+                </motion.p>
               ) : null}
             </div>
-            <div className="divide-y divide-[#ece6da]">
+
+            <div className="divide-y divide-white/6">
               {clients.length === 0 ? (
-                <div className="p-8 text-sm text-[#6b7280]">
-                  No SMB customers yet. Create the first demo workspace.
+                <div className="flex flex-col items-center justify-center gap-3 px-6 py-16 text-center">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/8 bg-white/4">
+                    <Building2 className="h-5 w-5 text-white/25" strokeWidth={1.5} />
+                  </div>
+                  <p className="text-sm text-white/30">
+                    Sin clientes todavía. Crea el primer workspace.
+                  </p>
                 </div>
               ) : (
-                clients.map((summary) => {
+                clients.map((summary, i) => {
                   const isPublished = summary.eventPage.status === 'published';
                   const isPublishing = publishingClientId === summary.client.id;
                   const previewHref = `/c/${summary.eventPage.slug}?preview=1`;
                   const publicHref = `/c/${summary.eventPage.slug}`;
 
                   return (
-                    <article key={summary.client.id} className="p-5">
+                    <motion.article
+                      key={summary.client.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.05, type: 'spring', stiffness: 90, damping: 20 }}
+                      className="px-6 py-5 transition-colors hover:bg-white/3"
+                    >
                       <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
                         <div className="min-w-0">
                           <div className="flex flex-wrap items-center gap-2">
-                            <Building2 className="h-4 w-4 text-[#155e75]" />
-                            <h3 className="text-base font-semibold">{summary.client.name}</h3>
+                            <h3 className="text-sm font-semibold text-white">{summary.client.name}</h3>
                             <StatusBadge published={isPublished} />
                           </div>
-                          <p className="mt-2 text-sm text-[#6b7280]">
-                            {summary.adminEmail || 'No admin email'} · /c/{summary.eventPage.slug}
+                          <p className="mt-1.5 text-xs text-white/35">
+                            {summary.adminEmail || 'Sin email'} · /c/{summary.eventPage.slug}
                           </p>
-                          <div className="mt-3 flex flex-wrap gap-2 text-xs text-[#4b5563]">
-                            <span className="rounded-md bg-[#f4f1ea] px-2 py-1">
-                              {summary.productCount} products
+                          <div className="mt-2.5 flex flex-wrap gap-1.5">
+                            <span className="rounded-lg border border-white/7 bg-white/4 px-2.5 py-1 text-[11px] text-white/40">
+                              {summary.productCount} productos
                             </span>
-                            <span className="rounded-md bg-[#f4f1ea] px-2 py-1">
+                            <span className="rounded-lg border border-white/7 bg-white/4 px-2.5 py-1 text-[11px] text-white/40">
                               {summary.leadCount} leads
                             </span>
                           </div>
@@ -310,83 +398,107 @@ export default function AdminConsole({ adminEmail, initialClients }: AdminConsol
                           <Link
                             href={previewHref}
                             target="_blank"
-                            className="inline-flex h-9 items-center gap-2 rounded-md border border-[#d8d1c2] px-3 text-sm font-medium transition hover:border-[#155e75]"
+                            className="inline-flex h-8 items-center gap-1.5 rounded-xl border border-white/8 bg-white/4 px-3 text-xs font-medium text-white/60 transition-all hover:border-white/15 hover:text-white"
                           >
-                            <Eye className="h-4 w-4" />
+                            <Eye className="h-3.5 w-3.5" strokeWidth={1.5} />
                             Preview
                           </Link>
                           <Link
                             href={publicHref}
                             target="_blank"
-                            className="inline-flex h-9 items-center gap-2 rounded-md border border-[#d8d1c2] px-3 text-sm font-medium transition hover:border-[#155e75]"
+                            className="inline-flex h-8 items-center gap-1.5 rounded-xl border border-white/8 bg-white/4 px-3 text-xs font-medium text-white/60 transition-all hover:border-white/15 hover:text-white"
                           >
-                            <ExternalLink className="h-4 w-4" />
-                            Public
+                            <ExternalLink className="h-3.5 w-3.5" strokeWidth={1.5} />
+                            Público
                           </Link>
                           <button
                             type="button"
                             onClick={() => setPublished(summary.client.id, !isPublished)}
                             disabled={isPublishing}
-                            className={`inline-flex h-9 items-center gap-2 rounded-md px-3 text-sm font-semibold transition ${
+                            className={`inline-flex h-8 items-center gap-1.5 rounded-xl px-3 text-xs font-semibold transition-all active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-60 ${
                               isPublished
-                                ? 'bg-[#f3f4f6] text-[#111827] hover:bg-[#e5e7eb]'
-                                : 'bg-[#155e75] text-white hover:bg-[#0f4a5d]'
-                            } disabled:cursor-not-allowed disabled:opacity-70`}
+                                ? 'border border-white/8 bg-white/4 text-white/60 hover:border-red-400/25 hover:bg-red-500/8 hover:text-red-300'
+                                : 'bg-purple-600 text-white shadow-[0_2px_16px_-4px_rgba(124,58,237,0.5)] hover:bg-purple-500'
+                            }`}
                           >
                             {isPublishing ? (
-                              <RefreshCw className="h-4 w-4 animate-spin" />
+                              <RefreshCw className="h-3.5 w-3.5 animate-spin" strokeWidth={1.5} />
                             ) : isPublished ? (
-                              <Lock className="h-4 w-4" />
+                              <Lock className="h-3.5 w-3.5" strokeWidth={1.5} />
                             ) : (
-                              <CheckCircle2 className="h-4 w-4" />
+                              <CheckCircle2 className="h-3.5 w-3.5" strokeWidth={1.5} />
                             )}
                             {isPublishing
-                              ? isPublished
-                                ? 'Unpublishing...'
-                                : 'Publishing...'
-                              : isPublished
-                                ? 'Unpublish'
-                                : 'Publish'}
+                              ? isPublished ? 'Bajando...' : 'Publicando...'
+                              : isPublished ? 'Despublicar' : 'Publicar'}
                           </button>
                         </div>
                       </div>
-                    </article>
+                    </motion.article>
                   );
                 })
               )}
             </div>
-          </div>
+          </motion.div>
         </section>
-      </div>
-    </main>
+      </motion.div>
+    </div>
   );
 }
 
-function Metric({ label, value }: { label: string; value: number }) {
+function Metric({
+  icon: Icon,
+  label,
+  value,
+  accent,
+}: {
+  icon: React.ElementType;
+  label: string;
+  value: number;
+  accent?: boolean;
+}) {
   return (
-    <div className="rounded-lg border border-[#d8d1c2] bg-white p-4 shadow-sm">
-      <p className="text-sm text-[#6b7280]">{label}</p>
-      <p className="mt-2 text-3xl font-semibold">{value}</p>
-    </div>
+    <motion.div
+      variants={fadeUp}
+      className={`rounded-2xl border p-5 backdrop-blur-xl transition-all hover:border-purple-400/25 ${
+        accent
+          ? 'border-purple-400/20 bg-purple-500/8 shadow-[inset_0_1px_0_rgba(139,92,246,0.12)]'
+          : 'border-white/8 bg-white/4 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]'
+      }`}
+    >
+      <div className="flex items-center justify-between">
+        <p className="text-xs font-medium text-white/40">{label}</p>
+        <div className={`flex h-7 w-7 items-center justify-center rounded-lg border ${accent ? 'border-purple-400/20 bg-purple-500/15' : 'border-white/7 bg-white/4'}`}>
+          <Icon className={`h-3.5 w-3.5 ${accent ? 'text-purple-300/70' : 'text-white/35'}`} strokeWidth={1.5} />
+        </div>
+      </div>
+      <p className={`mt-3 text-3xl font-semibold tracking-tight ${accent ? 'text-purple-200' : 'text-white'}`}>
+        {value}
+      </p>
+    </motion.div>
   );
 }
 
 function StatusBadge({ published }: { published: boolean }) {
   return (
     <span
-      className={`inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium ${
+      className={`inline-flex items-center gap-1 rounded-lg px-2 py-0.5 text-[11px] font-medium ${
         published
-          ? 'bg-[#eef8f1] text-[#166534]'
-          : 'bg-[#fff7ed] text-[#9a3412]'
+          ? 'border border-purple-400/20 bg-purple-500/11 text-purple-200/80'
+          : 'border border-white/8 bg-white/4 text-white/35'
       }`}
     >
-      {published ? <CheckCircle2 className="h-3 w-3" /> : <Lock className="h-3 w-3" />}
-      {published ? 'Published' : 'Draft'}
+      {published ? (
+        <CheckCircle2 className="h-3 w-3" strokeWidth={1.5} />
+      ) : (
+        <Lock className="h-3 w-3" strokeWidth={1.5} />
+      )}
+      {published ? 'Publicado' : 'Borrador'}
     </span>
   );
 }
 
-function Input({
+function GlassInput({
   label,
   value,
   onChange,
@@ -403,15 +515,16 @@ function Input({
 }) {
   return (
     <label className="block">
-      <span className="text-sm font-medium text-[#374151]">{label}</span>
+      <span className="block text-[0.78rem] font-medium text-white/50">{label}</span>
       <input
         type={type}
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
         required={required}
-        className="mt-2 h-10 w-full rounded-md border border-[#d1d5db] bg-white px-3 text-sm outline-none transition focus:border-[#155e75] focus:ring-2 focus:ring-[#155e75]/15"
+        className="mt-1.5 h-10 w-full rounded-xl border border-white/7 bg-white/6 px-3 text-sm text-white outline-none transition-all placeholder:text-white/18 focus:border-purple-400/40 focus:bg-white/9 focus:ring-2 focus:ring-purple-400/12"
       />
     </label>
   );
 }
+

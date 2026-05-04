@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { motion } from 'framer-motion';
 import { signOut } from 'firebase/auth';
 import {
   CheckCircle2,
@@ -24,6 +25,20 @@ import {
 
 import { getFirebaseClientAuth } from '@/lib/firebase/client';
 import type { ClientBundle, Lead, LeadStatus, Product } from '@/lib/expo360/types';
+
+const container = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.07 } },
+};
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 18 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { type: 'spring' as const, stiffness: 90, damping: 20 },
+  },
+};
 
 interface StudioWorkspaceProps {
   initialBundle: ClientBundle;
@@ -116,8 +131,8 @@ export default function StudioWorkspace({
     [bundle.leads, selectedLeadId]
   );
 
-  const refreshLeads = useCallback(async () => {
-    setIsRefreshingLeads(true);
+  const fetchLeads = useCallback(async (showLoading: boolean) => {
+    if (showLoading) setIsRefreshingLeads(true);
 
     try {
       const response = await fetch('/api/studio/leads');
@@ -127,27 +142,32 @@ export default function StudioWorkspace({
         throw new Error(result.error || 'No se pudieron actualizar los prospectos.');
       }
 
-      setBundle((current) => ({
-        ...current,
-        leads: result.leads,
-        leadCount: result.leads.length,
-      }));
+      setBundle((current) => {
+        const incoming: string = JSON.stringify(result.leads);
+        const existing: string = JSON.stringify(current.leads);
+        if (incoming === existing) return current;
+        return { ...current, leads: result.leads, leadCount: result.leads.length };
+      });
     } catch (refreshError) {
-      setError(
-        refreshError instanceof Error
-          ? refreshError.message
-          : 'No se pudieron actualizar los prospectos.'
-      );
+      if (showLoading) {
+        setError(
+          refreshError instanceof Error
+            ? refreshError.message
+            : 'No se pudieron actualizar los prospectos.'
+        );
+      }
     } finally {
-      setIsRefreshingLeads(false);
+      if (showLoading) setIsRefreshingLeads(false);
     }
   }, []);
 
+  const refreshLeads = useCallback(() => fetchLeads(true), [fetchLeads]);
+
   useEffect(() => {
-    const interval = window.setInterval(refreshLeads, 5000);
+    const interval = window.setInterval(() => { void fetchLeads(false); }, 5000);
 
     return () => window.clearInterval(interval);
-  }, [refreshLeads]);
+  }, [fetchLeads]);
 
   async function updateLead(
     leadId: string,
@@ -332,83 +352,124 @@ export default function StudioWorkspace({
   }
 
   return (
-    <main className="min-h-screen bg-[#f4f1ea] text-[#111827]">
-      <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-5 py-6 lg:px-8">
-        <header className="flex flex-col gap-4 border-b border-[#d8d1c2] pb-6 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[#155e75]">
-              Estudio
-            </p>
-            <h1 className="mt-2 text-3xl font-semibold">{bundle.client.name}</h1>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-[#4b5563]">
-              Administra la página del evento, productos, vista previa y
-              prospectos capturados desde un solo lugar.
-            </p>
+    <div className="relative min-h-dvh bg-[#08071a] text-white" style={{ zoom: 1.1 }}>
+      {/* Ambient blobs */}
+      <div className="pointer-events-none fixed inset-0 overflow-hidden">
+        <div className="absolute -left-64 -top-64 h-[900px] w-[900px] rounded-full bg-purple-700/20 blur-[160px]" />
+        <div className="absolute -right-48 top-1/3 h-[700px] w-[700px] rounded-full bg-indigo-600/15 blur-[130px]" />
+        <div className="absolute bottom-0 left-1/2 h-[500px] w-[500px] -translate-x-1/2 rounded-full bg-violet-500/8 blur-[90px]" />
+      </div>
+      {/* Dot grid */}
+      <div
+        className="pointer-events-none fixed inset-0 opacity-30"
+        style={{
+          backgroundImage:
+            'radial-gradient(circle, rgba(255,255,255,0.065) 1px, transparent 1px)',
+          backgroundSize: '28px 28px',
+        }}
+      />
+
+      <motion.div
+        variants={container}
+        initial="hidden"
+        animate="visible"
+        className="relative mx-auto flex w-full max-w-7xl flex-col gap-6 px-5 py-6 lg:px-8"
+      >
+        {/* Header */}
+        <motion.header
+          variants={fadeUp}
+          className="flex flex-col gap-4 border-b border-white/8 pb-6 lg:flex-row lg:items-end lg:justify-between"
+        >
+          <div className="flex items-center gap-4">
+            <Link href="/studio" className="overflow-hidden rounded-lg">
+              <img
+                src="/expo360_logo.png"
+                alt="Logo"
+                className="h-16 w-auto scale-[1.35] object-contain drop-shadow-[0_2px_16px_rgba(139,92,246,0.5)]"
+              />
+            </Link>
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-[0.16em] text-purple-300/70">
+                Estudio
+              </p>
+              <h1 className="mt-1 text-3xl font-semibold">{bundle.client.name}</h1>
+              <p className="mt-1 max-w-2xl text-sm leading-6 text-white/40">
+                Administra la página del evento, productos, vista previa y prospectos.
+              </p>
+            </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded-md border border-[#d8d1c2] bg-white px-3 py-2 text-xs text-[#4b5563]">
+            <span className="rounded-xl border border-white/8 bg-white/4 px-3 py-2 text-xs text-white/40 backdrop-blur-sm">
               {userEmail}
             </span>
             <Link
               href={previewHref}
               target="_blank"
-              className="inline-flex h-9 items-center gap-2 rounded-md border border-[#d8d1c2] bg-white px-3 text-sm font-medium transition hover:border-[#155e75]"
+              className="inline-flex h-9 items-center gap-2 rounded-xl border border-white/8 bg-white/4 px-3 text-sm font-medium backdrop-blur-sm transition hover:border-purple-400/30 hover:text-purple-200 active:scale-[0.98]"
             >
-              <Eye className="h-4 w-4" />
+              <Eye className="h-4 w-4" strokeWidth={1.5} />
               Vista previa
             </Link>
             <button
               type="button"
               onClick={handleSignOut}
-              className="inline-flex h-9 items-center gap-2 rounded-md bg-[#111827] px-3 text-sm font-medium text-white transition hover:bg-[#155e75]"
+              className="inline-flex h-9 items-center gap-2 rounded-xl border border-white/8 bg-white/4 px-3.5 text-sm font-medium text-white/70 backdrop-blur-sm transition hover:border-red-400/30 hover:bg-red-500/8 hover:text-red-300 active:scale-[0.98]"
             >
-              <LogOut className="h-4 w-4" />
+              <LogOut className="h-3.5 w-3.5" strokeWidth={1.5} />
               Salir
             </button>
           </div>
-        </header>
+        </motion.header>
 
-        <section className="grid gap-3 md:grid-cols-4">
+        <motion.section variants={fadeUp} className="grid gap-3 md:grid-cols-4">
           <StatusTile label="Marca" complete={Boolean(bundle.client.logoUrl || brandForm.logoUrl)} />
           <StatusTile label="Productos" complete={bundle.products.length > 0} />
           <StatusTile label="Vista previa" complete />
           <StatusTile label="Publicada" complete={isPublished} locked={!isPublished} />
-        </section>
+        </motion.section>
 
         {message ? (
-          <div className="rounded-md border border-[#b7d7c7] bg-[#eef8f1] px-3 py-2 text-sm text-[#166534]">
+          <motion.div
+            variants={fadeUp}
+            className="rounded-xl border border-purple-400/20 bg-purple-500/8 px-3 py-2 text-sm text-purple-200/80"
+          >
             {message}
-          </div>
+          </motion.div>
         ) : null}
 
         {error ? (
-          <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+          <motion.div
+            variants={fadeUp}
+            className="rounded-xl border border-red-400/20 bg-red-500/8 px-3 py-2 text-sm text-red-300/80"
+          >
             {error}
-          </div>
+          </motion.div>
         ) : null}
 
-        <LeadWorkspace
-          leads={bundle.leads}
-          productsById={productNamesById}
-          selectedLead={selectedLead}
-          leadView={leadView}
-          isRefreshing={isRefreshingLeads}
-          updatingLeadId={updatingLeadId}
-          draggedLeadId={draggedLeadId}
-          onRefresh={refreshLeads}
-          onViewChange={setLeadView}
-          onSelectLead={(lead) => setSelectedLeadId(lead.id)}
-          onCloseLead={() => setSelectedLeadId(null)}
-          onUpdateLead={updateLead}
-          onDragLead={setDraggedLeadId}
-          onDropLead={(status) => {
-            if (!draggedLeadId) return;
-            void updateLead(draggedLeadId, { status });
-            setDraggedLeadId(null);
-          }}
-        />
+        <motion.div variants={fadeUp}>
+          <LeadWorkspace
+            leads={bundle.leads}
+            productsById={productNamesById}
+            selectedLead={selectedLead}
+            leadView={leadView}
+            isRefreshing={isRefreshingLeads}
+            updatingLeadId={updatingLeadId}
+            draggedLeadId={draggedLeadId}
+            onRefresh={refreshLeads}
+            onViewChange={setLeadView}
+            onSelectLead={(lead) => setSelectedLeadId(lead.id)}
+            onCloseLead={() => setSelectedLeadId(null)}
+            onUpdateLead={updateLead}
+            onDragLead={setDraggedLeadId}
+            onDropLead={(status) => {
+              if (!draggedLeadId) return;
+              void updateLead(draggedLeadId, { status });
+              setDraggedLeadId(null);
+            }}
+          />
+        </motion.div>
 
-        <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
+        <motion.section variants={fadeUp} className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
           <div className="space-y-6">
             <Panel title="Identidad de marca">
               <form onSubmit={saveBranding} className="grid gap-4 md:grid-cols-2">
@@ -430,7 +491,7 @@ export default function StudioWorkspace({
                         value={brandForm.logoUrl}
                         onChange={(event) => setBrandForm((current) => ({ ...current, logoUrl: event.target.value }))}
                         placeholder="Sube o pega la URL del logo"
-                        className="h-10 min-w-0 flex-1 rounded-md border border-[#d1d5db] bg-white px-3 text-sm outline-none transition focus:border-[#155e75] focus:ring-2 focus:ring-[#155e75]/15"
+                        className="h-10 min-w-0 flex-1 rounded-xl border border-white/7 bg-white/6 px-3 text-sm text-white outline-none placeholder:text-white/25 transition focus:border-purple-400/40 focus:ring-2 focus:ring-purple-400/12"
                       />
                       <label className="inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-md border border-[#d8d1c2] px-3 text-sm font-medium transition hover:border-[#155e75]">
                         <ImagePlus className="h-4 w-4" />
@@ -481,7 +542,7 @@ export default function StudioWorkspace({
                         value={eventForm.heroImageUrl}
                         onChange={(event) => setEventForm((current) => ({ ...current, heroImageUrl: event.target.value }))}
                         placeholder="Sube o pega la URL de la imagen"
-                        className="h-10 min-w-0 flex-1 rounded-md border border-[#d1d5db] bg-white px-3 text-sm outline-none transition focus:border-[#155e75] focus:ring-2 focus:ring-[#155e75]/15"
+                        className="h-10 min-w-0 flex-1 rounded-xl border border-white/7 bg-white/6 px-3 text-sm text-white outline-none placeholder:text-white/25 transition focus:border-purple-400/40 focus:ring-2 focus:ring-purple-400/12"
                       />
                       <label className="inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-md border border-[#d8d1c2] px-3 text-sm font-medium transition hover:border-[#155e75]">
                         <ImagePlus className="h-4 w-4" />
@@ -524,7 +585,7 @@ export default function StudioWorkspace({
                         value={productForm.imageUrl}
                         onChange={(event) => setProductForm((current) => ({ ...current, imageUrl: event.target.value }))}
                         placeholder="Sube o pega la URL"
-                        className="h-10 min-w-0 flex-1 rounded-md border border-[#d1d5db] bg-white px-3 text-sm outline-none transition focus:border-[#155e75] focus:ring-2 focus:ring-[#155e75]/15"
+                        className="h-10 min-w-0 flex-1 rounded-xl border border-white/7 bg-white/6 px-3 text-sm text-white outline-none placeholder:text-white/25 transition focus:border-purple-400/40 focus:ring-2 focus:ring-purple-400/12"
                       />
                       <label className="inline-flex h-10 cursor-pointer items-center justify-center rounded-md border border-[#d8d1c2] px-3 transition hover:border-[#155e75]" aria-label="Upload product image">
                         <ImagePlus className="h-4 w-4" />
@@ -553,9 +614,9 @@ export default function StudioWorkspace({
                   <button
                     type="submit"
                     disabled={isCreatingProduct}
-                    className="inline-flex h-10 items-center gap-2 rounded-md bg-[#111827] px-4 text-sm font-semibold text-white transition hover:bg-[#155e75] disabled:cursor-not-allowed disabled:opacity-60"
+                    className="inline-flex h-10 items-center gap-2 rounded-xl bg-purple-600 px-4 text-sm font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.14),0_4px_24px_-4px_rgba(124,58,237,0.5)] transition hover:bg-purple-500 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
                   >
-                    <PackagePlus className="h-4 w-4" />
+                    <PackagePlus className="h-4 w-4" strokeWidth={1.5} />
                     {isCreatingProduct ? 'Agregando...' : 'Agregar producto'}
                   </button>
                 </div>
@@ -563,7 +624,7 @@ export default function StudioWorkspace({
 
               <div className="mt-6 grid gap-4">
                 {bundle.products.length === 0 ? (
-                  <p className="rounded-md bg-[#f4f1ea] p-4 text-sm text-[#6b7280]">
+                  <p className="rounded-xl border border-white/8 bg-white/4 p-4 text-sm text-white/40">
                     Agrega algunos productos destacados para que la página del evento se sienta lista.
                   </p>
                 ) : (
@@ -583,27 +644,27 @@ export default function StudioWorkspace({
           <aside className="space-y-6">
             <Panel title="Publicación">
               <div className="space-y-4">
-                <div className={`rounded-md border px-3 py-3 text-sm ${isPublished ? 'border-[#b7d7c7] bg-[#eef8f1] text-[#166534]' : 'border-[#fed7aa] bg-[#fff7ed] text-[#9a3412]'}`}>
+                <div className={`rounded-xl border px-3 py-3 text-sm ${isPublished ? 'border-purple-400/20 bg-purple-500/8 text-purple-200/80' : 'border-orange-400/20 bg-orange-500/8 text-orange-300/80'}`}>
                   {isPublished
                     ? 'La página del evento ya está visible para visitantes.'
                     : 'La página está bloqueada hasta que Interzekt la publique desde el panel maestro.'}
                 </div>
                 <div className="space-y-2 text-sm">
-                  <Link href={previewHref} target="_blank" className="flex items-center justify-between rounded-md border border-[#d8d1c2] px-3 py-2 font-medium transition hover:border-[#155e75]">
+                  <Link href={previewHref} target="_blank" className="flex items-center justify-between rounded-xl border border-white/8 bg-white/4 px-3 py-2 font-medium backdrop-blur-sm transition hover:border-purple-400/30 hover:text-purple-200">
                     Vista previa autenticada
-                    <Eye className="h-4 w-4" />
+                    <Eye className="h-4 w-4" strokeWidth={1.5} />
                   </Link>
-                  <Link href={publicHref} target="_blank" className="flex items-center justify-between rounded-md border border-[#d8d1c2] px-3 py-2 font-medium transition hover:border-[#155e75]">
+                  <Link href={publicHref} target="_blank" className="flex items-center justify-between rounded-xl border border-white/8 bg-white/4 px-3 py-2 font-medium backdrop-blur-sm transition hover:border-purple-400/30 hover:text-purple-200">
                     URL pública
-                    {isPublished ? <CheckCircle2 className="h-4 w-4 text-[#166534]" /> : <Lock className="h-4 w-4 text-[#9a3412]" />}
+                    {isPublished ? <CheckCircle2 className="h-4 w-4 text-purple-300" strokeWidth={1.5} /> : <Lock className="h-4 w-4 text-red-400/70" strokeWidth={1.5} />}
                   </Link>
                 </div>
               </div>
             </Panel>
           </aside>
-        </section>
-      </div>
-    </main>
+        </motion.section>
+      </motion.div>
+    </div>
   );
 }
 
@@ -651,53 +712,53 @@ function LeadWorkspace({
   );
 
   return (
-    <section className="rounded-lg border border-[#d8d1c2] bg-white p-5 shadow-sm">
+    <section className="overflow-hidden rounded-2xl border border-white/8 bg-white/4 p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.07)] backdrop-blur-2xl">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[#155e75]">
+          <p className="text-sm font-semibold uppercase tracking-[0.16em] text-purple-300/70">
             Prospectos
           </p>
           <h2 className="mt-2 text-2xl font-semibold">Seguimiento de prospectos</h2>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-[#6b7280]">
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-white/40">
             Visualiza, clasifica y exporta los contactos capturados desde la página del evento.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <div className="inline-flex rounded-md border border-[#d8d1c2] bg-[#f8f5ef] p-1">
+          <div className="inline-flex rounded-xl border border-white/8 bg-white/4 p-1 backdrop-blur-sm">
             <button
               type="button"
               onClick={() => onViewChange('tabla')}
-              className={`inline-flex h-8 items-center gap-2 rounded px-3 text-sm font-medium transition ${
-                leadView === 'tabla' ? 'bg-white shadow-sm' : 'text-[#6b7280] hover:text-[#111827]'
+              className={`inline-flex h-8 items-center gap-2 rounded-lg px-3 text-sm font-medium transition ${
+                leadView === 'tabla' ? 'bg-white/10 text-white shadow-sm' : 'text-white/40 hover:text-white'
               }`}
             >
-              <Table2 className="h-4 w-4" />
+              <Table2 className="h-4 w-4" strokeWidth={1.5} />
               Tabla
             </button>
             <button
               type="button"
               onClick={() => onViewChange('kanban')}
-              className={`inline-flex h-8 items-center gap-2 rounded px-3 text-sm font-medium transition ${
-                leadView === 'kanban' ? 'bg-white shadow-sm' : 'text-[#6b7280] hover:text-[#111827]'
+              className={`inline-flex h-8 items-center gap-2 rounded-lg px-3 text-sm font-medium transition ${
+                leadView === 'kanban' ? 'bg-white/10 text-white shadow-sm' : 'text-white/40 hover:text-white'
               }`}
             >
-              <Columns3 className="h-4 w-4" />
+              <Columns3 className="h-4 w-4" strokeWidth={1.5} />
               Kanban
             </button>
           </div>
           <Link
             href="/api/studio/leads/export"
             prefetch={false}
-            className="inline-flex h-10 items-center gap-2 rounded-md border border-[#d8d1c2] px-3 text-sm font-medium transition hover:border-[#155e75]"
+            className="inline-flex h-10 items-center gap-2 rounded-xl border border-white/8 bg-white/4 px-3 text-sm font-medium backdrop-blur-sm transition hover:border-purple-400/30 hover:text-purple-200 active:scale-[0.98]"
           >
-            <Download className="h-4 w-4" />
+            <Download className="h-4 w-4" strokeWidth={1.5} />
             Exportar CSV
           </Link>
           <button
             type="button"
             onClick={onRefresh}
             disabled={isRefreshing}
-            className="inline-flex h-10 items-center gap-2 rounded-md bg-[#111827] px-3 text-sm font-semibold text-white transition hover:bg-[#155e75] disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex h-10 items-center gap-2 rounded-xl bg-purple-600 px-3 text-sm font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.14),0_4px_24px_-4px_rgba(124,58,237,0.5)] transition hover:bg-purple-500 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isRefreshing ? 'Actualizando...' : 'Actualizar'}
           </button>
@@ -706,8 +767,8 @@ function LeadWorkspace({
 
       <div className="mt-5 grid gap-3 md:grid-cols-5">
         {leadStages.map((stage) => (
-          <div key={stage.value} className="rounded-md bg-[#f8f5ef] px-3 py-2">
-            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#6b7280]">
+          <div key={stage.value} className="rounded-xl border border-white/8 bg-white/4 px-3 py-2">
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-white/40">
               {stage.label}
             </p>
             <p className="mt-1 text-2xl font-semibold">
@@ -718,9 +779,9 @@ function LeadWorkspace({
       </div>
 
       {leads.length === 0 ? (
-        <div className="mt-5 rounded-lg border border-dashed border-[#d8d1c2] bg-[#f8f5ef] p-8 text-center">
+        <div className="mt-5 rounded-xl border border-dashed border-white/8 bg-white/4 p-8 text-center">
           <p className="font-semibold">Todavía no hay prospectos.</p>
-          <p className="mt-2 text-sm text-[#6b7280]">
+          <p className="mt-2 text-sm text-white/40">
             Cuando alguien envíe el formulario público, aparecerá aquí automáticamente.
           </p>
         </div>
@@ -775,10 +836,10 @@ function LeadTable({
   ) => Promise<void>;
 }) {
   return (
-    <div className="mt-5 overflow-hidden rounded-lg border border-[#e7e0d2]">
+    <div className="mt-5 overflow-hidden rounded-xl border border-white/8">
       <div className="overflow-x-auto">
         <table className="min-w-full text-left text-sm">
-          <thead className="bg-[#f8f5ef] text-xs font-semibold uppercase tracking-[0.08em] text-[#6b7280]">
+          <thead className="bg-white/4 text-xs font-semibold uppercase tracking-[0.08em] text-white/40">
             <tr>
               <th className="px-3 py-3">Fecha</th>
               <th className="px-3 py-3">Nombre</th>
@@ -789,21 +850,21 @@ function LeadTable({
               <th className="px-3 py-3">Etapa</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-[#ece6da]">
+          <tbody className="divide-y divide-white/6">
             {leads.map((lead) => (
               <tr
                 key={lead.id}
-                className="cursor-pointer bg-white transition hover:bg-[#faf7f0]"
+                className="cursor-pointer transition hover:bg-white/4"
                 onClick={() => onSelectLead(lead)}
               >
-                <td className="whitespace-nowrap px-3 py-3 text-[#6b7280]">
+                <td className="whitespace-nowrap px-3 py-3 text-white/40">
                   {formatDate(lead.createdAt)}
                 </td>
                 <td className="px-3 py-3 font-medium">{lead.fullName}</td>
-                <td className="px-3 py-3 text-[#4b5563]">{lead.email}</td>
-                <td className="px-3 py-3 text-[#4b5563]">{lead.phone || '-'}</td>
-                <td className="px-3 py-3 text-[#4b5563]">{lead.company || '-'}</td>
-                <td className="px-3 py-3 text-[#4b5563]">
+                <td className="px-3 py-3 text-white/50">{lead.email}</td>
+                <td className="px-3 py-3 text-white/50">{lead.phone || '-'}</td>
+                <td className="px-3 py-3 text-white/50">{lead.company || '-'}</td>
+                <td className="px-3 py-3 text-white/50">
                   {productNamesForLead(lead, productsById).join(', ') || '-'}
                 </td>
                 <td className="px-3 py-3" onClick={(event) => event.stopPropagation()}>
@@ -851,13 +912,13 @@ function LeadKanban({
           key={stage.value}
           onDragOver={(event) => event.preventDefault()}
           onDrop={() => onDropLead(stage.value)}
-          className={`min-h-64 rounded-lg border border-[#e7e0d2] bg-[#f8f5ef] p-3 ${
-            draggedLeadId ? 'ring-2 ring-[#155e75]/20' : ''
+          className={`min-h-64 rounded-xl border border-white/8 bg-white/4 p-3 ${
+            draggedLeadId ? 'ring-2 ring-purple-400/20' : ''
           }`}
         >
           <div className="flex items-center justify-between gap-2">
             <h3 className="text-sm font-semibold">{stage.label}</h3>
-            <span className="rounded bg-white px-2 py-1 text-xs text-[#6b7280]">
+            <span className="rounded-lg border border-white/8 bg-white/4 px-2 py-1 text-xs text-white/40">
               {leadsByStage[stage.value]?.length || 0}
             </span>
           </div>
@@ -869,22 +930,22 @@ function LeadKanban({
                 onDragStart={() => onDragLead(lead.id)}
                 onDragEnd={() => onDragLead(null)}
                 onClick={() => onSelectLead(lead)}
-                className="cursor-grab rounded-lg border border-[#d8d1c2] bg-white p-3 shadow-sm transition hover:border-[#155e75]"
+                className="cursor-grab rounded-xl border border-white/8 bg-white/4 p-3 shadow-sm transition hover:border-purple-400/30 hover:bg-white/6"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="font-medium">{lead.fullName}</p>
-                    <p className="mt-1 text-xs text-[#6b7280]">{formatDate(lead.createdAt)}</p>
+                    <p className="mt-1 text-xs text-white/40">{formatDate(lead.createdAt)}</p>
                   </div>
                   {updatingLeadId === lead.id ? (
-                    <span className="text-xs text-[#155e75]">Guardando...</span>
+                    <span className="text-xs text-purple-300/70">Guardando...</span>
                   ) : null}
                 </div>
-                <p className="mt-2 text-sm text-[#4b5563]">{lead.email}</p>
+                <p className="mt-2 text-sm text-white/50">{lead.email}</p>
                 {lead.phone ? (
-                  <p className="mt-1 text-sm text-[#4b5563]">{lead.phone}</p>
+                  <p className="mt-1 text-sm text-white/50">{lead.phone}</p>
                 ) : null}
-                <p className="mt-3 line-clamp-2 text-xs leading-5 text-[#6b7280]">
+                <p className="mt-3 line-clamp-2 text-xs leading-5 text-white/40">
                   {productNamesForLead(lead, productsById).join(', ') || 'Sin productos seleccionados'}
                 </p>
                 <div className="mt-3" onClick={(event) => event.stopPropagation()}>
@@ -928,20 +989,20 @@ function LeadDetailDrawer({
   const isSaving = updatingLeadId === lead.id;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/30">
-      <aside className="ml-auto flex h-full w-full max-w-xl flex-col bg-white shadow-2xl">
-        <div className="flex items-start justify-between gap-4 border-b border-[#e7e0d2] p-5">
+    <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm">
+      <aside className="ml-auto flex h-full w-full max-w-xl flex-col border-l border-white/8 bg-[#08071a]/95 shadow-2xl backdrop-blur-2xl">
+        <div className="flex items-start justify-between gap-4 border-b border-white/8 p-5">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[#155e75]">
+            <p className="text-sm font-semibold uppercase tracking-[0.16em] text-purple-300/70">
               Detalle del prospecto
             </p>
-            <h2 className="mt-2 text-2xl font-semibold">{lead.fullName}</h2>
-            <p className="mt-1 text-sm text-[#6b7280]">{formatDate(lead.createdAt)}</p>
+            <h2 className="mt-2 text-2xl font-semibold text-white">{lead.fullName}</h2>
+            <p className="mt-1 text-sm text-white/40">{formatDate(lead.createdAt)}</p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-[#d8d1c2] transition hover:border-[#155e75]"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-white/8 bg-white/4 text-white/60 transition hover:border-red-400/30 hover:text-red-300 active:scale-[0.98]"
             aria-label="Cerrar detalle"
           >
             <X className="h-4 w-4" />
@@ -957,7 +1018,7 @@ function LeadDetailDrawer({
           </div>
 
           <div>
-            <label className="text-sm font-medium text-[#374151]">Etapa</label>
+            <label className="text-sm font-medium text-white/50">Etapa</label>
             <div className="mt-2 max-w-xs">
               <LeadStatusSelect
                 value={lead.status}
@@ -967,49 +1028,49 @@ function LeadDetailDrawer({
             </div>
           </div>
 
-          <section className="rounded-lg border border-[#e7e0d2] p-4">
+          <section className="rounded-xl border border-white/8 bg-white/4 p-4">
             <h3 className="font-semibold">Productos de interés</h3>
             <div className="mt-3 flex flex-wrap gap-2">
               {productNamesForLead(lead, productsById).length > 0 ? (
                 productNamesForLead(lead, productsById).map((productName) => (
-                  <span key={productName} className="rounded-md bg-[#f8f5ef] px-2 py-1 text-sm">
+                  <span key={productName} className="rounded-lg border border-white/8 bg-white/4 px-2 py-1 text-sm text-white/70">
                     {productName}
                   </span>
                 ))
               ) : (
-                <p className="text-sm text-[#6b7280]">Sin productos seleccionados.</p>
+                <p className="text-sm text-white/40">Sin productos seleccionados.</p>
               )}
             </div>
           </section>
 
-          <section className="rounded-lg border border-[#e7e0d2] p-4">
+          <section className="rounded-xl border border-white/8 bg-white/4 p-4">
             <div className="flex items-center gap-2">
-              <MessageSquare className="h-4 w-4 text-[#155e75]" />
+              <MessageSquare className="h-4 w-4 text-purple-300/70" strokeWidth={1.5} />
               <h3 className="font-semibold">Mensaje</h3>
             </div>
-            <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-[#4b5563]">
+            <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-white/50">
               {lead.message || 'Sin mensaje.'}
             </p>
           </section>
 
           <label className="block">
-            <span className="text-sm font-medium text-[#374151]">Notas internas</span>
+            <span className="text-sm font-medium text-white/50">Notas internas</span>
             <textarea
               value={notes}
               onChange={(event) => setNotes(event.target.value)}
               rows={6}
-              className="mt-2 w-full resize-y rounded-md border border-[#d1d5db] bg-white px-3 py-2 text-sm outline-none transition focus:border-[#155e75] focus:ring-2 focus:ring-[#155e75]/15"
+              className="mt-2 w-full resize-y rounded-xl border border-white/7 bg-white/6 px-3 py-2 text-sm text-white outline-none placeholder:text-white/25 transition focus:border-purple-400/40 focus:ring-2 focus:ring-purple-400/12"
               placeholder="Agrega notas de seguimiento para tu equipo."
             />
           </label>
         </div>
 
-        <div className="border-t border-[#e7e0d2] p-5">
+        <div className="border-t border-white/8 p-5">
           <button
             type="button"
             onClick={() => void onUpdateLead(lead.id, { notes })}
             disabled={isSaving}
-            className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-md bg-[#111827] px-4 text-sm font-semibold text-white transition hover:bg-[#155e75] disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-purple-600 px-4 text-sm font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.14),0_4px_24px_-4px_rgba(124,58,237,0.5)] transition hover:bg-purple-500 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
           >
             <Save className="h-4 w-4" />
             {isSaving ? 'Guardando...' : 'Guardar notas'}
@@ -1030,12 +1091,12 @@ function LeadInfo({
   value: string;
 }) {
   return (
-    <div className="rounded-lg border border-[#e7e0d2] p-3">
-      <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.1em] text-[#6b7280]">
+    <div className="rounded-xl border border-white/8 bg-white/4 p-3">
+      <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.1em] text-white/40">
         {icon}
         {label}
       </div>
-      <p className="mt-2 break-words text-sm font-medium">{value}</p>
+      <p className="mt-2 break-words text-sm font-medium text-white">{value}</p>
     </div>
   );
 }
@@ -1054,7 +1115,7 @@ function LeadStatusSelect({
       value={value}
       disabled={disabled}
       onChange={(event) => onChange(event.target.value as LeadStatus)}
-      className="h-9 w-full rounded-md border border-[#d1d5db] bg-white px-2 text-sm outline-none transition focus:border-[#155e75] focus:ring-2 focus:ring-[#155e75]/15 disabled:cursor-not-allowed disabled:opacity-60"
+      className="h-9 w-full rounded-xl border border-white/7 bg-white/6 px-2 text-sm text-white outline-none transition focus:border-purple-400/40 focus:ring-2 focus:ring-purple-400/12 disabled:cursor-not-allowed disabled:opacity-60 [&>option]:bg-[#0f0e2a] [&>option]:text-white"
     >
       {leadStages.map((stage) => (
         <option key={stage.value} value={stage.value}>
@@ -1149,8 +1210,8 @@ function ProductEditor({
   }
 
   return (
-    <div className="grid gap-3 rounded-lg border border-[#e7e0d2] p-3 md:grid-cols-[96px_1fr]">
-      <div className="aspect-square overflow-hidden rounded-md bg-[#f4f1ea]">
+    <div className="grid gap-3 rounded-xl border border-white/8 bg-white/4 p-3 md:grid-cols-[96px_1fr]">
+      <div className="aspect-square overflow-hidden rounded-xl border border-white/8 bg-white/4">
         {form.imageUrl ? (
           <img src={form.imageUrl} alt="" className="h-full w-full object-cover" />
         ) : null}
@@ -1167,27 +1228,27 @@ function ProductEditor({
           <button
             type="button"
             onClick={() => setForm((current) => ({ ...current, isActive: !current.isActive }))}
-            className="inline-flex h-9 items-center gap-2 rounded-md border border-[#d8d1c2] px-3 text-sm font-medium transition hover:border-[#155e75]"
+            className="inline-flex h-9 items-center gap-2 rounded-xl border border-white/8 bg-white/4 px-3 text-sm font-medium backdrop-blur-sm transition hover:border-purple-400/30 hover:text-purple-200 active:scale-[0.98]"
           >
-            {form.isActive ? <CheckCircle2 className="h-4 w-4" /> : <Lock className="h-4 w-4" />}
+            {form.isActive ? <CheckCircle2 className="h-4 w-4" strokeWidth={1.5} /> : <Lock className="h-4 w-4" strokeWidth={1.5} />}
             {form.isActive ? 'Visible' : 'Oculto'}
           </button>
           <button
             type="button"
             onClick={saveProduct}
             disabled={isSaving}
-            className="inline-flex h-9 items-center gap-2 rounded-md bg-[#111827] px-3 text-sm font-semibold text-white transition hover:bg-[#155e75] disabled:opacity-60"
+            className="inline-flex h-9 items-center gap-2 rounded-xl bg-purple-600 px-3 text-sm font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.14),0_4px_24px_-4px_rgba(124,58,237,0.5)] transition hover:bg-purple-500 active:scale-[0.98] disabled:opacity-60"
           >
-            <Save className="h-4 w-4" />
+            <Save className="h-4 w-4" strokeWidth={1.5} />
             Guardar
           </button>
           <button
             type="button"
             onClick={removeProduct}
             disabled={isSaving}
-            className="inline-flex h-9 items-center gap-2 rounded-md bg-[#f3f4f6] px-3 text-sm font-semibold text-[#991b1b] transition hover:bg-[#fee2e2] disabled:opacity-60"
+            className="inline-flex h-9 items-center gap-2 rounded-xl border border-red-400/20 bg-red-500/8 px-3 text-sm font-semibold text-red-300 transition hover:bg-red-500/15 active:scale-[0.98] disabled:opacity-60"
           >
-            <Trash2 className="h-4 w-4" />
+            <Trash2 className="h-4 w-4" strokeWidth={1.5} />
             Eliminar
           </button>
         </div>
@@ -1206,15 +1267,15 @@ function StatusTile({
   locked?: boolean;
 }) {
   return (
-    <div className="rounded-lg border border-[#d8d1c2] bg-white p-4 shadow-sm">
+    <div className="overflow-hidden rounded-2xl border border-white/8 bg-white/4 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.07)] backdrop-blur-2xl">
       <div className="flex items-center justify-between gap-3">
-        <p className="text-sm text-[#6b7280]">{label}</p>
+        <p className="text-sm text-white/40">{label}</p>
         {locked ? (
-          <Lock className="h-4 w-4 text-[#9a3412]" />
+          <Lock className="h-4 w-4 text-red-400/70" strokeWidth={1.5} />
         ) : complete ? (
-          <CheckCircle2 className="h-4 w-4 text-[#166534]" />
+          <CheckCircle2 className="h-4 w-4 text-purple-300" strokeWidth={1.5} />
         ) : (
-          <span className="h-2.5 w-2.5 rounded-full bg-[#d1d5db]" />
+          <span className="h-2.5 w-2.5 rounded-full bg-white/15" />
         )}
       </div>
       <p className="mt-2 text-sm font-semibold">{complete ? 'Listo' : 'Pendiente'}</p>
@@ -1224,7 +1285,7 @@ function StatusTile({
 
 function Panel({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="rounded-lg border border-[#d8d1c2] bg-white p-5 shadow-sm">
+    <section className="overflow-hidden rounded-2xl border border-white/8 bg-white/4 p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.07)] backdrop-blur-2xl">
       <h2 className="text-lg font-semibold">{title}</h2>
       <div className="mt-5">{children}</div>
     </section>
@@ -1248,14 +1309,14 @@ function Input({
 }) {
   return (
     <label className="block">
-      <span className="text-sm font-medium text-[#374151]">{label}</span>
+      <span className="text-sm font-medium text-white/50">{label}</span>
       <input
         type={type}
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
         required={required}
-        className="mt-2 h-10 w-full rounded-md border border-[#d1d5db] bg-white px-3 text-sm outline-none transition focus:border-[#155e75] focus:ring-2 focus:ring-[#155e75]/15"
+        className="mt-2 h-10 w-full rounded-xl border border-white/7 bg-white/6 px-3 text-sm text-white outline-none placeholder:text-white/25 transition focus:border-purple-400/40 focus:ring-2 focus:ring-purple-400/12"
       />
     </label>
   );
@@ -1272,8 +1333,8 @@ function ColorInput({
 }) {
   return (
     <label className="block">
-      <span className="text-sm font-medium text-[#374151]">{label}</span>
-      <span className="mt-2 flex h-10 overflow-hidden rounded-md border border-[#d1d5db] bg-white">
+      <span className="text-sm font-medium text-white/50">{label}</span>
+      <span className="mt-2 flex h-10 overflow-hidden rounded-xl border border-white/7 bg-white/6">
         <input
           type="color"
           value={value}
@@ -1284,7 +1345,7 @@ function ColorInput({
         <input
           value={value}
           onChange={(event) => onChange(event.target.value)}
-          className="min-w-0 flex-1 px-3 text-sm outline-none"
+          className="min-w-0 flex-1 bg-transparent px-3 text-sm text-white outline-none"
         />
       </span>
     </label>
@@ -1304,13 +1365,13 @@ function TextArea({
 }) {
   return (
     <label className="block">
-      <span className="text-sm font-medium text-[#374151]">{label}</span>
+      <span className="text-sm font-medium text-white/50">{label}</span>
       <textarea
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
         rows={4}
-        className="mt-2 w-full resize-y rounded-md border border-[#d1d5db] bg-white px-3 py-2 text-sm outline-none transition focus:border-[#155e75] focus:ring-2 focus:ring-[#155e75]/15"
+        className="mt-2 w-full resize-y rounded-xl border border-white/7 bg-white/6 px-3 py-2 text-sm text-white outline-none placeholder:text-white/25 transition focus:border-purple-400/40 focus:ring-2 focus:ring-purple-400/12"
       />
     </label>
   );
@@ -1321,7 +1382,7 @@ function SaveButton({ saving, label }: { saving: boolean; label: string }) {
     <button
       type="submit"
       disabled={saving}
-      className="inline-flex h-10 items-center gap-2 rounded-md bg-[#111827] px-4 text-sm font-semibold text-white transition hover:bg-[#155e75] disabled:cursor-not-allowed disabled:opacity-60"
+      className="inline-flex h-10 items-center gap-2 rounded-xl bg-purple-600 px-4 text-sm font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.14),0_4px_24px_-4px_rgba(124,58,237,0.5)] transition hover:bg-purple-500 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
     >
       <Save className="h-4 w-4" />
       {saving ? 'Guardando...' : label}
