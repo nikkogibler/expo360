@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "seed:firebase": "node scripts/seed-firebase-v1.mjs",
     "revalidate-seo": "node scripts/revalidate-seo.js"
   },
   "dependencies": {
@@ -20,8 +21,11 @@
     "@supabase/supabase-js": "^2.86.0",
     "@tabler/icons-react": "^3.35.0",
     "@vercel/analytics": "^1.6.0",
+    "@vercel/blob": "^2.3.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "firebase": "^12.12.1",
+    "firebase-admin": "^13.8.0",
     "framer-motion": "^12.22.0",
     "google-auth-library": "^10.3.0",
     "googleapis": "^160.0.0",

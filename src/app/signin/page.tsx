@@ -1,256 +1,192 @@
 'use client';
 
-import React, { useState, Suspense } from 'react';
-import { motion } from 'framer-motion';
-import { ArrowRight, Mail, Lock, Eye, EyeOff, Github, Chrome, X } from 'lucide-react';
+import { Suspense, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { createBrowserClient } from '@supabase/ssr';
-import { LoaderOne } from '@/components/ui/loader';
+import { FirebaseError } from 'firebase/app';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { ArrowRight, Eye, EyeOff, Lock, Mail, ShieldCheck } from 'lucide-react';
 
-function SignInContent() {
+import { getFirebaseClientAuth } from '@/lib/firebase/client';
+
+function safeNextPath(value: string | null) {
+  if (!value || !value.startsWith('/') || value.startsWith('//')) return null;
+  return value;
+}
+
+function getSignInMessage(error: unknown) {
+  if (error instanceof FirebaseError) {
+    if (error.code === 'auth/operation-not-allowed') {
+      return 'Firebase Email/Password sign-in is disabled. Enable it in Firebase Authentication > Sign-in method, then try again.';
+    }
+
+    if (error.code === 'auth/invalid-credential') {
+      return 'Firebase rejected this email/password. I reset the seeded dev credentials to fixed passwords; run npm run seed:firebase again and use the new password.';
+    }
+
+    if (error.code === 'auth/network-request-failed') {
+      return 'Firebase Auth could not be reached from the browser. Check your network and Firebase project config.';
+    }
+
+    return `${error.message} (${error.code})`;
+  }
+
+  return 'Unable to sign in. Check the Firebase Auth setup and try again.';
+}
+
+function SignInForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [email, setEmail] = useState(searchParams.get('email') || '');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState(searchParams.get('message') === 'account_created' ? 'Account created! Please sign in.' : '');
-  const [successMessage, setSuccessMessage] = useState(searchParams.get('message') === 'account_created' ? 'Account created successfully! Please sign in.' : '');
+  const [error, setError] = useState('');
 
-  // Initialize Supabase client
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
     setError('');
-    setSuccessMessage('');
     setIsLoading(true);
 
     try {
-      const { data, error: signInError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+      const auth = getFirebaseClientAuth();
+      const credential = await signInWithEmailAndPassword(
+        auth,
+        email.trim().toLowerCase(),
+        password
+      );
+      const idToken = await credential.user.getIdToken();
+      const response = await fetch('/api/auth/session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idToken }),
       });
+      const result = await response.json();
 
-      if (signInError) {
-        setError(signInError.message);
-      } else if (data.user) {
-        // Set the user email cookie for the admin layout to check
-        await fetch('/api/auth/set-email', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: data.user.email }),
-        });
-        // Redirect to admin dashboard
-        router.push('/admin');
-        router.refresh(); // Refresh to update server components with new session
+      if (!response.ok) {
+        setError(result.error || 'Unable to sign in.');
+        return;
       }
-    } catch (err) {
-      console.error('Sign in error:', err);
-      setError('An unexpected error occurred during sign-in');
+
+      router.push(safeNextPath(searchParams.get('next')) || result.redirectTo || '/studio');
+      router.refresh();
+    } catch (signinError) {
+      console.error('Firebase sign-in error:', signinError);
+      setError(getSignInMessage(signinError));
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleClose = () => {
-    router.back();
-  };
-
-  const containerVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: { duration: 0.6, ease: [0.25, 0.1, 0.25, 1] as const },
-    },
-  };
-
-  const itemVariants = {
-    hidden: { opacity: 0, y: 10 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: { duration: 0.4 },
-    },
-  };
+  }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-linear-to-br from-slate-900 via-purple-900 to-slate-900">
-      <motion.div
-        initial="hidden"
-        animate="visible"
-        variants={containerVariants}
-        className="w-full max-w-sm relative"
-      >
-        {/* Close button */}
-        <button
-          onClick={handleClose}
-          className="absolute -top-10 right-0 text-gray-400 hover:text-white transition-colors"
-        >
-          <X className="w-6 h-6" />
-        </button>
+    <main className="min-h-screen overflow-hidden bg-[#071014] text-white">
+      <div className="absolute inset-0 bg-[url('/admin/interzekt_dashboard_background.png')] bg-cover bg-center opacity-45" />
+      <div className="absolute inset-0 bg-[#071014]/75" />
 
-        {/* Card */}
-        <div className="bg-linear-to-br from-white/10 to-white/5 backdrop-blur-xl rounded-2xl p-6 border border-white/20 shadow-2xl">
-          {/* Logo and header */}
-          <motion.div
-            variants={itemVariants}
-            className="text-center mb-0 -mt-20"
-          >
-            <Link href="/" className="inline-block mb-0">
-              <img src="/expo360_logo.png" alt="Expo360" className="h-80 mx-auto" />
-            </Link>
-          </motion.div>
+      <div className="relative mx-auto grid min-h-screen w-full max-w-6xl items-center gap-10 px-5 py-8 lg:grid-cols-[1fr_410px] lg:px-8">
+        <section className="hidden max-w-2xl lg:block">
+          <Link href="/" className="inline-flex items-center gap-3">
+            <img src="/expo360_logo.png" alt="Expo360" className="h-20 w-auto" />
+          </Link>
+          <p className="mt-8 text-sm font-semibold uppercase tracking-[0.22em] text-[#f4c15d]">
+            Interzekt Console
+          </p>
+          <h1 className="mt-4 text-5xl font-semibold leading-tight">
+            Expo360
+          </h1>
+          <p className="mt-5 max-w-xl text-lg leading-8 text-white/72">
+            Master admin and SMB Studio access for event landing pages.
+          </p>
+        </section>
 
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-1 -mt-20">
-              
-              {/* Messages */}
-              {error && (
-                <motion.div 
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="bg-red-500/20 border border-red-500/50 text-red-200 text-xs p-3 rounded-lg mb-4"
-                >
-                  {error}
-                </motion.div>
-              )}
+        <section className="mx-auto w-full max-w-[410px] rounded-lg border border-white/15 bg-white/[0.08] p-6 shadow-2xl backdrop-blur-xl">
+          <div className="flex items-center justify-between gap-4">
+            <img src="/expo360_logo.png" alt="Expo360" className="h-16 w-auto lg:hidden" />
+            <div className="hidden lg:block">
+              <p className="text-sm font-medium text-[#f4c15d]">Secure access</p>
+              <h2 className="mt-2 text-2xl font-semibold text-white">Sign in</h2>
+            </div>
+            <div className="flex h-10 w-10 items-center justify-center rounded-md border border-white/15 bg-white/10">
+              <ShieldCheck className="h-5 w-5 text-[#f4c15d]" />
+            </div>
+          </div>
 
-              {successMessage && (
-                <motion.div 
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="bg-green-500/20 border border-green-500/50 text-green-200 text-xs p-3 rounded-lg mb-4"
-                >
-                  {successMessage}
-                </motion.div>
-              )}
+          <div className="mt-4 lg:hidden">
+            <p className="text-sm font-medium text-[#f4c15d]">Secure access</p>
+            <h2 className="mt-2 text-2xl font-semibold text-white">Sign in</h2>
+          </div>
 
-              {/* Email Field */}
-              <motion.div variants={itemVariants}>
-                <label className="block text-xs font-semibold text-gray-200 mb-1">
-                  Correo
-                </label>
-                <div className="relative">
-                  <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-purple-400" />
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="tu@email.com"
-                    className="w-full pl-12 pr-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300 backdrop-blur-sm text-sm"
-                    required
-                  />
-                </div>
-              </motion.div>
+          <form onSubmit={handleSubmit} className="mt-7 space-y-5" data-testid="signin-form">
+            {error ? (
+              <div className="rounded-md border border-red-400/35 bg-red-500/15 px-3 py-2 text-sm leading-6 text-red-100" data-testid="signin-error">
+                {error}
+              </div>
+            ) : null}
 
-              {/* Password Field */}
-              <motion.div variants={itemVariants} className="pt-4">
-                <label className="block text-xs font-semibold text-gray-200 mb-1">
-                  Contraseña
-                </label>
-                <div className="relative">
-                  <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-purple-400" />
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
-                    className="w-full pl-12 pr-12 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300 backdrop-blur-sm text-sm"
-                    required
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
-                  >
-                    {showPassword ? (
-                      <EyeOff className="w-5 h-5" />
-                    ) : (
-                      <Eye className="w-5 h-5" />
-                    )}
-                  </button>
-                </div>
-              </motion.div>
+            <label className="block">
+              <span className="text-sm font-medium text-white/80">Email</span>
+              <span className="relative mt-2 block">
+                <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/45" />
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  autoComplete="email"
+                  required
+                  data-testid="signin-email"
+                  className="h-11 w-full rounded-md border border-white/15 bg-white/10 pl-10 pr-3 text-sm text-white outline-none transition placeholder:text-white/35 focus:border-[#f4c15d] focus:ring-2 focus:ring-[#f4c15d]/20"
+                />
+              </span>
+            </label>
 
-              {/* Forgot Password Link */}
-              <motion.div variants={itemVariants} className="flex justify-end pt-2">
-                <Link
-                  href="/forgot-password"
-                  className="text-xs text-purple-300 hover:text-purple-200 transition-colors"
-                >
-                  ¿Olvidaste tu contraseña?
-                </Link>
-              </motion.div>
-
-              {/* Submit Button */}
-              <motion.div variants={itemVariants} className="pt-6">
+            <label className="block">
+              <span className="text-sm font-medium text-white/80">Password</span>
+              <span className="relative mt-2 block">
+                <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/45" />
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  autoComplete="current-password"
+                  required
+                  data-testid="signin-password"
+                  className="h-11 w-full rounded-md border border-white/15 bg-white/10 pl-10 pr-11 text-sm text-white outline-none transition placeholder:text-white/35 focus:border-[#f4c15d] focus:ring-2 focus:ring-[#f4c15d]/20"
+                />
                 <button
-                  type="submit"
-                  disabled={isLoading}
-                  className="w-full bg-linear-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white font-bold py-2 px-4 rounded-lg shadow-lg transform transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center group"
+                  type="button"
+                  onClick={() => setShowPassword((value) => !value)}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  className="absolute right-2 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-md text-white/50 transition hover:bg-white/10 hover:text-white"
                 >
-                  {isLoading ? (
-                    <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  ) : (
-                    <>
-                      Iniciar Sesión
-                      <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                    </>
-                  )}
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
-              </motion.div>
+              </span>
+            </label>
+
+            <button
+              type="submit"
+              disabled={isLoading}
+              data-testid="signin-submit"
+              className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-md bg-[#f4c15d] px-4 text-sm font-semibold text-[#101820] transition hover:bg-[#ffd879] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {isLoading ? 'Signing in...' : 'Sign in'}
+              <ArrowRight className="h-4 w-4" />
+            </button>
           </form>
 
-          {/* Divider */}
-          <motion.div variants={itemVariants} className="relative py-6">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-white/10"></div>
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-transparent px-2 text-gray-400">
-                O continúa con
-              </span>
-            </div>
-          </motion.div>
-
-          {/* Social Login */}
-          <motion.div variants={itemVariants} className="grid grid-cols-2 gap-4">
-            <button className="flex items-center justify-center px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition-all duration-200 group">
-              <Github className="w-5 h-5 text-white group-hover:scale-110 transition-transform" />
-            </button>
-            <button className="flex items-center justify-center px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition-all duration-200 group">
-              <Chrome className="w-5 h-5 text-white group-hover:scale-110 transition-transform" />
-            </button>
-          </motion.div>
-
-          {/* Sign Up Link */}
-          <motion.div variants={itemVariants} className="mt-6 text-center">
-            <p className="text-xs text-gray-400">
-              ¿No tienes una cuenta?{' '}
-              <Link
-                href="/onboarding"
-                className="text-purple-300 hover:text-purple-200 font-semibold transition-colors"
-              >
-                Regístrate
-              </Link>
-            </p>
-          </motion.div>
-        </div>
-      </motion.div>
-    </div>
+          <p className="mt-6 text-sm leading-6 text-white/55">
+            Invite-only access for Interzekt admins and SMB Studio accounts.
+          </p>
+        </section>
+      </div>
+    </main>
   );
 }
 
 export default function SignInPage() {
   return (
-    <Suspense fallback={<div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900"><LoaderOne /></div>}>
-      <SignInContent />
+    <Suspense fallback={null}>
+      <SignInForm />
     </Suspense>
   );
 }
