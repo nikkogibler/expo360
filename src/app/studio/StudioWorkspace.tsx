@@ -40,6 +40,137 @@ const fadeUp = {
   },
 };
 
+type LayoutTemplate = 'coleccion' | 'galeria' | 'catalogo' | 'terminal';
+
+interface TemplateDef {
+  id: LayoutTemplate;
+  name: string;
+  description: string;
+  thumb: React.ReactNode;
+}
+
+const TEMPLATE_DEFS: TemplateDef[] = [
+  {
+    id: 'coleccion',
+    name: 'Colección',
+    description: 'Panel flotante sobre foto de fondo',
+    thumb: (
+      <svg viewBox="0 0 80 50" className="w-full" aria-hidden>
+        <rect width="80" height="50" rx="4" fill="#2a2520" />
+        <rect x="4" y="6" width="72" height="39" rx="1" fill="#f8f4ee" />
+        <line x1="31" y1="6" x2="31" y2="33" stroke="#e0d8cc" strokeWidth="0.5" />
+        <line x1="4" y1="33" x2="76" y2="33" stroke="#e0d8cc" strokeWidth="0.5" />
+        <rect x="7" y="12" width="20" height="4" rx="0.5" fill="#1a1a1a" opacity=".8" />
+        <rect x="7" y="18" width="14" height="2" rx="0.5" fill="#999" opacity=".5" />
+        <rect x="7" y="22" width="10" height="1.5" rx="0.5" fill="#bbb" opacity=".4" />
+        <rect x="7" y="27" width="9" height="2.5" rx="1.25" fill="#e8e2d8" />
+        <rect x="18" y="27" width="9" height="2.5" rx="1.25" fill="#e8e2d8" />
+        <rect x="31" y="6" width="45" height="27" fill="#ccc" opacity=".6" />
+        <rect x="63" y="8" width="10" height="2.5" rx="1.25" fill="white" opacity=".85" />
+        <rect x="4" y="33.5" width="17" height="11" fill="#f4f0e8" />
+        <line x1="21" y1="33.5" x2="21" y2="44.5" stroke="#e0d8cc" strokeWidth="0.5" />
+        <rect x="21.5" y="33.5" width="17" height="11" fill="#f4f0e8" />
+        <line x1="39" y1="33.5" x2="39" y2="44.5" stroke="#e0d8cc" strokeWidth="0.5" />
+        <rect x="39.5" y="33.5" width="17" height="11" fill="#f4f0e8" />
+        <line x1="57" y1="33.5" x2="57" y2="44.5" stroke="#e0d8cc" strokeWidth="0.5" />
+        <rect x="57.5" y="33.5" width="18.5" height="11" fill="#f4f0e8" />
+      </svg>
+    ),
+  },
+  {
+    id: 'galeria',
+    name: 'Galería',
+    description: 'Fondo oscuro, formulario blanco, grid de imágenes',
+    thumb: (
+      <svg viewBox="0 0 80 50" className="w-full" aria-hidden>
+        <rect width="80" height="50" rx="4" fill="#0d0d0d" />
+        <line x1="0" y1="8" x2="80" y2="8" stroke="white" strokeWidth="0.3" opacity=".2" />
+        <rect x="3" y="2.5" width="14" height="3" rx="1" fill="white" opacity=".35" />
+        <rect width="26" height="42" x="0" y="8" fill="white" />
+        <rect x="3" y="12" width="20" height="2" rx="0.5" fill="#ccc" />
+        <rect x="3" y="17" width="20" height="5" rx="0.5" fill="#f0f0f0" />
+        <rect x="3" y="25" width="20" height="5" rx="0.5" fill="#f0f0f0" />
+        <rect x="3" y="33" width="20" height="5" rx="1" fill="#222" opacity=".75" />
+        <line x1="26" y1="8" x2="26" y2="50" stroke="white" strokeWidth="0.3" opacity=".15" />
+        <rect x="29" y="22" width="28" height="5" rx="0.5" fill="white" opacity=".65" />
+        <rect x="29" y="30" width="20" height="2.5" rx="0.5" fill="white" opacity=".2" />
+        <rect x="29" y="35" width="14" height="1.5" rx="0.5" fill="white" opacity=".12" />
+        <line x1="0" y1="42" x2="80" y2="42" stroke="white" strokeWidth="0.3" opacity=".12" />
+        <rect x="0" y="42" width="20" height="8" fill="#181818" />
+        <rect x="0.3" y="42.3" width="19.4" height="7.4" fill="#181818" stroke="white" strokeWidth="0.15" opacity=".1" />
+        <rect x="20" y="42" width="20" height="8" fill="#181818" />
+        <rect x="40" y="42" width="20" height="8" fill="#181818" />
+        <rect x="60" y="42" width="20" height="8" fill="#181818" />
+        <line x1="20" y1="42" x2="20" y2="50" stroke="white" strokeWidth="0.3" opacity=".12" />
+        <line x1="40" y1="42" x2="40" y2="50" stroke="white" strokeWidth="0.3" opacity=".12" />
+        <line x1="60" y1="42" x2="60" y2="50" stroke="white" strokeWidth="0.3" opacity=".12" />
+      </svg>
+    ),
+  },
+  {
+    id: 'catalogo',
+    name: 'Catálogo',
+    description: 'Marco negro, título enorme, grid de celdas',
+    thumb: (
+      <svg viewBox="0 0 80 50" className="w-full" aria-hidden>
+        <rect width="80" height="50" rx="4" fill="white" />
+        <rect x="2" y="2" width="76" height="46" rx="2" fill="none" stroke="black" strokeWidth="2" />
+        <rect x="3" y="3" width="75" height="7" fill="#1a1a1a" opacity=".05" />
+        <rect x="6" y="5" width="18" height="3" rx="1" fill="#1a1a1a" opacity=".7" />
+        <rect x="5" y="14" width="44" height="6" rx="0.5" fill="#1a1a1a" />
+        <rect x="5" y="22" width="28" height="2.5" rx="0.5" fill="#1a1a1a" opacity=".25" />
+        <line x1="2" y1="28" x2="78" y2="28" stroke="black" strokeWidth="1" />
+        <rect x="2" y="28" width="15" height="5" fill="black" />
+        <line x1="17" y1="28" x2="17" y2="33" stroke="black" strokeWidth="0.5" />
+        <line x1="31.5" y1="28" x2="31.5" y2="33" stroke="black" strokeWidth="0.5" />
+        <line x1="2" y1="33" x2="78" y2="33" stroke="black" strokeWidth="1" />
+        <rect x="2" y="33" width="18" height="8" fill="#f0f0f0" />
+        <rect x="21" y="33" width="18" height="8" fill="#f0f0f0" />
+        <rect x="40" y="33" width="18" height="8" fill="#f0f0f0" />
+        <rect x="59" y="33" width="19" height="8" fill="#f0f0f0" />
+        <line x1="20" y1="33" x2="20" y2="41" stroke="black" strokeWidth="0.5" />
+        <line x1="39" y1="33" x2="39" y2="41" stroke="black" strokeWidth="0.5" />
+        <line x1="58" y1="33" x2="58" y2="41" stroke="black" strokeWidth="0.5" />
+        <line x1="2" y1="41" x2="78" y2="41" stroke="black" strokeWidth="0.3" />
+        <rect x="2" y="41" width="18" height="7" fill="#f0f0f0" />
+        <rect x="21" y="41" width="18" height="7" fill="#f0f0f0" />
+        <rect x="40" y="41" width="18" height="7" fill="#f0f0f0" />
+        <rect x="59" y="41" width="19" height="7" fill="#f0f0f0" />
+      </svg>
+    ),
+  },
+  {
+    id: 'terminal',
+    name: 'Terminal',
+    description: 'Panel de registro + hero y productos',
+    thumb: (
+      <svg viewBox="0 0 80 50" className="w-full" aria-hidden>
+        <rect width="80" height="50" rx="4" fill="white" />
+        <line x1="0" y1="8" x2="80" y2="8" stroke="#e0e0e0" strokeWidth="0.6" />
+        <rect x="3" y="3" width="14" height="3" rx="1" fill="#1a1a1a" opacity=".8" />
+        <rect x="55" y="3.5" width="8" height="2" rx="1" fill="#999" opacity=".4" />
+        <rect x="65" y="3.5" width="12" height="2" rx="1" fill="#1a1a1a" opacity=".5" />
+        <line x1="28" y1="8" x2="28" y2="50" stroke="#e8e8e8" strokeWidth="0.6" />
+        <rect x="3" y="12" width="7" height="1.5" rx="0.75" fill="#bbb" opacity=".6" />
+        <rect x="3" y="16" width="20" height="3" rx="0.5" fill="#1a1a1a" opacity=".75" />
+        <rect x="3" y="21" width="14" height="1.5" rx="0.75" fill="#bbb" opacity=".4" />
+        <line x1="3" y1="25" x2="25" y2="25" stroke="#e0e0e0" strokeWidth="0.5" />
+        <rect x="3" y="28" width="22" height="3.5" rx="0.5" fill="#f0f0f0" />
+        <rect x="3" y="33.5" width="22" height="3.5" rx="0.5" fill="#f0f0f0" />
+        <rect x="3" y="39" width="22" height="5" rx="0.5" fill="#1a1a1a" opacity=".7" />
+        <rect x="28" y="8" width="52" height="20" fill="#e0e0e0" />
+        <line x1="28" y1="28" x2="80" y2="28" stroke="#e8e8e8" strokeWidth="0.6" />
+        <rect x="30" y="30" width="11" height="9" fill="#f5f5f5" />
+        <rect x="43" y="30" width="11" height="9" fill="#f5f5f5" />
+        <rect x="56" y="30" width="11" height="9" fill="#f5f5f5" />
+        <rect x="30" y="41" width="11" height="7" fill="#f5f5f5" />
+        <rect x="43" y="41" width="11" height="7" fill="#f5f5f5" />
+        <rect x="56" y="41" width="11" height="7" fill="#f5f5f5" />
+      </svg>
+    ),
+  },
+];
+
 interface StudioWorkspaceProps {
   initialBundle: ClientBundle;
   userEmail: string;
@@ -115,6 +246,8 @@ export default function StudioWorkspace({
     layoutTemplate: (initialBundle.eventPage.settings.layoutTemplate ?? 'coleccion') as 'coleccion' | 'galeria' | 'catalogo' | 'terminal',
   });
   const [productForm, setProductForm] = useState<ProductForm>(emptyProductForm);
+  const [previewTemplateId, setPreviewTemplateId] = useState<LayoutTemplate | null>(null);
+  const [isSavingTemplate, setIsSavingTemplate] = useState(false);
 
   const previewHref = `/c/${bundle.eventPage.slug}?preview=1`;
   const publicHref = `/c/${bundle.eventPage.slug}`;
@@ -353,6 +486,36 @@ export default function StudioWorkspace({
     }
   }
 
+  async function handleSelectTemplate(templateId: LayoutTemplate) {
+    setIsSavingTemplate(true);
+    setError('');
+    setMessage('');
+
+    try {
+      await patchJson('/api/studio/event-page', {
+        title: eventForm.title,
+        subtitle: eventForm.subtitle,
+        location: eventForm.location,
+        eventDate: eventForm.eventDate,
+        intro: eventForm.intro,
+        ctaLabel: eventForm.ctaLabel,
+        settings: {
+          ...bundle.eventPage.settings,
+          heroImageUrl: eventForm.heroImageUrl,
+          leadFormTitle: eventForm.leadFormTitle,
+          layoutTemplate: templateId,
+        },
+      });
+      setEventForm((current) => ({ ...current, layoutTemplate: templateId }));
+      setPreviewTemplateId(null);
+      setMessage(`Plantilla "${TEMPLATE_DEFS.find((t) => t.id === templateId)?.name ?? templateId}" aplicada.`);
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : 'No se pudo guardar la plantilla.');
+    } finally {
+      setIsSavingTemplate(false);
+    }
+  }
+
   return (
     <div className="relative min-h-dvh bg-[#08071a] text-white" style={{ zoom: 1.1 }}>
       {/* Ambient blobs */}
@@ -447,6 +610,50 @@ export default function StudioWorkspace({
             {error}
           </motion.div>
         ) : null}
+
+        {/* ── Step 1: Template Picker ── */}
+        <motion.section variants={fadeUp} className="overflow-hidden rounded-2xl border border-white/8 bg-white/4 p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.07)] backdrop-blur-2xl">
+          <div className="mb-5 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-[0.16em] text-purple-300/70">Paso 1</p>
+              <h2 className="mt-1 text-2xl font-semibold">Elige tu plantilla</h2>
+              <p className="mt-1 text-sm text-white/40">Esta es la base visual de tu página de evento. Haz clic para ver una vista previa.</p>
+            </div>
+            <p className="text-sm text-white/30">
+              Activa:{' '}
+              <span className="font-semibold text-purple-300">
+                {TEMPLATE_DEFS.find((t) => t.id === eventForm.layoutTemplate)?.name ?? eventForm.layoutTemplate}
+              </span>
+            </p>
+          </div>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {TEMPLATE_DEFS.map((tpl) => {
+              const isActive = eventForm.layoutTemplate === tpl.id;
+              return (
+                <button
+                  key={tpl.id}
+                  type="button"
+                  onClick={() => setPreviewTemplateId(tpl.id)}
+                  className={`group relative rounded-2xl border p-2 text-left transition ${
+                    isActive
+                      ? 'border-purple-400/60 bg-purple-500/10 shadow-[0_0_0_1px_rgba(167,139,250,0.3)]'
+                      : 'border-white/8 bg-white/3 hover:border-white/20 hover:bg-white/6'
+                  }`}
+                >
+                  <div className="overflow-hidden rounded-lg">{tpl.thumb}</div>
+                  <p className={`mt-2 text-xs font-semibold ${isActive ? 'text-purple-300' : 'text-white/70'}`}>{tpl.name}</p>
+                  <p className="mt-0.5 text-[10px] leading-snug text-white/35">{tpl.description}</p>
+                  {isActive && (
+                    <span className="absolute right-2 top-2 flex h-4 w-4 items-center justify-center rounded-full bg-purple-500 text-[9px] text-white">✓</span>
+                  )}
+                  <span className="absolute inset-0 flex items-center justify-center rounded-2xl bg-black/40 text-xs font-semibold text-white opacity-0 transition group-hover:opacity-100">
+                    Ver vista previa
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </motion.section>
 
         <motion.div variants={fadeUp}>
           <LeadWorkspace
@@ -571,132 +778,7 @@ export default function StudioWorkspace({
                 <div className="md:col-span-2">
                   <p className="mb-3 text-sm font-medium text-white/70">Plantilla de diseño</p>
                   <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                    {(
-                      [
-                        {
-                          id: 'coleccion' as const,
-                          name: 'Colección',
-                          description: 'Panel flotante sobre foto de fondo',
-                          thumb: (
-                            <svg viewBox="0 0 80 50" className="w-full" aria-hidden>
-                              <rect width="80" height="50" rx="4" fill="#2a2520" />
-                              <rect x="4" y="6" width="72" height="39" rx="1" fill="#f8f4ee" />
-                              <line x1="31" y1="6" x2="31" y2="33" stroke="#e0d8cc" strokeWidth="0.5" />
-                              <line x1="4" y1="33" x2="76" y2="33" stroke="#e0d8cc" strokeWidth="0.5" />
-                              <rect x="7" y="12" width="20" height="4" rx="0.5" fill="#1a1a1a" opacity=".8" />
-                              <rect x="7" y="18" width="14" height="2" rx="0.5" fill="#999" opacity=".5" />
-                              <rect x="7" y="22" width="10" height="1.5" rx="0.5" fill="#bbb" opacity=".4" />
-                              <rect x="7" y="27" width="9" height="2.5" rx="1.25" fill="#e8e2d8" />
-                              <rect x="18" y="27" width="9" height="2.5" rx="1.25" fill="#e8e2d8" />
-                              <rect x="31" y="6" width="45" height="27" fill="#ccc" opacity=".6" />
-                              <rect x="63" y="8" width="10" height="2.5" rx="1.25" fill="white" opacity=".85" />
-                              <rect x="4" y="33.5" width="17" height="11" fill="#f4f0e8" />
-                              <line x1="21" y1="33.5" x2="21" y2="44.5" stroke="#e0d8cc" strokeWidth="0.5" />
-                              <rect x="21.5" y="33.5" width="17" height="11" fill="#f4f0e8" />
-                              <line x1="39" y1="33.5" x2="39" y2="44.5" stroke="#e0d8cc" strokeWidth="0.5" />
-                              <rect x="39.5" y="33.5" width="17" height="11" fill="#f4f0e8" />
-                              <line x1="57" y1="33.5" x2="57" y2="44.5" stroke="#e0d8cc" strokeWidth="0.5" />
-                              <rect x="57.5" y="33.5" width="18.5" height="11" fill="#f4f0e8" />
-                            </svg>
-                          ),
-                        },
-                        {
-                          id: 'galeria' as const,
-                          name: 'Galería',
-                          description: 'Fondo oscuro, formulario blanco, grid de imágenes',
-                          thumb: (
-                            <svg viewBox="0 0 80 50" className="w-full" aria-hidden>
-                              <rect width="80" height="50" rx="4" fill="#0d0d0d" />
-                              <line x1="0" y1="8" x2="80" y2="8" stroke="white" strokeWidth="0.3" opacity=".2" />
-                              <rect x="3" y="2.5" width="14" height="3" rx="1" fill="white" opacity=".35" />
-                              <rect width="26" height="42" x="0" y="8" fill="white" />
-                              <rect x="3" y="12" width="20" height="2" rx="0.5" fill="#ccc" />
-                              <rect x="3" y="17" width="20" height="5" rx="0.5" fill="#f0f0f0" />
-                              <rect x="3" y="25" width="20" height="5" rx="0.5" fill="#f0f0f0" />
-                              <rect x="3" y="33" width="20" height="5" rx="1" fill="#222" opacity=".75" />
-                              <line x1="26" y1="8" x2="26" y2="50" stroke="white" strokeWidth="0.3" opacity=".15" />
-                              <rect x="29" y="22" width="28" height="5" rx="0.5" fill="white" opacity=".65" />
-                              <rect x="29" y="30" width="20" height="2.5" rx="0.5" fill="white" opacity=".2" />
-                              <rect x="29" y="35" width="14" height="1.5" rx="0.5" fill="white" opacity=".12" />
-                              <line x1="0" y1="42" x2="80" y2="42" stroke="white" strokeWidth="0.3" opacity=".12" />
-                              <rect x="0" y="42" width="20" height="8" fill="#181818" />
-                              <rect x="0.3" y="42.3" width="19.4" height="7.4" fill="#181818" stroke="white" strokeWidth="0.15" opacity=".1" />
-                              <rect x="20" y="42" width="20" height="8" fill="#181818" />
-                              <rect x="40" y="42" width="20" height="8" fill="#181818" />
-                              <rect x="60" y="42" width="20" height="8" fill="#181818" />
-                              <line x1="20" y1="42" x2="20" y2="50" stroke="white" strokeWidth="0.3" opacity=".12" />
-                              <line x1="40" y1="42" x2="40" y2="50" stroke="white" strokeWidth="0.3" opacity=".12" />
-                              <line x1="60" y1="42" x2="60" y2="50" stroke="white" strokeWidth="0.3" opacity=".12" />
-                            </svg>
-                          ),
-                        },
-                        {
-                          id: 'catalogo' as const,
-                          name: 'Catálogo',
-                          description: 'Marco negro, título enorme, grid de celdas',
-                          thumb: (
-                            <svg viewBox="0 0 80 50" className="w-full" aria-hidden>
-                              <rect width="80" height="50" rx="4" fill="white" />
-                              <rect x="2" y="2" width="76" height="46" rx="2" fill="none" stroke="black" strokeWidth="2" />
-                              <rect x="3" y="3" width="75" height="7" fill="#1a1a1a" opacity=".05" />
-                              <rect x="6" y="5" width="18" height="3" rx="1" fill="#1a1a1a" opacity=".7" />
-                              <rect x="5" y="14" width="44" height="6" rx="0.5" fill="#1a1a1a" />
-                              <rect x="5" y="22" width="28" height="2.5" rx="0.5" fill="#1a1a1a" opacity=".25" />
-                              <line x1="2" y1="28" x2="78" y2="28" stroke="black" strokeWidth="1" />
-                              <rect x="2" y="28" width="15" height="5" fill="black" />
-                              <line x1="17" y1="28" x2="17" y2="33" stroke="black" strokeWidth="0.5" />
-                              <line x1="31.5" y1="28" x2="31.5" y2="33" stroke="black" strokeWidth="0.5" />
-                              <line x1="2" y1="33" x2="78" y2="33" stroke="black" strokeWidth="1" />
-                              <rect x="2" y="33" width="18" height="8" fill="#f0f0f0" />
-                              <rect x="21" y="33" width="18" height="8" fill="#f0f0f0" />
-                              <rect x="40" y="33" width="18" height="8" fill="#f0f0f0" />
-                              <rect x="59" y="33" width="19" height="8" fill="#f0f0f0" />
-                              <line x1="20" y1="33" x2="20" y2="41" stroke="black" strokeWidth="0.5" />
-                              <line x1="39" y1="33" x2="39" y2="41" stroke="black" strokeWidth="0.5" />
-                              <line x1="58" y1="33" x2="58" y2="41" stroke="black" strokeWidth="0.5" />
-                              <line x1="2" y1="41" x2="78" y2="41" stroke="black" strokeWidth="0.3" />
-                              <rect x="2" y="41" width="18" height="7" fill="#f0f0f0" />
-                              <rect x="21" y="41" width="18" height="7" fill="#f0f0f0" />
-                              <rect x="40" y="41" width="18" height="7" fill="#f0f0f0" />
-                              <rect x="59" y="41" width="19" height="7" fill="#f0f0f0" />
-                            </svg>
-                          ),
-                        },
-                        {
-                          id: 'terminal' as const,
-                          name: 'Terminal',
-                          description: 'Panel de registro + hero y productos',
-                          thumb: (
-                            <svg viewBox="0 0 80 50" className="w-full" aria-hidden>
-                              <rect width="80" height="50" rx="4" fill="white" />
-                              <line x1="0" y1="8" x2="80" y2="8" stroke="#e0e0e0" strokeWidth="0.6" />
-                              <rect x="3" y="3" width="14" height="3" rx="1" fill="#1a1a1a" opacity=".8" />
-                              <rect x="55" y="3.5" width="8" height="2" rx="1" fill="#999" opacity=".4" />
-                              <rect x="65" y="3.5" width="12" height="2" rx="1" fill="#1a1a1a" opacity=".5" />
-                              {/* Left action panel */}
-                              <line x1="28" y1="8" x2="28" y2="50" stroke="#e8e8e8" strokeWidth="0.6" />
-                              <rect x="3" y="12" width="7" height="1.5" rx="0.75" fill="#bbb" opacity=".6" />
-                              <rect x="3" y="16" width="20" height="3" rx="0.5" fill="#1a1a1a" opacity=".75" />
-                              <rect x="3" y="21" width="14" height="1.5" rx="0.75" fill="#bbb" opacity=".4" />
-                              <line x1="3" y1="25" x2="25" y2="25" stroke="#e0e0e0" strokeWidth="0.5" />
-                              <rect x="3" y="28" width="22" height="3.5" rx="0.5" fill="#f0f0f0" />
-                              <rect x="3" y="33.5" width="22" height="3.5" rx="0.5" fill="#f0f0f0" />
-                              <rect x="3" y="39" width="22" height="5" rx="0.5" fill="#1a1a1a" opacity=".7" />
-                              {/* Right: hero image top */}
-                              <rect x="28" y="8" width="52" height="20" fill="#e0e0e0" />
-                              <line x1="28" y1="28" x2="80" y2="28" stroke="#e8e8e8" strokeWidth="0.6" />
-                              {/* Right: product grid bottom */}
-                              <rect x="30" y="30" width="11" height="9" fill="#f5f5f5" />
-                              <rect x="43" y="30" width="11" height="9" fill="#f5f5f5" />
-                              <rect x="56" y="30" width="11" height="9" fill="#f5f5f5" />
-                              <rect x="30" y="41" width="11" height="7" fill="#f5f5f5" />
-                              <rect x="43" y="41" width="11" height="7" fill="#f5f5f5" />
-                              <rect x="56" y="41" width="11" height="7" fill="#f5f5f5" />
-                            </svg>
-                          ),
-                        },
-                      ] as const
-                    ).map((tpl) => (
+                    {TEMPLATE_DEFS.map((tpl) => (
                       <button
                         key={tpl.id}
                         type="button"
@@ -817,6 +899,16 @@ export default function StudioWorkspace({
           </aside>
         </motion.section>
       </motion.div>
+
+      {previewTemplateId ? (
+        <TemplatePreviewModal
+          template={TEMPLATE_DEFS.find((t) => t.id === previewTemplateId)!}
+          isActive={eventForm.layoutTemplate === previewTemplateId}
+          isSaving={isSavingTemplate}
+          onSelect={() => void handleSelectTemplate(previewTemplateId)}
+          onClose={() => setPreviewTemplateId(null)}
+        />
+      ) : null}
     </div>
   );
 }
@@ -1555,4 +1647,85 @@ function parseDetails(value: string) {
       }
       return details;
     }, {} as Record<string, string>);
+}
+
+function TemplatePreviewModal({
+  template,
+  isActive,
+  isSaving,
+  onSelect,
+  onClose,
+}: {
+  template: TemplateDef;
+  isActive: boolean;
+  isSaving: boolean;
+  onSelect: () => void;
+  onClose: () => void;
+}) {
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div className="relative w-full max-w-lg overflow-hidden rounded-2xl border border-white/10 bg-[#0d0b1e] shadow-2xl">
+        {/* Header */}
+        <div className="flex items-start justify-between border-b border-white/8 px-5 py-4">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-purple-300/70">Vista previa</p>
+            <h3 className="mt-0.5 text-xl font-semibold">{template.name}</h3>
+            <p className="mt-0.5 text-sm text-white/40">{template.description}</p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="ml-4 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/8 bg-white/4 text-white/50 transition hover:bg-white/8 hover:text-white"
+          >
+            <X className="h-4 w-4" strokeWidth={1.5} />
+          </button>
+        </div>
+
+        {/* Preview area */}
+        <div className="px-5 pt-5">
+          {/* Browser chrome mock */}
+          <div className="overflow-hidden rounded-xl border border-white/8 bg-white/4">
+            <div className="flex items-center gap-1.5 border-b border-white/8 bg-white/4 px-3 py-2">
+              <span className="h-2.5 w-2.5 rounded-full bg-red-500/60" />
+              <span className="h-2.5 w-2.5 rounded-full bg-yellow-500/60" />
+              <span className="h-2.5 w-2.5 rounded-full bg-green-500/60" />
+              <span className="ml-2 flex-1 rounded bg-white/8 px-2 py-0.5 text-[10px] text-white/25">expo360.io/c/tu-evento</span>
+            </div>
+            <div className="p-3">
+              {template.thumb}
+            </div>
+            <div className="border-t border-white/8 bg-white/3 px-4 py-3 text-center text-xs text-white/30">
+              Vista previa detallada próximamente
+            </div>
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div className="flex items-center justify-end gap-3 px-5 py-4">
+          <button
+            type="button"
+            onClick={onClose}
+            className="inline-flex h-9 items-center gap-2 rounded-xl border border-white/8 bg-white/4 px-4 text-sm font-medium text-white/60 transition hover:bg-white/8 hover:text-white"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            onClick={onSelect}
+            disabled={isSaving || isActive}
+            className={`inline-flex h-9 items-center gap-2 rounded-xl px-5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${
+              isActive
+                ? 'border border-purple-400/40 bg-purple-500/15 text-purple-300'
+                : 'bg-purple-600 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.14),0_4px_24px_-4px_rgba(124,58,237,0.5)] hover:bg-purple-500 active:scale-[0.98]'
+            }`}
+          >
+            {isActive ? '✓ Plantilla activa' : isSaving ? 'Aplicando...' : 'Elegir esta plantilla'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 }
