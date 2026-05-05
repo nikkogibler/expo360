@@ -603,23 +603,30 @@ export default function StudioWorkspace({
                         {
                           id: 'galeria' as const,
                           name: 'Galería',
-                          description: 'Crema minimalista, grid de productos',
+                          description: 'Fondo oscuro, formulario blanco, grid de imágenes',
                           thumb: (
                             <svg viewBox="0 0 80 50" className="w-full" aria-hidden>
-                              <rect width="80" height="50" rx="4" fill="#f2ede5" />
-                              <line x1="0" y1="8" x2="80" y2="8" stroke="#d8d0c4" strokeWidth="0.5" />
-                              <rect x="5" y="15" width="16" height="1.5" rx="0.75" fill="#999" opacity=".6" />
-                              <rect x="5" y="18.5" width="8" height="1.5" rx="0.75" fill="#bbb" opacity=".5" />
-                              <rect x="28" y="13" width="24" height="4" rx="0.5" fill="#1a1a1a" opacity=".7" />
-                              <rect x="28" y="19" width="18" height="2" rx="0.5" fill="#999" opacity=".4" />
-                              <rect x="56" y="12" width="20" height="16" rx="1" fill="white" />
-                              <rect x="58" y="15" width="16" height="2" rx="0.5" fill="#ddd" />
-                              <rect x="58" y="19.5" width="16" height="2.5" rx="0.5" fill="#eee" />
-                              <rect x="58" y="24" width="16" height="3" rx="1" fill="#d0c8be" opacity=".8" />
-                              <rect x="5" y="35" width="15" height="11" rx="0.5" fill="#e8e2d8" />
-                              <rect x="22" y="35" width="15" height="11" rx="0.5" fill="#e8e2d8" />
-                              <rect x="39" y="35" width="15" height="11" rx="0.5" fill="#e8e2d8" />
-                              <rect x="56" y="35" width="19" height="11" rx="0.5" fill="#e8e2d8" />
+                              <rect width="80" height="50" rx="4" fill="#0d0d0d" />
+                              <line x1="0" y1="8" x2="80" y2="8" stroke="white" strokeWidth="0.3" opacity=".2" />
+                              <rect x="3" y="2.5" width="14" height="3" rx="1" fill="white" opacity=".35" />
+                              <rect width="26" height="42" x="0" y="8" fill="white" />
+                              <rect x="3" y="12" width="20" height="2" rx="0.5" fill="#ccc" />
+                              <rect x="3" y="17" width="20" height="5" rx="0.5" fill="#f0f0f0" />
+                              <rect x="3" y="25" width="20" height="5" rx="0.5" fill="#f0f0f0" />
+                              <rect x="3" y="33" width="20" height="5" rx="1" fill="#222" opacity=".75" />
+                              <line x1="26" y1="8" x2="26" y2="50" stroke="white" strokeWidth="0.3" opacity=".15" />
+                              <rect x="29" y="22" width="28" height="5" rx="0.5" fill="white" opacity=".65" />
+                              <rect x="29" y="30" width="20" height="2.5" rx="0.5" fill="white" opacity=".2" />
+                              <rect x="29" y="35" width="14" height="1.5" rx="0.5" fill="white" opacity=".12" />
+                              <line x1="0" y1="42" x2="80" y2="42" stroke="white" strokeWidth="0.3" opacity=".12" />
+                              <rect x="0" y="42" width="20" height="8" fill="#181818" />
+                              <rect x="0.3" y="42.3" width="19.4" height="7.4" fill="#181818" stroke="white" strokeWidth="0.15" opacity=".1" />
+                              <rect x="20" y="42" width="20" height="8" fill="#181818" />
+                              <rect x="40" y="42" width="20" height="8" fill="#181818" />
+                              <rect x="60" y="42" width="20" height="8" fill="#181818" />
+                              <line x1="20" y1="42" x2="20" y2="50" stroke="white" strokeWidth="0.3" opacity=".12" />
+                              <line x1="40" y1="42" x2="40" y2="50" stroke="white" strokeWidth="0.3" opacity=".12" />
+                              <line x1="60" y1="42" x2="60" y2="50" stroke="white" strokeWidth="0.3" opacity=".12" />
                             </svg>
                           ),
                         },

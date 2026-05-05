@@ -188,112 +188,88 @@ export function GaleriaTemplate({ client, eventPage, products }: TemplateProps) 
   const formConfig = buildFormProps(eventPage, products);
 
   return (
-    <div className="min-h-screen bg-[#f2ede5] text-[#1a1a1a]">
+    <div className="min-h-screen bg-[#0d0d0d] text-white">
 
-      {/* Minimal header */}
-      <header className="flex items-center justify-between px-6 py-5 sm:px-10">
+      {/* Header */}
+      <header className="flex items-center justify-between border-b border-white/[0.07] px-6 py-4 sm:px-10">
         {client.logoUrl ? (
           <img
             src={client.logoUrl}
             alt={client.name}
-            className="max-h-8 max-w-[120px] object-contain opacity-80"
+            className="max-h-7 max-w-[100px] object-contain brightness-0 invert"
           />
         ) : (
-          <span className="text-[10px] font-medium uppercase tracking-[0.2em] text-[#aaa]">
+          <span className="text-[10px] font-semibold uppercase tracking-[0.25em] text-white/40">
             {client.name}
           </span>
         )}
-        <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#1a1a1a]">
-          {client.name}
+        <span className="text-[10px] uppercase tracking-[0.25em] text-white/25">
+          {eventPage.title}
         </span>
       </header>
 
-      {/* Breathing space */}
-      <div className="h-10 sm:h-16 lg:h-24" />
+      {/* Split: form (DOM-first → top on mobile) + editorial title block */}
+      <div className="grid lg:grid-cols-[400px_1fr]">
 
-      {/* Two-column header section */}
-      <div className="mx-auto max-w-[1200px] px-6 sm:px-10">
-        <div className="grid gap-8 sm:grid-cols-[200px_1fr] lg:grid-cols-[260px_1fr]">
-
-          {/* Left: label column */}
-          <div className="pt-1">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#aaa]">
-              {eventPage.title}
-            </p>
-            {products.length > 0 ? (
-              <p className="mt-1 text-[10px] uppercase tracking-[0.15em] text-[#ccc]">
-                ({products.length})
-              </p>
-            ) : null}
-            {eventPage.location || eventPage.eventDate ? (
-              <div className="mt-5 space-y-1.5">
-                {eventPage.location ? (
-                  <p className="text-[12px] text-[#aaa]">{eventPage.location}</p>
-                ) : null}
-                {eventPage.eventDate ? (
-                  <p className="text-[12px] text-[#aaa]">{eventPage.eventDate}</p>
-                ) : null}
-              </div>
-            ) : null}
-          </div>
-
-          {/* Right: intro text + form card */}
-          <div className="grid gap-8 lg:grid-cols-[1fr_360px]">
-            <div className="self-start">
-              {eventPage.subtitle ? (
-                <h2 className="text-2xl font-light leading-snug text-[#1a1a1a] sm:text-[1.9rem]">
-                  {eventPage.subtitle}
-                </h2>
-              ) : null}
-              {eventPage.intro ? (
-                <p className="mt-4 max-w-lg text-[13px] leading-6 text-[#888]">
-                  {eventPage.intro}
-                </p>
-              ) : null}
-            </div>
-            <div className="rounded-sm border border-[#e0d9ce] bg-white p-5 sm:p-6">
-              <LeadCaptureForm {...formConfig} />
-            </div>
-          </div>
+        {/* Form — white card, left on desktop, top on mobile */}
+        <div className="border-b border-white/[0.07] bg-white px-8 py-10 text-[#111] lg:border-b-0 lg:border-r lg:border-r-white/[0.07]">
+          <LeadCaptureForm {...formConfig} />
         </div>
 
-        {/* Product grid */}
-        {products.length > 0 ? (
-          <div className="mt-16 sm:mt-20">
-            <div className="grid grid-cols-2 gap-x-5 gap-y-10 sm:grid-cols-3 lg:grid-cols-4">
-              {products.map((product) => (
-                <div key={product.id}>
-                  <div className="aspect-3/4 overflow-hidden bg-[#ede8df]">
-                    {product.imageUrls[0] ? (
-                      <img
-                        src={product.imageUrls[0]}
-                        alt={product.name}
-                        className="h-full w-full object-cover"
-                        loading="lazy"
-                      />
-                    ) : null}
-                  </div>
-                  <div className="mt-3 flex items-start justify-between gap-2">
-                    <div>
-                      <p className="text-[13px] font-medium text-[#1a1a1a]">{product.name}</p>
-                      {product.description ? (
-                        <p className="mt-0.5 line-clamp-1 text-[11px] text-[#bbb]">
-                          {product.description}
-                        </p>
-                      ) : null}
-                    </div>
-                    {product.price ? (
-                      <p className="shrink-0 text-[13px] text-[#999]">{product.price}</p>
-                    ) : null}
-                  </div>
-                </div>
-              ))}
+        {/* Title block — right on desktop */}
+        <div className="flex flex-col justify-end border-b border-white/[0.07] px-8 py-12 sm:px-12 lg:min-h-[380px] lg:px-14">
+          {eventPage.subtitle ? (
+            <h2 className="text-4xl font-light leading-tight tracking-tight text-white sm:text-5xl xl:text-[3.5rem]">
+              {eventPage.subtitle}
+            </h2>
+          ) : null}
+          {eventPage.intro ? (
+            <p className="mt-5 max-w-lg text-sm leading-7 text-white/45">
+              {eventPage.intro}
+            </p>
+          ) : null}
+          {eventPage.location || eventPage.eventDate ? (
+            <div className="mt-8 flex flex-wrap gap-6 text-[11px] uppercase tracking-[0.18em] text-white/30">
+              {eventPage.location ? <span>{eventPage.location}</span> : null}
+              {eventPage.eventDate ? <span>{eventPage.eventDate}</span> : null}
             </div>
-          </div>
-        ) : null}
-
-        <div className="h-20 sm:h-32" />
+          ) : null}
+        </div>
       </div>
+
+      {/* Product grid — gap-px on dark bg creates hairline dividers */}
+      {products.length > 0 ? (
+        <div className="grid grid-cols-2 gap-px bg-white/[0.07] sm:grid-cols-3 lg:grid-cols-4">
+          {products.map((product, i) => (
+            <div key={product.id} className="group bg-[#0d0d0d]">
+              <div className="aspect-square overflow-hidden bg-[#181818]">
+                {product.imageUrls[0] ? (
+                  <img
+                    src={product.imageUrls[0]}
+                    alt={product.name}
+                    className="h-full w-full object-cover opacity-70 transition-opacity duration-500 group-hover:opacity-100"
+                    loading="lazy"
+                  />
+                ) : (
+                  <div className="flex h-full items-center justify-center">
+                    <span className="text-[11px] font-medium uppercase tracking-[0.15em] text-white/20">
+                      {String(i + 1).padStart(2, '0')}
+                    </span>
+                  </div>
+                )}
+              </div>
+              <div className="px-4 py-3">
+                <p className="text-[12px] font-medium leading-tight text-white/85">{product.name}</p>
+                {product.price ? (
+                  <p className="mt-0.5 text-[11px] text-white/35">{product.price}</p>
+                ) : null}
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : null}
+
+      <div className="h-16" />
     </div>
   );
 }
