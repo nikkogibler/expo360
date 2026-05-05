@@ -112,13 +112,13 @@ export default function LeadCaptureForm({
             value={form.message}
             onChange={(event) => setForm((current) => ({ ...current, message: event.target.value }))}
             rows={4}
-            className="mt-2 w-full rounded-md border border-[#d1d5db] px-3 py-2 text-sm outline-none transition focus:border-[var(--brand-primary)] focus:ring-2 focus:ring-black/10"
+            className="mt-2 w-full rounded-md border border-[#d1d5db] px-3 py-2 text-sm outline-none transition focus:border-(--brand-primary) focus:ring-2 focus:ring-black/10"
           />
         </label>
         <button
           type="submit"
           disabled={isSubmitting}
-          className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-md bg-[var(--brand-primary)] px-4 text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+          className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-md bg-(--brand-primary) px-4 text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {isSubmitting ? 'Enviando...' : buttonLabel || 'Solicitar información'}
           <Send className="h-4 w-4" />
@@ -149,7 +149,7 @@ function Input({
         value={value}
         onChange={(event) => onChange(event.target.value)}
         required={required}
-        className="mt-2 h-10 w-full rounded-md border border-[#d1d5db] px-3 text-sm outline-none transition focus:border-[var(--brand-primary)] focus:ring-2 focus:ring-black/10"
+        className="mt-2 h-10 w-full rounded-md border border-[#d1d5db] px-3 text-sm outline-none transition focus:border-(--brand-primary) focus:ring-2 focus:ring-black/10"
       />
     </label>
   );

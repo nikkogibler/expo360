@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import type { CSSProperties } from 'react';
 
 import { getCurrentUserContext } from '@/lib/expo360/auth';
@@ -11,6 +12,76 @@ import {
 } from './EventPageTemplates';
 
 export const dynamic = 'force-dynamic';
+
+const SITE_BASE_URL = 'https://expo360.vercel.app';
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const bundle = await getClientBundleBySlug(slug, { includeDraft: true });
+
+  if (!bundle) {
+    return {
+      title: 'Página no disponible',
+      description: 'Esta página del evento no está disponible.',
+      icons: {
+        icon: '/favicon.png',
+      },
+    };
+  }
+
+  const brandName = bundle.client.name.trim();
+  const eventTitle = bundle.eventPage.title.trim();
+  const title =
+    eventTitle && eventTitle.toLowerCase() !== brandName.toLowerCase()
+      ? `${brandName} | ${eventTitle}`
+      : brandName;
+  const description =
+    bundle.eventPage.subtitle?.trim() ||
+    bundle.eventPage.intro?.trim() ||
+    `${brandName} presenta su experiencia de evento en Expo360.`;
+  const iconUrl = bundle.client.logoUrl || '/favicon.png';
+  const previewImageUrl = bundle.eventPage.settings.heroImageUrl || iconUrl;
+  const canonicalPath = `/c/${slug}`;
+
+  return {
+    title,
+    description,
+    metadataBase: new URL(SITE_BASE_URL),
+    alternates: {
+      canonical: canonicalPath,
+    },
+    icons: {
+      icon: [{ url: iconUrl }],
+      shortcut: [{ url: iconUrl }],
+      apple: [{ url: iconUrl }],
+    },
+    openGraph: {
+      title,
+      description,
+      url: canonicalPath,
+      siteName: brandName,
+      type: 'website',
+      images: previewImageUrl
+        ? [
+            {
+              url: previewImageUrl,
+              alt: title,
+            },
+          ]
+        : undefined,
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: previewImageUrl ? [previewImageUrl] : undefined,
+    },
+  };
+}
 
 export default async function PublicEventPage({
   params,
@@ -44,6 +115,8 @@ export default async function PublicEventPage({
     '--brand-accent': theme.accentColor,
     '--brand-bg': theme.backgroundColor,
     '--brand-text': theme.textColor,
+    backgroundColor: 'var(--brand-bg)',
+    color: 'var(--brand-text)',
   } as CSSProperties;
 
   const templateId = bundle.eventPage.settings.layoutTemplate ?? 'coleccion';
@@ -52,7 +125,7 @@ export default async function PublicEventPage({
   return (
     <main
       style={pageStyle}
-      className="min-h-screen bg-(--brand-bg) text-(--brand-text)"
+      className="min-h-screen"
     >
       {canPreview && !isPublic ? (
         <div className="bg-[#111827] px-4 py-2 text-center text-xs font-medium uppercase tracking-[0.16em] text-white">

@@ -23,8 +23,16 @@ export async function uploadClientAsset({
   kind: 'logos' | 'products' | 'event-pages';
   file: File;
 }) {
-  if (!process.env.BLOB_READ_WRITE_TOKEN) {
-    throw new Error('Vercel Blob is not configured. Add BLOB_READ_WRITE_TOKEN.');
+  // Support the named token first; fall back to the generic Vercel convention.
+  // Later we can swap in a per-customer token here without touching call sites.
+  const token =
+    process.env.PRODUCT_IMAGES_READ_WRITE_TOKEN ??
+    process.env.BLOB_READ_WRITE_TOKEN;
+
+  if (!token) {
+    throw new Error(
+      'Vercel Blob is not configured. Add PRODUCT_IMAGES_READ_WRITE_TOKEN to your environment.'
+    );
   }
 
   if (file.size > MAX_UPLOAD_SIZE) {
@@ -37,5 +45,6 @@ export async function uploadClientAsset({
   return put(path, file, {
     access: 'public',
     addRandomSuffix: true,
+    token,
   });
 }

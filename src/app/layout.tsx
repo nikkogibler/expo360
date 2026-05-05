@@ -73,7 +73,6 @@ export default function RootLayout({
   return (
     <html lang="es-MX" className="scroll-smooth">
       <head>
-        <link rel="icon" href="/favicon.png" type="image/png" />
         {/* SEO and GEO optimization meta tags */}
         <meta name="geo.region" content="MX-NLE" />
         <meta name="geo.placename" content="San Pedro Garza García" />

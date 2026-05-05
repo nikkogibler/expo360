@@ -7,24 +7,35 @@ import { motion } from 'framer-motion';
 import { signOut } from 'firebase/auth';
 import {
   CheckCircle2,
+  ChevronDown,
   Columns3,
   Download,
   Eye,
   ImagePlus,
   Lock,
+  Loader2,
   LogOut,
   Mail,
   MessageSquare,
   PackagePlus,
   Phone,
   Save,
+  Sparkles,
   Table2,
   Trash2,
   X,
 } from 'lucide-react';
 
 import { getFirebaseClientAuth } from '@/lib/firebase/client';
-import type { ClientBundle, Lead, LeadStatus, Product } from '@/lib/expo360/types';
+import type {
+  ClientBundle,
+  CreatedHeroAsset,
+  Lead,
+  LeadStatus,
+  Product,
+  TerminalDrawerSectionId,
+  TerminalDrawerSections,
+} from '@/lib/expo360/types';
 
 const container = {
   hidden: {},
@@ -41,6 +52,47 @@ const fadeUp = {
 };
 
 type LayoutTemplate = 'coleccion' | 'galeria' | 'catalogo' | 'terminal';
+
+const defaultTerminalDrawerSections: Record<TerminalDrawerSectionId, boolean> = {
+  about: true,
+  mission: true,
+  products: true,
+  contact: true,
+};
+
+const terminalDrawerSectionOptions: Array<{
+  key: TerminalDrawerSectionId;
+  label: string;
+  description: string;
+}> = [
+  {
+    key: 'about',
+    label: 'Acerca de nosotros',
+    description: 'Contexto general de la marca o de la experiencia.',
+  },
+  {
+    key: 'mission',
+    label: 'Nuestra misión',
+    description: 'Un bloque editorial para propósito, enfoque o visión.',
+  },
+  {
+    key: 'products',
+    label: 'Nuestras líneas',
+    description: 'Una vista rápida de productos o familias destacadas.',
+  },
+  {
+    key: 'contact',
+    label: 'Contacto',
+    description: 'Ubicación, fecha y datos de contacto de la marca.',
+  },
+];
+
+function resolveTerminalDrawerSections(value?: TerminalDrawerSections) {
+  return {
+    ...defaultTerminalDrawerSections,
+    ...(value || {}),
+  };
+}
 
 interface TemplateDef {
   id: LayoutTemplate;
@@ -194,6 +246,21 @@ const emptyProductForm: ProductForm = {
   detailsText: '',
 };
 
+function joinGuideList(values?: string[]) {
+  return Array.isArray(values) ? values.filter(Boolean).join('\n') : '';
+}
+
+function parseGuideList(value: string) {
+  return Array.from(
+    new Set(
+      value
+        .split(/[\n,]/)
+        .map((item) => item.trim())
+        .filter(Boolean)
+    )
+  );
+}
+
 const leadStages: Array<{ value: LeadStatus; label: string }> = [
   { value: 'nuevo', label: 'Nuevo' },
   { value: 'contactado', label: 'Contactado' },
@@ -233,6 +300,11 @@ export default function StudioWorkspace({
     textColor: initialBundle.client.theme.textColor,
     crmProvider: initialBundle.client.integrations.crmProvider || '',
     crmNotes: initialBundle.client.integrations.crmNotes || '',
+    voiceAndTone: initialBundle.client.integrations.brandCopyGuide?.voiceAndTone || '',
+    brandContext: initialBundle.client.integrations.brandCopyGuide?.brandContext || '',
+    mentionableBrandFacts: joinGuideList(initialBundle.client.integrations.brandCopyGuide?.mentionableBrandFacts),
+    forbiddenWords: joinGuideList(initialBundle.client.integrations.brandCopyGuide?.forbiddenWords),
+    clientProfile: initialBundle.client.integrations.brandCopyGuide?.clientProfile || '',
   });
   const [eventForm, setEventForm] = useState({
     title: initialBundle.eventPage.title,
@@ -242,12 +314,26 @@ export default function StudioWorkspace({
     intro: initialBundle.eventPage.intro || '',
     ctaLabel: initialBundle.eventPage.ctaLabel,
     heroImageUrl: initialBundle.eventPage.settings.heroImageUrl || '',
+    featuredProductId: initialBundle.eventPage.settings.featuredProductId || '',
     leadFormTitle: initialBundle.eventPage.settings.leadFormTitle || '',
+    terminalDrawerSections: resolveTerminalDrawerSections(initialBundle.eventPage.settings.terminalDrawerSections),
     layoutTemplate: (initialBundle.eventPage.settings.layoutTemplate ?? 'coleccion') as 'coleccion' | 'galeria' | 'catalogo' | 'terminal',
   });
   const [productForm, setProductForm] = useState<ProductForm>(emptyProductForm);
   const [previewTemplateId, setPreviewTemplateId] = useState<LayoutTemplate | null>(null);
   const [isSavingTemplate, setIsSavingTemplate] = useState(false);
+  const [isGeneratingProductDescription, setIsGeneratingProductDescription] = useState(false);
+  const [productDescriptionAiError, setProductDescriptionAiError] = useState('');
+  const [heroCreatorPrompt, setHeroCreatorPrompt] = useState('');
+  const [heroCreatorReferenceImageUrl, setHeroCreatorReferenceImageUrl] = useState('');
+  const [isGeneratingHeroImage, setIsGeneratingHeroImage] = useState(false);
+  const [heroCreatorError, setHeroCreatorError] = useState('');
+  const [heroCreatorRemainingTries, setHeroCreatorRemainingTries] = useState<number | null>(null);
+  const [generatedHeroPreviewUrl, setGeneratedHeroPreviewUrl] = useState('');
+  const [generatedHeroEnhancedPrompt, setGeneratedHeroEnhancedPrompt] = useState('');
+  const [isHeroPreviewOpen, setIsHeroPreviewOpen] = useState(false);
+  const [isApplyingHeroImage, setIsApplyingHeroImage] = useState(false);
+  const [isLeadWorkspaceOpen, setIsLeadWorkspaceOpen] = useState(false);
 
   const previewHref = `/c/${bundle.eventPage.slug}?preview=1`;
   const publicHref = `/c/${bundle.eventPage.slug}`;
@@ -264,6 +350,11 @@ export default function StudioWorkspace({
     () => bundle.leads.find((lead) => lead.id === selectedLeadId) || null,
     [bundle.leads, selectedLeadId]
   );
+  const createdHeroes = useMemo(
+    () => bundle.client.integrations.createdHeroes || [],
+    [bundle.client.integrations.createdHeroes]
+  );
+  const activeHeroUrl = eventForm.heroImageUrl || bundle.eventPage.settings.heroImageUrl || '';
 
   const fetchLeads = useCallback(async (showLoading: boolean) => {
     if (showLoading) setIsRefreshingLeads(true);
@@ -410,8 +501,16 @@ export default function StudioWorkspace({
           location: brandForm.location,
         },
         integrations: {
+          ...bundle.client.integrations,
           crmProvider: brandForm.crmProvider,
           crmNotes: brandForm.crmNotes,
+          brandCopyGuide: {
+            voiceAndTone: brandForm.voiceAndTone,
+            brandContext: brandForm.brandContext,
+            mentionableBrandFacts: parseGuideList(brandForm.mentionableBrandFacts),
+            forbiddenWords: parseGuideList(brandForm.forbiddenWords),
+            clientProfile: brandForm.clientProfile,
+          },
           stripeAccountMode: bundle.client.integrations.stripeAccountMode || 'not_configured',
         },
       });
@@ -440,7 +539,9 @@ export default function StudioWorkspace({
         settings: {
           ...bundle.eventPage.settings,
           heroImageUrl: eventForm.heroImageUrl,
+          featuredProductId: eventForm.featuredProductId || undefined,
           leadFormTitle: eventForm.leadFormTitle,
+          terminalDrawerSections: eventForm.terminalDrawerSections,
           layoutTemplate: eventForm.layoutTemplate,
         },
       });
@@ -486,6 +587,47 @@ export default function StudioWorkspace({
     }
   }
 
+  async function generateCreateProductDescription() {
+    if (!productForm.imageUrl) {
+      setProductDescriptionAiError('Agrega una imagen del producto para usar IA.');
+      return;
+    }
+
+    setIsGeneratingProductDescription(true);
+    setProductDescriptionAiError('');
+    setError('');
+    setMessage('');
+
+    try {
+      const response = await fetch('/api/studio/products/generate-description', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          imageUrl: productForm.imageUrl,
+          name: productForm.name,
+          sku: productForm.sku,
+          details: productForm.detailsText,
+          existingDescription: productForm.description,
+          clientName: bundle.client.name,
+        }),
+      });
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'No se pudo generar la descripción.');
+      }
+
+      setProductForm((current) => ({ ...current, description: result.description || '' }));
+      setMessage('Descripción generada con IA.');
+    } catch (descriptionError) {
+      const messageText = descriptionError instanceof Error ? descriptionError.message : 'No se pudo generar la descripción.';
+      setProductDescriptionAiError(messageText);
+      setError(messageText);
+    } finally {
+      setIsGeneratingProductDescription(false);
+    }
+  }
+
   async function handleSelectTemplate(templateId: LayoutTemplate) {
     setIsSavingTemplate(true);
     setError('');
@@ -502,7 +644,9 @@ export default function StudioWorkspace({
         settings: {
           ...bundle.eventPage.settings,
           heroImageUrl: eventForm.heroImageUrl,
+          featuredProductId: eventForm.featuredProductId || undefined,
           leadFormTitle: eventForm.leadFormTitle,
+          terminalDrawerSections: eventForm.terminalDrawerSections,
           layoutTemplate: templateId,
         },
       });
@@ -513,6 +657,106 @@ export default function StudioWorkspace({
       setError(saveError instanceof Error ? saveError.message : 'No se pudo guardar la plantilla.');
     } finally {
       setIsSavingTemplate(false);
+    }
+  }
+
+  async function generateHeroImage() {
+    if (!heroCreatorPrompt.trim()) {
+      setHeroCreatorError('Escribe una indicación para Create-A-Hero.');
+      return;
+    }
+
+    setIsGeneratingHeroImage(true);
+    setHeroCreatorError('');
+    setError('');
+    setMessage('');
+
+    try {
+      const response = await fetch('/api/studio/event-page/create-hero', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: heroCreatorPrompt,
+          referenceImageUrl: heroCreatorReferenceImageUrl,
+          title: eventForm.title,
+          subtitle: eventForm.subtitle,
+          intro: eventForm.intro,
+        }),
+      });
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'No se pudo generar el hero con IA.');
+      }
+
+      setGeneratedHeroPreviewUrl(result.imageUrl || '');
+      setGeneratedHeroEnhancedPrompt(result.enhancedPrompt || '');
+      setIsHeroPreviewOpen(true);
+      setHeroCreatorRemainingTries(typeof result.remainingTries === 'number' ? result.remainingTries : null);
+      if (result.createdHero?.url) {
+        const createdHero = result.createdHero as CreatedHeroAsset;
+        setBundle((current) => ({
+          ...current,
+          client: {
+            ...current.client,
+            integrations: {
+              ...current.client.integrations,
+              createdHeroes: [createdHero, ...(current.client.integrations.createdHeroes || []).filter((hero) => hero.url !== createdHero.url)].slice(0, 24),
+            },
+          },
+        }));
+      }
+      setMessage(
+        typeof result.remainingTries === 'number'
+          ? `Hero generado con IA. Revísalo en el modal. Te quedan ${result.remainingTries} de ${result.limit} intentos en el free trial.`
+          : 'Hero generado con IA. Revísalo en el modal.'
+      );
+    } catch (heroError) {
+      const messageText = heroError instanceof Error ? heroError.message : 'No se pudo generar el hero con IA.';
+      setHeroCreatorError(messageText);
+      setError(messageText);
+    } finally {
+      setIsGeneratingHeroImage(false);
+    }
+  }
+
+  function revealLeadWorkspace() {
+    setIsLeadWorkspaceOpen(true);
+  }
+
+  async function applyGeneratedHeroImage(imageUrl = generatedHeroPreviewUrl, closePreview = true) {
+    if (!imageUrl) return;
+
+    setIsApplyingHeroImage(true);
+    setError('');
+    setMessage('');
+
+    try {
+      setEventForm((current) => ({ ...current, heroImageUrl: imageUrl }));
+      await patchJson('/api/studio/event-page', {
+        title: eventForm.title,
+        subtitle: eventForm.subtitle,
+        location: eventForm.location,
+        eventDate: eventForm.eventDate,
+        intro: eventForm.intro,
+        ctaLabel: eventForm.ctaLabel,
+        settings: {
+          ...bundle.eventPage.settings,
+          heroImageUrl: imageUrl,
+          featuredProductId: eventForm.featuredProductId || undefined,
+          leadFormTitle: eventForm.leadFormTitle,
+          terminalDrawerSections: eventForm.terminalDrawerSections,
+          layoutTemplate: eventForm.layoutTemplate,
+        },
+      });
+      if (closePreview) {
+        setIsHeroPreviewOpen(false);
+      }
+      setMessage('Hero aplicado como imagen principal. Ya quedó guardado.');
+    } catch (applyError) {
+      setError(applyError instanceof Error ? applyError.message : 'No se pudo aplicar el hero.');
+    } finally {
+      setIsApplyingHeroImage(false);
     }
   }
 
@@ -538,12 +782,12 @@ export default function StudioWorkspace({
         variants={container}
         initial="hidden"
         animate="visible"
-        className="relative mx-auto flex w-full max-w-7xl flex-col gap-6 px-5 py-6 lg:px-8"
+        className="relative mx-auto flex w-full max-w-7xl flex-col gap-3 px-5 py-6 lg:px-8"
       >
         {/* Header */}
         <motion.header
           variants={fadeUp}
-          className="flex flex-col gap-4 border-b border-white/8 pb-6 lg:flex-row lg:items-end lg:justify-between"
+          className="flex flex-col gap-4 border-b border-white/8 pb-4 lg:flex-row lg:items-end lg:justify-between"
         >
           <div className="flex items-center gap-4">
             <Link href="/studio" className="overflow-hidden rounded-lg">
@@ -586,10 +830,16 @@ export default function StudioWorkspace({
           </div>
         </motion.header>
 
-        <motion.section variants={fadeUp} className="grid gap-3 md:grid-cols-4">
+        <motion.section variants={fadeUp} className="grid gap-3 md:grid-cols-5">
           <StatusTile label="Marca" complete={Boolean(bundle.client.logoUrl || brandForm.logoUrl)} />
           <StatusTile label="Productos" complete={bundle.products.length > 0} />
           <StatusTile label="Vista previa" complete />
+          <StatusTile
+            label="Prospectos"
+            complete
+            summary={bundle.leads.length > 0 ? `${bundle.leads.length} capturados` : 'Sin capturas'}
+            onClick={revealLeadWorkspace}
+          />
           <StatusTile label="Publicada" complete={isPublished} locked={!isPublished} />
         </motion.section>
 
@@ -655,29 +905,6 @@ export default function StudioWorkspace({
           </div>
         </motion.section>
 
-        <motion.div variants={fadeUp}>
-          <LeadWorkspace
-            leads={bundle.leads}
-            productsById={productNamesById}
-            selectedLead={selectedLead}
-            leadView={leadView}
-            isRefreshing={isRefreshingLeads}
-            updatingLeadId={updatingLeadId}
-            draggedLeadId={draggedLeadId}
-            onRefresh={refreshLeads}
-            onViewChange={setLeadView}
-            onSelectLead={(lead) => setSelectedLeadId(lead.id)}
-            onCloseLead={() => setSelectedLeadId(null)}
-            onUpdateLead={updateLead}
-            onDragLead={setDraggedLeadId}
-            onDropLead={(status) => {
-              if (!draggedLeadId) return;
-              void updateLead(draggedLeadId, { status });
-              setDraggedLeadId(null);
-            }}
-          />
-        </motion.div>
-
         <motion.section variants={fadeUp} className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
           <div className="space-y-6">
             <Panel title="Identidad de marca">
@@ -695,6 +922,7 @@ export default function StudioWorkspace({
                 <div className="md:col-span-2">
                   <label className="block">
                     <span className="text-sm font-medium text-[#374151]">Logo</span>
+                    <p className="mt-0.5 text-[11px] text-white/35">PNG o SVG con fondo transparente · ancho ideal 400 px · máx 2 MB</p>
                     <div className="mt-2 flex flex-col gap-3 sm:flex-row">
                       <input
                         value={brandForm.logoUrl}
@@ -726,6 +954,61 @@ export default function StudioWorkspace({
                 </div>
                 <TextArea label="Notas de CRM" value={brandForm.crmNotes} onChange={(value) => setBrandForm((current) => ({ ...current, crmNotes: value }))} />
                 <Input label="CRM previsto" value={brandForm.crmProvider} onChange={(value) => setBrandForm((current) => ({ ...current, crmProvider: value }))} />
+                <div className="md:col-span-2 rounded-2xl border border-white/8 bg-white/3 p-4">
+                  <div>
+                    <p className="text-sm font-semibold text-white/80">Guía de Marca</p>
+                    <p className="mt-1 text-xs leading-5 text-white/40">La IA usará esta guía para ajustar tono, beneficios, contexto y límites de lenguaje. No se copiará literalmente salvo que sea natural para el producto.</p>
+                  </div>
+                  <div className="mt-4 grid gap-4 md:grid-cols-2">
+                    <div className="md:col-span-2">
+                      <TextArea
+                        label="Tono y estilo"
+                        value={brandForm.voiceAndTone}
+                        onChange={(value) => setBrandForm((current) => ({ ...current, voiceAndTone: value }))}
+                        placeholder="Nuestra comunicación es clara, directa y elegante. Vamos al punto con calidez, sensibilidad y confianza. Evitamos exagerar, sonar rebuscados o demasiado promocionales."
+                        helperText="Describe cómo debe sonar la marca, no lo que vende." 
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <TextArea
+                        label="Contexto y valores de marca"
+                        value={brandForm.brandContext}
+                        onChange={(value) => setBrandForm((current) => ({ ...current, brandContext: value }))}
+                        placeholder="Somos una marca mexicana con sensibilidad por la manufactura local, la funcionalidad real y la durabilidad. Preferimos hablar de utilidad, diseño y experiencia antes que de promesas grandilocuentes."
+                        helperText="Este contexto guía el fondo de la redacción, aunque no siempre se mencione explícitamente."
+                      />
+                    </div>
+                    <div>
+                      <TextArea
+                        label="Frases o atributos que sí se pueden mencionar"
+                        value={brandForm.mentionableBrandFacts}
+                        onChange={(value) => setBrandForm((current) => ({ ...current, mentionableBrandFacts: value }))}
+                        placeholder={"Hecho en México\nMateriales reciclados\nProducción local\nDiseño funcional\nDurabilidad"}
+                        helperText="Una frase por línea. La IA los usa solo cuando sean relevantes para el producto."
+                        rows={5}
+                      />
+                    </div>
+                    <div>
+                      <TextArea
+                        label="Palabras prohibidas"
+                        value={brandForm.forbiddenWords}
+                        onChange={(value) => setBrandForm((current) => ({ ...current, forbiddenWords: value }))}
+                        placeholder={"barato\nlujoso\npremium\nexclusivo"}
+                        helperText="Una palabra o frase por línea. También puedes separarlas con comas."
+                        rows={5}
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <TextArea
+                        label="Perfil de Cliente"
+                        value={brandForm.clientProfile}
+                        onChange={(value) => setBrandForm((current) => ({ ...current, clientProfile: value }))}
+                        placeholder="Hombres entre 30-50 años, clase media-alta a clase alta, mexicanos que han vivido en el extranjero, viajan y compran marcas de lujo. Asistente a: CES 2026 Las Vegas."
+                        helperText="Este perfil le dice a la IA qué aspiraciones, beneficios y sensibilidad priorizar. No debería pegarlo literal en la descripción salvo que sea natural."
+                      />
+                    </div>
+                  </div>
+                </div>
                 <div className="md:col-span-2">
                   <SaveButton saving={isSavingBrand} label="Guardar identidad" />
                 </div>
@@ -740,12 +1023,66 @@ export default function StudioWorkspace({
                 <Input label="Fecha del evento" value={eventForm.eventDate} onChange={(value) => setEventForm((current) => ({ ...current, eventDate: value }))} />
                 <Input label="Texto del botón" value={eventForm.ctaLabel} onChange={(value) => setEventForm((current) => ({ ...current, ctaLabel: value }))} />
                 <Input label="Título del formulario" value={eventForm.leadFormTitle} onChange={(value) => setEventForm((current) => ({ ...current, leadFormTitle: value }))} />
+                {eventForm.layoutTemplate === 'terminal' ? (
+                  <div className="md:col-span-2 rounded-2xl border border-white/8 bg-white/3 p-4">
+                    <div>
+                      <p className="text-sm font-semibold text-white/80">Drawer lateral para Terminal</p>
+                      <p className="mt-1 text-xs leading-5 text-white/40">
+                        Activa o desactiva las secciones que aparecerán dentro del drawer lateral. Más adelante podremos editar el contenido de cada sección desde Studio.
+                      </p>
+                    </div>
+                    <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                      {terminalDrawerSectionOptions.map((option) => (
+                        <label
+                          key={option.key}
+                          className="flex items-start gap-3 rounded-xl border border-white/8 bg-white/4 px-3 py-3"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={Boolean(eventForm.terminalDrawerSections[option.key])}
+                            onChange={(event) =>
+                              setEventForm((current) => ({
+                                ...current,
+                                terminalDrawerSections: {
+                                  ...current.terminalDrawerSections,
+                                  [option.key]: event.target.checked,
+                                },
+                              }))
+                            }
+                            className="mt-0.5 h-4 w-4 rounded border-white/15 bg-white/5"
+                          />
+                          <span>
+                            <span className="block text-sm font-medium text-white/78">{option.label}</span>
+                            <span className="mt-1 block text-xs leading-5 text-white/38">{option.description}</span>
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+                <label className="block md:col-span-2">
+                  <span className="text-sm font-medium text-white/50">Producto héroe para Colección</span>
+                  <p className="mt-1 text-[11px] leading-5 text-white/35">Elige un producto solo si quieres reemplazar la imagen principal del evento dentro del bloque superior de Colección. Si lo dejas vacío, Colección usa la imagen principal del evento.</p>
+                  <select
+                    value={eventForm.featuredProductId}
+                    onChange={(event) => setEventForm((current) => ({ ...current, featuredProductId: event.target.value }))}
+                    className="mt-2 h-10 w-full rounded-xl border border-white/7 bg-white/6 px-3 text-sm text-white outline-none transition focus:border-purple-400/40 focus:ring-2 focus:ring-purple-400/12"
+                  >
+                    <option value="" className="bg-[#141226] text-white">Automático · usar imagen principal del evento</option>
+                    {bundle.products.map((product) => (
+                      <option key={product.id} value={product.id} className="bg-[#141226] text-white">
+                        {product.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
                 <div className="md:col-span-2">
                   <TextArea label="Texto introductorio" value={eventForm.intro} onChange={(value) => setEventForm((current) => ({ ...current, intro: value }))} />
                 </div>
                 <div className="md:col-span-2">
                   <label className="block">
                     <span className="text-sm font-medium text-[#374151]">Imagen principal</span>
+                    <p className="mt-0.5 text-[11px] text-white/35">JPG o WebP · 1920×1080 px mínimo · orientación horizontal · máx 5 MB. En Colección esta imagen se usa como fondo y también como imagen principal por defecto.</p>
                     <div className="mt-2 flex flex-col gap-3 sm:flex-row">
                       <input
                         value={eventForm.heroImageUrl}
@@ -775,37 +1112,145 @@ export default function StudioWorkspace({
                     </div>
                   </label>
                 </div>
-                <div className="md:col-span-2">
-                  <p className="mb-3 text-sm font-medium text-white/70">Plantilla de diseño</p>
-                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                    {TEMPLATE_DEFS.map((tpl) => (
-                      <button
-                        key={tpl.id}
-                        type="button"
-                        onClick={() => setEventForm((current) => ({ ...current, layoutTemplate: tpl.id }))}
-                        className={`group relative rounded-2xl border p-2 text-left transition ${
-                          eventForm.layoutTemplate === tpl.id
-                            ? 'border-purple-400/60 bg-purple-500/10 shadow-[0_0_0_1px_rgba(167,139,250,0.3)]'
-                            : 'border-white/8 bg-white/3 hover:border-white/15 hover:bg-white/5'
-                        }`}
-                      >
-                        <div className="overflow-hidden rounded-lg">{tpl.thumb}</div>
-                        <p className={`mt-2 text-xs font-semibold ${
-                          eventForm.layoutTemplate === tpl.id ? 'text-purple-300' : 'text-white/70'
-                        }`}>{tpl.name}</p>
-                        <p className="mt-0.5 text-[10px] leading-snug text-white/35">{tpl.description}</p>
-                        {eventForm.layoutTemplate === tpl.id && (
-                          <span className="absolute right-2 top-2 flex h-4 w-4 items-center justify-center rounded-full bg-purple-500 text-[9px] text-white">✓</span>
-                        )}
-                      </button>
-                    ))}
+                <div className="md:col-span-2 rounded-2xl border border-white/8 bg-white/4 p-4">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-white/80">Create-A-Hero</p>
+                      <p className="mt-1 text-[11px] leading-5 text-white/35">Genera una nueva imagen principal con IA usando tu logo como referencia de marca, un prompt creativo y una imagen opcional de contexto adicional. Antes de mandar el prompt al modelo de imagen, lo mejoramos automáticamente.</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => void generateHeroImage()}
+                      disabled={isGeneratingHeroImage || !heroCreatorPrompt.trim()}
+                      className="inline-flex h-9 items-center gap-2 rounded-xl border border-white/8 bg-white/4 px-3 text-xs font-semibold text-white/70 transition hover:border-purple-400/30 hover:text-purple-200 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-45"
+                    >
+                      <Sparkles className="h-3.5 w-3.5" strokeWidth={1.6} />
+                      {isGeneratingHeroImage ? 'Generando...' : 'Create-A-Hero'}
+                    </button>
                   </div>
+                  <div className="mt-4 grid gap-4 md:grid-cols-2">
+                    <label className="block md:col-span-2">
+                      <span className="text-sm font-medium text-white/50">Prompt creativo</span>
+                      <textarea
+                        value={heroCreatorPrompt}
+                        onChange={(event) => {
+                          setHeroCreatorError('');
+                          setHeroCreatorPrompt(event.target.value);
+                        }}
+                        rows={3}
+                        placeholder="Ej. Crea una escena editorial premium con materiales oscuros, iluminación lateral dramática, atmósfera de lujo silencioso y espacio limpio para superponer el título de la colección."
+                        className="mt-2 w-full resize-y rounded-xl border border-white/7 bg-white/6 px-3 py-2 text-sm text-white outline-none placeholder:text-white/25 transition focus:border-purple-400/40 focus:ring-2 focus:ring-purple-400/12"
+                      />
+                    </label>
+                    <label className="block md:col-span-2">
+                      <span className="text-sm font-medium text-white/50">Imagen extra de contexto opcional</span>
+                      <p className="mt-1 text-[11px] leading-5 text-white/35">Úsala para enseñar atmósfera, materiales, producto o encuadre. El logo siempre se manda aparte como referencia de marca.</p>
+                      <div className="mt-2 flex flex-col gap-3 sm:flex-row">
+                        <input
+                          value={heroCreatorReferenceImageUrl}
+                          onChange={(event) => {
+                            setHeroCreatorError('');
+                            setHeroCreatorReferenceImageUrl(event.target.value);
+                          }}
+                          placeholder="Sube o pega la URL de una imagen de contexto"
+                          className="h-10 min-w-0 flex-1 rounded-xl border border-white/7 bg-white/6 px-3 text-sm text-white outline-none placeholder:text-white/25 transition focus:border-purple-400/40 focus:ring-2 focus:ring-purple-400/12"
+                        />
+                        <label className="inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-md border border-[#d8d1c2] px-3 text-sm font-medium transition hover:border-[#155e75]">
+                          <ImagePlus className="h-4 w-4" />
+                          {uploading === 'event-pages' ? 'Subiendo...' : 'Subir contexto'}
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="sr-only"
+                            onChange={async (event) => {
+                              const file = event.target.files?.[0];
+                              if (!file) return;
+                              try {
+                                const url = await uploadAsset(file, 'event-pages');
+                                setHeroCreatorReferenceImageUrl(url);
+                                setHeroCreatorError('');
+                              } catch (uploadError) {
+                                setError(uploadError instanceof Error ? uploadError.message : 'No se pudo subir el archivo.');
+                              }
+                            }}
+                          />
+                        </label>
+                      </div>
+                    </label>
+                  </div>
+                  {heroCreatorError ? (
+                    <p className="mt-3 text-xs text-red-300">{heroCreatorError}</p>
+                  ) : heroCreatorRemainingTries !== null ? (
+                    <p className="mt-3 text-xs text-amber-200/90">Free trial: te quedan {heroCreatorRemainingTries} de 5 intentos de Create-A-Hero.</p>
+                  ) : (
+                    <p className="mt-3 text-xs text-white/30">En free trial, Create-A-Hero está limitado a 5 intentos porque la generación de imágenes tiene costo alto.</p>
+                  )}
                 </div>
                 <div className="md:col-span-2">
                   <SaveButton saving={isSavingEvent} label="Guardar página del evento" />
                 </div>
               </form>
             </Panel>
+
+            {isHeroPreviewOpen ? (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm" onClick={() => setIsHeroPreviewOpen(false)}>
+                <div
+                  className="w-full max-w-5xl overflow-hidden rounded-3xl border border-white/10 bg-[#0f1022]/96 shadow-2xl"
+                  onClick={(event) => event.stopPropagation()}
+                >
+                  <div className="flex items-start justify-between gap-4 border-b border-white/8 px-5 py-4 sm:px-6">
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-purple-300/70">Create-A-Hero</p>
+                      <h3 className="mt-1 text-xl font-semibold text-white">Vista previa del hero generado</h3>
+                      <p className="mt-1 text-sm text-white/45">Revísalo aquí mismo antes de usarlo como imagen principal.</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setIsHeroPreviewOpen(false)}
+                      className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/8 bg-white/4 text-white/60 transition hover:border-red-400/30 hover:text-red-300 active:scale-[0.98]"
+                      aria-label="Cerrar vista previa del hero"
+                    >
+                      <X className="h-4 w-4" strokeWidth={1.6} />
+                    </button>
+                  </div>
+
+                  <div className="grid gap-0 lg:grid-cols-[1.5fr_1fr]">
+                    <div className="bg-black/20 p-4 sm:p-6">
+                      {generatedHeroPreviewUrl ? (
+                        <img
+                          src={generatedHeroPreviewUrl}
+                          alt="Hero generado con IA"
+                          className="aspect-video w-full rounded-2xl object-cover shadow-[0_20px_60px_rgba(0,0,0,0.35)]"
+                        />
+                      ) : null}
+                    </div>
+                    <div className="border-t border-white/8 p-5 lg:border-l lg:border-t-0 sm:p-6">
+                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/40">Prompt mejorado</p>
+                      <div className="mt-3 max-h-[40vh] overflow-y-auto rounded-2xl border border-white/8 bg-white/4 p-4 text-sm leading-6 text-white/78">
+                        {generatedHeroEnhancedPrompt || heroCreatorPrompt || 'Sin prompt disponible.'}
+                      </div>
+                      <div className="mt-5 flex flex-col gap-3">
+                        <button
+                          type="button"
+                          onClick={() => void applyGeneratedHeroImage()}
+                          disabled={isApplyingHeroImage || !generatedHeroPreviewUrl}
+                          className="inline-flex h-11 items-center justify-center rounded-xl bg-purple-600 px-4 text-sm font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.14),0_4px_24px_-4px_rgba(124,58,237,0.5)] transition hover:bg-purple-500 active:scale-[0.98]"
+                        >
+                          {isApplyingHeroImage ? 'Aplicando...' : 'Usar como imagen principal'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setIsHeroPreviewOpen(false)}
+                          className="inline-flex h-11 items-center justify-center rounded-xl border border-white/8 bg-white/4 px-4 text-sm font-semibold text-white/70 transition hover:border-white/15 hover:text-white active:scale-[0.98]"
+                        >
+                          Cerrar
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : null}
 
             <Panel title="Productos">
               <form onSubmit={createProduct} className="grid gap-4 md:grid-cols-2">
@@ -815,6 +1260,7 @@ export default function StudioWorkspace({
                 <div>
                   <label className="block">
                     <span className="text-sm font-medium text-[#374151]">Imagen del producto</span>
+                    <p className="mt-0.5 text-[11px] text-white/35">JPG o PNG · cuadrada 800×800 px · fondo blanco o neutro · máx 3 MB</p>
                     <div className="mt-2 flex gap-2">
                       <input
                         value={productForm.imageUrl}
@@ -822,8 +1268,16 @@ export default function StudioWorkspace({
                         placeholder="Sube o pega la URL"
                         className="h-10 min-w-0 flex-1 rounded-xl border border-white/7 bg-white/6 px-3 text-sm text-white outline-none placeholder:text-white/25 transition focus:border-purple-400/40 focus:ring-2 focus:ring-purple-400/12"
                       />
-                      <label className="inline-flex h-10 cursor-pointer items-center justify-center rounded-md border border-[#d8d1c2] px-3 transition hover:border-[#155e75]" aria-label="Upload product image">
-                        <ImagePlus className="h-4 w-4" />
+                      <label
+                        className="inline-flex h-10 min-w-[126px] cursor-pointer items-center justify-center gap-2 rounded-md border border-[#d8d1c2] px-3 text-sm font-medium transition hover:border-[#155e75]"
+                        aria-label="Upload product image"
+                      >
+                        {uploading === 'products' ? (
+                          <Loader2 className="h-4 w-4 animate-spin" strokeWidth={1.8} />
+                        ) : (
+                          <ImagePlus className="h-4 w-4" />
+                        )}
+                        {uploading === 'products' ? 'Subiendo...' : 'Subir imagen'}
                         <input
                           type="file"
                           accept="image/*"
@@ -841,9 +1295,42 @@ export default function StudioWorkspace({
                         />
                       </label>
                     </div>
+                    {uploading === 'products' ? (
+                      <p className="mt-2 text-xs text-amber-200/90">Subiendo imagen del producto. Espera un momento antes de continuar.</p>
+                    ) : null}
                   </label>
                 </div>
-                <TextArea label="Descripción" value={productForm.description} onChange={(value) => setProductForm((current) => ({ ...current, description: value }))} />
+                <div className="md:col-span-2">
+                  <label className="block">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-sm font-medium text-white/50">Descripción</span>
+                      <button
+                        type="button"
+                        onClick={() => void generateCreateProductDescription()}
+                        disabled={isGeneratingProductDescription || !productForm.imageUrl}
+                        className="inline-flex h-8 items-center gap-2 rounded-xl border border-white/8 bg-white/4 px-3 text-xs font-semibold text-white/70 transition hover:border-purple-400/30 hover:text-purple-200 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-45"
+                      >
+                        <Sparkles className="h-3.5 w-3.5" strokeWidth={1.6} />
+                        {isGeneratingProductDescription ? 'Generando...' : 'Generar con IA'}
+                      </button>
+                    </div>
+                    <p className="mt-1 text-[11px] text-white/35">Usa la imagen y los detalles del producto para redactar una descripción en español de México.</p>
+                    <textarea
+                      value={productForm.description}
+                      onChange={(event) => {
+                        setProductDescriptionAiError('');
+                        setProductForm((current) => ({ ...current, description: event.target.value }));
+                      }}
+                      rows={4}
+                      className="mt-2 w-full resize-y rounded-xl border border-white/7 bg-white/6 px-3 py-2 text-sm text-white outline-none placeholder:text-white/25 transition focus:border-purple-400/40 focus:ring-2 focus:ring-purple-400/12"
+                    />
+                    {productDescriptionAiError ? (
+                      <p className="mt-1 text-xs text-red-300">{productDescriptionAiError}</p>
+                    ) : !productForm.imageUrl ? (
+                      <p className="mt-1 text-xs text-white/30">Sube o pega una imagen para habilitar la generación.</p>
+                    ) : null}
+                  </label>
+                </div>
                 <TextArea label="Detalles" value={productForm.detailsText} onChange={(value) => setProductForm((current) => ({ ...current, detailsText: value }))} placeholder="Material: Encino&#10;Tiempo de entrega: 4 semanas" />
                 <div className="md:col-span-2">
                   <button
@@ -885,6 +1372,11 @@ export default function StudioWorkspace({
                     : 'La página está bloqueada hasta que Interzekt la publique desde el panel maestro.'}
                 </div>
                 <div className="space-y-2 text-sm">
+                  {activeHeroUrl ? (
+                    <div className="overflow-hidden rounded-xl border border-white/8 bg-white/4">
+                      <img src={activeHeroUrl} alt="Hero activo" className="aspect-video w-full object-cover" />
+                    </div>
+                  ) : null}
                   <Link href={previewHref} target="_blank" className="flex items-center justify-between rounded-xl border border-white/8 bg-white/4 px-3 py-2 font-medium backdrop-blur-sm transition hover:border-purple-400/30 hover:text-purple-200">
                     Vista previa autenticada
                     <Eye className="h-4 w-4" strokeWidth={1.5} />
@@ -895,6 +1387,49 @@ export default function StudioWorkspace({
                   </Link>
                 </div>
               </div>
+            </Panel>
+
+            <Panel title="Heroes creados" defaultOpen={createdHeroes.length > 0}>
+              {createdHeroes.length === 0 ? (
+                <p className="text-sm leading-6 text-white/40">
+                  Los heroes que generes con IA aparecerán aquí para que puedas reutilizarlos y cambiar entre opciones sin volver a generarlos.
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  <p className="text-xs leading-5 text-white/40">
+                    Haz clic en cualquier miniatura para convertirla en la imagen principal publicada.
+                  </p>
+                  <div className="grid grid-cols-2 gap-3">
+                    {createdHeroes.map((hero) => {
+                      const isActive = hero.url === activeHeroUrl;
+
+                      return (
+                        <button
+                          key={hero.id}
+                          type="button"
+                          onClick={() => void applyGeneratedHeroImage(hero.url, false)}
+                          disabled={isApplyingHeroImage}
+                          className={`overflow-hidden rounded-2xl border text-left transition ${
+                            isActive
+                              ? 'border-purple-400/60 bg-purple-500/10 shadow-[0_0_0_1px_rgba(167,139,250,0.24)]'
+                              : 'border-white/8 bg-white/4 hover:border-purple-400/30 hover:bg-white/6'
+                          } ${isApplyingHeroImage ? 'cursor-not-allowed opacity-70' : ''}`}
+                        >
+                          <img src={hero.url} alt="Hero creado" className="aspect-video w-full object-cover" />
+                          <div className="space-y-1 px-3 py-2">
+                            <p className="text-xs font-semibold text-white/70">
+                              {isActive ? 'Hero activo' : 'Usar este hero'}
+                            </p>
+                            <p className="line-clamp-2 text-[11px] leading-4 text-white/40">
+                              {hero.prompt || hero.enhancedPrompt || 'Hero generado con IA'}
+                            </p>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </Panel>
           </aside>
         </motion.section>
@@ -908,6 +1443,31 @@ export default function StudioWorkspace({
           onSelect={() => void handleSelectTemplate(previewTemplateId)}
           onClose={() => setPreviewTemplateId(null)}
         />
+      ) : null}
+
+      {isLeadWorkspaceOpen ? (
+        <LeadWorkspaceModal onClose={() => setIsLeadWorkspaceOpen(false)}>
+          <LeadWorkspace
+            leads={bundle.leads}
+            productsById={productNamesById}
+            selectedLead={selectedLead}
+            leadView={leadView}
+            isRefreshing={isRefreshingLeads}
+            updatingLeadId={updatingLeadId}
+            draggedLeadId={draggedLeadId}
+            onRefresh={refreshLeads}
+            onViewChange={setLeadView}
+            onSelectLead={(lead) => setSelectedLeadId(lead.id)}
+            onCloseLead={() => setSelectedLeadId(null)}
+            onUpdateLead={updateLead}
+            onDragLead={setDraggedLeadId}
+            onDropLead={(status) => {
+              if (!draggedLeadId) return;
+              void updateLead(draggedLeadId, { status });
+              setDraggedLeadId(null);
+            }}
+          />
+        </LeadWorkspaceModal>
       ) : null}
     </div>
   );
@@ -1061,6 +1621,39 @@ function LeadWorkspace({
         />
       ) : null}
     </section>
+  );
+}
+
+function LeadWorkspaceModal({
+  children,
+  onClose,
+}: {
+  children: React.ReactNode;
+  onClose: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-40 bg-black/50 p-4 backdrop-blur-sm sm:p-6" onClick={onClose}>
+      <div
+        className="mx-auto flex h-full w-full max-w-7xl flex-col overflow-hidden rounded-3xl border border-white/10 bg-[#08071a]/96 shadow-2xl backdrop-blur-2xl"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className="flex items-center justify-between gap-4 border-b border-white/8 px-5 py-4">
+          <div>
+            <p className="text-sm font-semibold uppercase tracking-[0.16em] text-purple-300/70">Prospectos</p>
+            <h2 className="mt-1 text-xl font-semibold text-white">Seguimiento de prospectos</h2>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/8 bg-white/4 text-white/60 transition hover:border-red-400/30 hover:text-red-300 active:scale-[0.98]"
+            aria-label="Cerrar prospectos"
+          >
+            <X className="h-4 w-4" strokeWidth={1.6} />
+          </button>
+        </div>
+        <div className="min-h-0 flex-1 overflow-y-auto p-5">{children}</div>
+      </div>
+    </div>
   );
 }
 
@@ -1410,6 +2003,8 @@ function ProductEditor({
     isActive: product.isActive,
   });
   const [isSaving, setIsSaving] = useState(false);
+  const [isGeneratingDescription, setIsGeneratingDescription] = useState(false);
+  const [descriptionAiError, setDescriptionAiError] = useState('');
 
   async function saveProduct() {
     setIsSaving(true);
@@ -1454,6 +2049,48 @@ function ProductEditor({
     }
   }
 
+  async function generateDescription() {
+    if (!form.imageUrl) {
+      setDescriptionAiError('Agrega una imagen del producto para usar IA.');
+      return;
+    }
+
+    setIsGeneratingDescription(true);
+    setDescriptionAiError('');
+    onError('');
+
+    try {
+      const detailsText = Object.entries(product.details || {})
+        .map(([key, value]) => `${key}: ${value}`)
+        .join('\n');
+
+      const response = await fetch('/api/studio/products/generate-description', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          imageUrl: form.imageUrl,
+          name: form.name,
+          sku: form.sku,
+          details: detailsText,
+          existingDescription: form.description,
+        }),
+      });
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'No se pudo generar la descripción.');
+      }
+
+      setForm((current) => ({ ...current, description: result.description || '' }));
+    } catch (descriptionError) {
+      const messageText = descriptionError instanceof Error ? descriptionError.message : 'No se pudo generar la descripción.';
+      setDescriptionAiError(messageText);
+      onError(messageText);
+    } finally {
+      setIsGeneratingDescription(false);
+    }
+  }
+
   return (
     <div className="grid gap-3 rounded-xl border border-white/8 bg-white/4 p-3 md:grid-cols-[96px_1fr]">
       <div className="aspect-square overflow-hidden rounded-xl border border-white/8 bg-white/4">
@@ -1467,7 +2104,35 @@ function ProductEditor({
         <Input label="Precio" value={form.price} onChange={(value) => setForm((current) => ({ ...current, price: value }))} />
         <Input label="URL de imagen" value={form.imageUrl} onChange={(value) => setForm((current) => ({ ...current, imageUrl: value }))} />
         <div className="md:col-span-2">
-          <TextArea label="Descripción" value={form.description} onChange={(value) => setForm((current) => ({ ...current, description: value }))} />
+          <label className="block">
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-sm font-medium text-white/50">Descripción</span>
+              <button
+                type="button"
+                onClick={() => void generateDescription()}
+                disabled={isGeneratingDescription || !form.imageUrl}
+                className="inline-flex h-8 items-center gap-2 rounded-xl border border-white/8 bg-white/4 px-3 text-xs font-semibold text-white/70 transition hover:border-purple-400/30 hover:text-purple-200 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-45"
+              >
+                <Sparkles className="h-3.5 w-3.5" strokeWidth={1.6} />
+                {isGeneratingDescription ? 'Generando...' : 'Generar con IA'}
+              </button>
+            </div>
+            <p className="mt-1 text-[11px] text-white/35">La IA toma la imagen actual y los datos confirmados del producto. No guarda cambios hasta que presiones Guardar.</p>
+            <textarea
+              value={form.description}
+              onChange={(event) => {
+                setDescriptionAiError('');
+                setForm((current) => ({ ...current, description: event.target.value }));
+              }}
+              rows={4}
+              className="mt-2 w-full resize-y rounded-xl border border-white/7 bg-white/6 px-3 py-2 text-sm text-white outline-none placeholder:text-white/25 transition focus:border-purple-400/40 focus:ring-2 focus:ring-purple-400/12"
+            />
+            {descriptionAiError ? (
+              <p className="mt-1 text-xs text-red-300">{descriptionAiError}</p>
+            ) : !form.imageUrl ? (
+              <p className="mt-1 text-xs text-white/30">Sube o pega una imagen para habilitar la generación.</p>
+            ) : null}
+          </label>
         </div>
         <div className="flex flex-wrap gap-2 md:col-span-2">
           <button
@@ -1506,13 +2171,17 @@ function StatusTile({
   label,
   complete,
   locked,
+  summary,
+  onClick,
 }: {
   label: string;
   complete: boolean;
   locked?: boolean;
+  summary?: string;
+  onClick?: () => void;
 }) {
-  return (
-    <div className="overflow-hidden rounded-2xl border border-white/8 bg-white/4 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.07)] backdrop-blur-2xl">
+  const content = (
+    <>
       <div className="flex items-center justify-between gap-3">
         <p className="text-sm text-white/40">{label}</p>
         {locked ? (
@@ -1523,16 +2192,62 @@ function StatusTile({
           <span className="h-2.5 w-2.5 rounded-full bg-white/15" />
         )}
       </div>
-      <p className="mt-2 text-sm font-semibold">{complete ? 'Listo' : 'Pendiente'}</p>
+      <p className="mt-2 text-sm font-semibold">{summary ?? (complete ? 'Listo' : 'Pendiente')}</p>
+    </>
+  );
+
+  if (onClick) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        className="overflow-hidden rounded-2xl border border-white/8 bg-white/4 p-4 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.07)] backdrop-blur-2xl transition hover:border-purple-400/30 hover:text-purple-200 active:scale-[0.98]"
+      >
+        {content}
+      </button>
+    );
+  }
+
+  return (
+    <div className="overflow-hidden rounded-2xl border border-white/8 bg-white/4 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.07)] backdrop-blur-2xl">
+      {content}
     </div>
   );
 }
 
-function Panel({ title, children }: { title: string; children: React.ReactNode }) {
+function Panel({
+  title,
+  children,
+  defaultOpen = false,
+}: {
+  title: string;
+  children: React.ReactNode;
+  defaultOpen?: boolean;
+}) {
+  const [isOpen, setIsOpen] = useState(defaultOpen);
+
   return (
-    <section className="overflow-hidden rounded-2xl border border-white/8 bg-white/4 p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.07)] backdrop-blur-2xl">
-      <h2 className="text-lg font-semibold">{title}</h2>
-      <div className="mt-5">{children}</div>
+    <section
+      className={`overflow-hidden rounded-2xl border border-white/8 bg-white/4 shadow-[inset_0_1px_0_rgba(255,255,255,0.07)] backdrop-blur-2xl ${
+        isOpen ? 'p-5' : 'px-4 py-3'
+      }`}
+    >
+      <button
+        type="button"
+        onClick={() => setIsOpen((current) => !current)}
+        className="flex w-full items-center justify-between gap-3 text-left"
+        aria-expanded={isOpen}
+      >
+        <h2 className={`font-semibold leading-tight ${isOpen ? 'text-lg' : 'text-base'}`}>{title}</h2>
+        <span
+          className={`inline-flex shrink-0 items-center justify-center rounded-xl border border-white/8 bg-white/4 text-white/60 transition hover:border-purple-400/30 hover:text-purple-200 ${
+            isOpen ? 'h-9 w-9' : 'h-8 w-8'
+          }`}
+        >
+          <ChevronDown className={`h-4 w-4 transition ${isOpen ? 'rotate-180' : ''}`} strokeWidth={1.8} />
+        </span>
+      </button>
+      {isOpen ? <div className="mt-4">{children}</div> : null}
     </section>
   );
 }
@@ -1602,20 +2317,25 @@ function TextArea({
   value,
   onChange,
   placeholder,
+  helperText,
+  rows = 4,
 }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
+  helperText?: string;
+  rows?: number;
 }) {
   return (
     <label className="block">
       <span className="text-sm font-medium text-white/50">{label}</span>
+      {helperText ? <p className="mt-1 text-[11px] leading-5 text-white/35">{helperText}</p> : null}
       <textarea
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
-        rows={4}
+        rows={rows}
         className="mt-2 w-full resize-y rounded-xl border border-white/7 bg-white/6 px-3 py-2 text-sm text-white outline-none placeholder:text-white/25 transition focus:border-purple-400/40 focus:ring-2 focus:ring-purple-400/12"
       />
     </label>

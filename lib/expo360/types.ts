@@ -4,6 +4,8 @@ export type SmbClientStatus = 'active' | 'suspended';
 export type EventPageStatus = 'draft' | 'published' | 'archived';
 export type PublicSlugStatus = 'draft' | 'published' | 'archived';
 export type LeadStatus = 'nuevo' | 'contactado' | 'cotizado' | 'ganado' | 'perdido';
+export type TerminalDrawerSectionId = 'about' | 'mission' | 'products' | 'contact';
+export type TerminalDrawerSections = Partial<Record<TerminalDrawerSectionId, boolean>>;
 
 export interface UserContext {
   uid: string;
@@ -28,9 +30,29 @@ export interface ClientContact {
   location?: string;
 }
 
+export interface ClientBrandCopyGuide {
+  voiceAndTone?: string;
+  brandContext?: string;
+  mentionableBrandFacts?: string[];
+  forbiddenWords?: string[];
+  clientProfile?: string;
+}
+
+export interface CreatedHeroAsset {
+  id: string;
+  url: string;
+  prompt?: string;
+  enhancedPrompt?: string;
+  referenceImageUrl?: string;
+  createdAt?: string;
+}
+
 export interface ClientIntegrationPlaceholders {
   crmProvider?: string;
   crmNotes?: string;
+  brandCopyGuide?: ClientBrandCopyGuide;
+  createdHeroes?: CreatedHeroAsset[];
+  heroCreatorTrialUsageCount?: number;
   stripeAccountMode?: 'not_configured' | 'customer_account' | 'interzekt_assisted';
 }
 
@@ -63,8 +85,10 @@ export interface EventPage {
   status: EventPageStatus;
   settings: {
     heroImageUrl?: string;
+    featuredProductId?: string;
     leadFormTitle?: string;
     showPoweredBy?: boolean;
+    terminalDrawerSections?: TerminalDrawerSections;
     layoutTemplate?: 'coleccion' | 'galeria' | 'catalogo' | 'terminal';
   };
   createdAt?: string;
