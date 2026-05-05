@@ -390,9 +390,10 @@ export function CatalogoTemplate({ client, eventPage, products }: TemplateProps)
 }
 
 // ─── Template: Terminal ───────────────────────────────────────────────────────
-// Pure white, three-column grid: narrow sidebar (event info + form) | large
-// center hero image | product grid. Circled section numbers. Dense type.
-// Mobile: sidebar first (form visible immediately), hero, then products.
+// Pure white. Two-column split: left = scrollable content (hero + product grid),
+// right = dedicated 380px action panel (event digest + full-width form).
+// Form gets real estate — not crammed into a sidebar with all the copy.
+// Mobile: action panel (form) first, content below.
 
 export function TerminalTemplate({ client, eventPage, products }: TemplateProps) {
   const formConfig = buildFormProps(eventPage, products);
@@ -420,88 +421,97 @@ export function TerminalTemplate({ client, eventPage, products }: TemplateProps)
         </div>
       </header>
 
-      {/* Three-column body */}
-      <div className="grid lg:grid-cols-[220px_1fr_1fr]">
+      {/* Two-column body */}
+      <div className="flex flex-col lg:flex-row lg:min-h-[calc(100vh-49px)]">
 
-        {/* ① Left sidebar: event info + form */}
-        <aside className="border-b border-black/10 p-5 lg:border-b-0 lg:border-r lg:p-6">
-          <p className="mb-4 text-[9px] font-semibold uppercase tracking-[0.22em] text-black/30">
-            ① {client.name}
+        {/* ① Action panel — form gets a full dedicated column */}
+        {/* DOM-first → top on mobile so the CTA is immediately visible */}
+        <aside className="order-first shrink-0 border-b border-black/10 px-7 py-8 lg:order-0 lg:w-[380px] lg:border-b-0 lg:border-r lg:px-8 lg:py-10">
+          <p className="mb-1 text-[9px] font-semibold uppercase tracking-[0.22em] text-black/30">
+            ① Registro
           </p>
-          <h1 className="text-xl font-bold leading-tight tracking-tight text-black sm:text-2xl">
+          <h1 className="mb-1 text-xl font-bold leading-tight tracking-tight text-black sm:text-2xl">
             {eventPage.title}
           </h1>
           {eventPage.subtitle ? (
-            <p className="mt-2 text-[12px] leading-5 text-black/50">{eventPage.subtitle}</p>
-          ) : null}
-          {eventPage.intro ? (
-            <p className="mt-4 text-[12px] leading-5 text-black/40">{eventPage.intro}</p>
-          ) : null}
-          <div className="mt-4 space-y-1.5">
-            {eventPage.location ? (
-              <p className="text-[11px] text-black/35">{eventPage.location}</p>
-            ) : null}
-            {eventPage.eventDate ? (
-              <p className="text-[11px] text-black/35">{eventPage.eventDate}</p>
-            ) : null}
-          </div>
-          <div className="mt-6 border-t border-black/8 pt-6">
+            <p className="mb-5 text-[13px] leading-5 text-black/45">{eventPage.subtitle}</p>
+          ) : (
+            <div className="mb-5" />
+          )}
+          <div className="border-t border-black/8 pt-6">
             <LeadCaptureForm {...formConfig} />
           </div>
+          {(eventPage.location || eventPage.eventDate || eventPage.intro) ? (
+            <div className="mt-8 border-t border-black/8 pt-6 space-y-3">
+              {eventPage.intro ? (
+                <p className="text-[12px] leading-5 text-black/40">{eventPage.intro}</p>
+              ) : null}
+              {eventPage.location ? (
+                <p className="text-[11px] text-black/30">{eventPage.location}</p>
+              ) : null}
+              {eventPage.eventDate ? (
+                <p className="text-[11px] text-black/30">{eventPage.eventDate}</p>
+              ) : null}
+            </div>
+          ) : null}
         </aside>
 
-        {/* ② Center: hero image, full column height */}
-        <div className="relative min-h-64 border-b border-black/10 lg:border-b-0 lg:border-r">
-          <p className="absolute left-4 top-3 z-10 text-[9px] font-semibold uppercase tracking-[0.22em] text-black/30">
-            ② {eventPage.title}
-          </p>
-          {eventPage.settings.heroImageUrl ? (
-            <img
-              src={eventPage.settings.heroImageUrl}
-              alt={eventPage.title}
-              className="h-full w-full object-cover"
-              style={{ minHeight: '320px' }}
-            />
-          ) : (
-            <div className="flex h-full min-h-80 items-center justify-center bg-[#f5f5f5]">
-              <p className="text-[10px] uppercase tracking-widest text-black/20">Sin imagen</p>
-            </div>
-          )}
-        </div>
+        {/* ② Content — hero + products */}
+        <div className="flex-1 flex flex-col">
 
-        {/* ③ Right: product grid */}
-        <div className="p-5 sm:p-6">
-          <p className="mb-4 text-[9px] font-semibold uppercase tracking-[0.22em] text-black/30">
-            ③ PRODUCTOS ({products.length})
-          </p>
-          {products.length > 0 ? (
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3">
-              {products.map((product) => (
-                <div key={product.id}>
-                  <div className="aspect-square bg-[#f5f5f5]">
-                    {product.imageUrls[0] ? (
-                      <img
-                        src={product.imageUrls[0]}
-                        alt={product.name}
-                        className="h-full w-full object-cover"
-                        loading="lazy"
-                      />
-                    ) : null}
+          {/* Hero image */}
+          <div className="relative border-b border-black/10">
+            <p className="absolute left-4 top-3 z-10 text-[9px] font-semibold uppercase tracking-[0.22em] text-black/30">
+              ② {eventPage.title}
+            </p>
+            {eventPage.settings.heroImageUrl ? (
+              <img
+                src={eventPage.settings.heroImageUrl}
+                alt={eventPage.title}
+                className="h-64 w-full object-cover sm:h-80 lg:h-96"
+              />
+            ) : (
+              <div className="flex h-48 items-center justify-center bg-[#f5f5f5] sm:h-64">
+                <p className="text-[10px] uppercase tracking-widest text-black/20">Sin imagen</p>
+              </div>
+            )}
+          </div>
+
+          {/* Product grid */}
+          <div className="p-6 sm:p-8">
+            <p className="mb-5 text-[9px] font-semibold uppercase tracking-[0.22em] text-black/30">
+              ③ Productos ({products.length})
+            </p>
+            {products.length > 0 ? (
+              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4">
+                {products.map((product) => (
+                  <div key={product.id}>
+                    <div className="aspect-square bg-[#f5f5f5]">
+                      {product.imageUrls[0] ? (
+                        <img
+                          src={product.imageUrls[0]}
+                          alt={product.name}
+                          className="h-full w-full object-cover"
+                          loading="lazy"
+                        />
+                      ) : null}
+                    </div>
+                    <div className="mt-2">
+                      <p className="text-[12px] font-medium leading-tight text-black">
+                        {product.name}
+                      </p>
+                      {product.price ? (
+                        <p className="mt-0.5 text-[11px] text-black/40">{product.price}</p>
+                      ) : null}
+                    </div>
                   </div>
-                  <div className="mt-1.5">
-                    <p className="text-[12px] font-medium leading-tight text-black">
-                      {product.name}
-                    </p>
-                    {product.price ? (
-                      <p className="mt-0.5 text-[11px] text-black/40">{product.price}</p>
-                    ) : null}
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-[12px] text-black/30">Los productos se están preparando.</p>
-          )}
+                ))}
+              </div>
+            ) : (
+              <p className="text-[12px] text-black/30">Los productos se están preparando.</p>
+            )}
+          </div>
+
         </div>
       </div>
     </div>

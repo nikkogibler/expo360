@@ -665,33 +665,33 @@ export default function StudioWorkspace({
                         {
                           id: 'terminal' as const,
                           name: 'Terminal',
-                          description: 'Tres columnas: formulario, hero, productos',
+                          description: 'Panel de registro + hero y productos',
                           thumb: (
                             <svg viewBox="0 0 80 50" className="w-full" aria-hidden>
                               <rect width="80" height="50" rx="4" fill="white" />
-                              <rect x="3" y="4" width="16" height="3" rx="1" fill="#1a1a1a" opacity=".85" />
-                              <rect x="28" y="4.5" width="8" height="2" rx="1" fill="#999" opacity=".5" />
-                              <rect x="38" y="4.5" width="8" height="2" rx="1" fill="#999" opacity=".4" />
-                              <rect x="62" y="4" width="15" height="3" rx="1" fill="#1a1a1a" opacity=".6" />
-                              <line x1="0" y1="9" x2="80" y2="9" stroke="#e0e0e0" strokeWidth="0.6" />
-                              <line x1="22" y1="9" x2="22" y2="50" stroke="#e8e8e8" strokeWidth="0.6" />
-                              <line x1="52" y1="9" x2="52" y2="50" stroke="#e8e8e8" strokeWidth="0.6" />
-                              <rect x="3" y="13" width="8" height="1.5" rx="0.75" fill="#999" opacity=".45" />
-                              <rect x="3" y="17" width="16" height="3" rx="0.5" fill="#1a1a1a" opacity=".8" />
-                              <rect x="3" y="22" width="13" height="1.5" rx="0.75" fill="#999" opacity=".35" />
-                              <rect x="3" y="31" width="16" height="2.5" rx="0.5" fill="#f0f0f0" />
-                              <rect x="3" y="35.5" width="16" height="2.5" rx="0.5" fill="#f0f0f0" />
-                              <rect x="3" y="40.5" width="16" height="4" rx="0.5" fill="#1a1a1a" opacity=".7" />
-                              <rect x="22" y="9" width="30" height="41" fill="#d5d5d5" />
-                              <rect x="53" y="10" width="12" height="9" fill="#f5f5f5" />
-                              <rect x="66.5" y="10" width="11" height="9" fill="#f5f5f5" />
-                              <rect x="53" y="21" width="12" height="9" fill="#f5f5f5" />
-                              <rect x="66.5" y="21" width="11" height="9" fill="#f5f5f5" />
-                              <rect x="53" y="32" width="12" height="9" fill="#f5f5f5" />
-                              <rect x="66.5" y="32" width="11" height="9" fill="#f5f5f5" />
-                              <line x1="66" y1="10" x2="66" y2="41" stroke="#e0e0e0" strokeWidth="0.5" />
-                              <line x1="53" y1="20" x2="78" y2="20" stroke="#e0e0e0" strokeWidth="0.5" />
-                              <line x1="53" y1="31" x2="78" y2="31" stroke="#e0e0e0" strokeWidth="0.5" />
+                              <line x1="0" y1="8" x2="80" y2="8" stroke="#e0e0e0" strokeWidth="0.6" />
+                              <rect x="3" y="3" width="14" height="3" rx="1" fill="#1a1a1a" opacity=".8" />
+                              <rect x="55" y="3.5" width="8" height="2" rx="1" fill="#999" opacity=".4" />
+                              <rect x="65" y="3.5" width="12" height="2" rx="1" fill="#1a1a1a" opacity=".5" />
+                              {/* Left action panel */}
+                              <line x1="28" y1="8" x2="28" y2="50" stroke="#e8e8e8" strokeWidth="0.6" />
+                              <rect x="3" y="12" width="7" height="1.5" rx="0.75" fill="#bbb" opacity=".6" />
+                              <rect x="3" y="16" width="20" height="3" rx="0.5" fill="#1a1a1a" opacity=".75" />
+                              <rect x="3" y="21" width="14" height="1.5" rx="0.75" fill="#bbb" opacity=".4" />
+                              <line x1="3" y1="25" x2="25" y2="25" stroke="#e0e0e0" strokeWidth="0.5" />
+                              <rect x="3" y="28" width="22" height="3.5" rx="0.5" fill="#f0f0f0" />
+                              <rect x="3" y="33.5" width="22" height="3.5" rx="0.5" fill="#f0f0f0" />
+                              <rect x="3" y="39" width="22" height="5" rx="0.5" fill="#1a1a1a" opacity=".7" />
+                              {/* Right: hero image top */}
+                              <rect x="28" y="8" width="52" height="20" fill="#e0e0e0" />
+                              <line x1="28" y1="28" x2="80" y2="28" stroke="#e8e8e8" strokeWidth="0.6" />
+                              {/* Right: product grid bottom */}
+                              <rect x="30" y="30" width="11" height="9" fill="#f5f5f5" />
+                              <rect x="43" y="30" width="11" height="9" fill="#f5f5f5" />
+                              <rect x="56" y="30" width="11" height="9" fill="#f5f5f5" />
+                              <rect x="30" y="41" width="11" height="7" fill="#f5f5f5" />
+                              <rect x="43" y="41" width="11" height="7" fill="#f5f5f5" />
+                              <rect x="56" y="41" width="11" height="7" fill="#f5f5f5" />
                             </svg>
                           ),
                         },
