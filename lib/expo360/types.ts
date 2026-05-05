@@ -65,6 +65,7 @@ export interface EventPage {
     heroImageUrl?: string;
     leadFormTitle?: string;
     showPoweredBy?: boolean;
+    layoutTemplate?: 'coleccion' | 'galeria' | 'catalogo' | 'terminal';
   };
   createdAt?: string;
   updatedAt?: string;

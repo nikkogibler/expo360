@@ -112,6 +112,7 @@ export default function StudioWorkspace({
     ctaLabel: initialBundle.eventPage.ctaLabel,
     heroImageUrl: initialBundle.eventPage.settings.heroImageUrl || '',
     leadFormTitle: initialBundle.eventPage.settings.leadFormTitle || '',
+    layoutTemplate: (initialBundle.eventPage.settings.layoutTemplate ?? 'coleccion') as 'coleccion' | 'galeria' | 'catalogo' | 'terminal',
   });
   const [productForm, setProductForm] = useState<ProductForm>(emptyProductForm);
 
@@ -307,6 +308,7 @@ export default function StudioWorkspace({
           ...bundle.eventPage.settings,
           heroImageUrl: eventForm.heroImageUrl,
           leadFormTitle: eventForm.leadFormTitle,
+          layoutTemplate: eventForm.layoutTemplate,
         },
       });
       setMessage('Página del evento guardada.');
@@ -565,6 +567,150 @@ export default function StudioWorkspace({
                       </label>
                     </div>
                   </label>
+                </div>
+                <div className="md:col-span-2">
+                  <p className="mb-3 text-sm font-medium text-white/70">Plantilla de diseño</p>
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                    {(
+                      [
+                        {
+                          id: 'coleccion' as const,
+                          name: 'Colección',
+                          description: 'Panel flotante sobre foto de fondo',
+                          thumb: (
+                            <svg viewBox="0 0 80 50" className="w-full" aria-hidden>
+                              <rect width="80" height="50" rx="4" fill="#2a2520" />
+                              <rect x="4" y="6" width="72" height="39" rx="1" fill="#f8f4ee" />
+                              <line x1="31" y1="6" x2="31" y2="33" stroke="#e0d8cc" strokeWidth="0.5" />
+                              <line x1="4" y1="33" x2="76" y2="33" stroke="#e0d8cc" strokeWidth="0.5" />
+                              <rect x="7" y="12" width="20" height="4" rx="0.5" fill="#1a1a1a" opacity=".8" />
+                              <rect x="7" y="18" width="14" height="2" rx="0.5" fill="#999" opacity=".5" />
+                              <rect x="7" y="22" width="10" height="1.5" rx="0.5" fill="#bbb" opacity=".4" />
+                              <rect x="7" y="27" width="9" height="2.5" rx="1.25" fill="#e8e2d8" />
+                              <rect x="18" y="27" width="9" height="2.5" rx="1.25" fill="#e8e2d8" />
+                              <rect x="31" y="6" width="45" height="27" fill="#ccc" opacity=".6" />
+                              <rect x="63" y="8" width="10" height="2.5" rx="1.25" fill="white" opacity=".85" />
+                              <rect x="4" y="33.5" width="17" height="11" fill="#f4f0e8" />
+                              <line x1="21" y1="33.5" x2="21" y2="44.5" stroke="#e0d8cc" strokeWidth="0.5" />
+                              <rect x="21.5" y="33.5" width="17" height="11" fill="#f4f0e8" />
+                              <line x1="39" y1="33.5" x2="39" y2="44.5" stroke="#e0d8cc" strokeWidth="0.5" />
+                              <rect x="39.5" y="33.5" width="17" height="11" fill="#f4f0e8" />
+                              <line x1="57" y1="33.5" x2="57" y2="44.5" stroke="#e0d8cc" strokeWidth="0.5" />
+                              <rect x="57.5" y="33.5" width="18.5" height="11" fill="#f4f0e8" />
+                            </svg>
+                          ),
+                        },
+                        {
+                          id: 'galeria' as const,
+                          name: 'Galería',
+                          description: 'Crema minimalista, grid de productos',
+                          thumb: (
+                            <svg viewBox="0 0 80 50" className="w-full" aria-hidden>
+                              <rect width="80" height="50" rx="4" fill="#f2ede5" />
+                              <line x1="0" y1="8" x2="80" y2="8" stroke="#d8d0c4" strokeWidth="0.5" />
+                              <rect x="5" y="15" width="16" height="1.5" rx="0.75" fill="#999" opacity=".6" />
+                              <rect x="5" y="18.5" width="8" height="1.5" rx="0.75" fill="#bbb" opacity=".5" />
+                              <rect x="28" y="13" width="24" height="4" rx="0.5" fill="#1a1a1a" opacity=".7" />
+                              <rect x="28" y="19" width="18" height="2" rx="0.5" fill="#999" opacity=".4" />
+                              <rect x="56" y="12" width="20" height="16" rx="1" fill="white" />
+                              <rect x="58" y="15" width="16" height="2" rx="0.5" fill="#ddd" />
+                              <rect x="58" y="19.5" width="16" height="2.5" rx="0.5" fill="#eee" />
+                              <rect x="58" y="24" width="16" height="3" rx="1" fill="#d0c8be" opacity=".8" />
+                              <rect x="5" y="35" width="15" height="11" rx="0.5" fill="#e8e2d8" />
+                              <rect x="22" y="35" width="15" height="11" rx="0.5" fill="#e8e2d8" />
+                              <rect x="39" y="35" width="15" height="11" rx="0.5" fill="#e8e2d8" />
+                              <rect x="56" y="35" width="19" height="11" rx="0.5" fill="#e8e2d8" />
+                            </svg>
+                          ),
+                        },
+                        {
+                          id: 'catalogo' as const,
+                          name: 'Catálogo',
+                          description: 'Marco negro, título enorme, grid de celdas',
+                          thumb: (
+                            <svg viewBox="0 0 80 50" className="w-full" aria-hidden>
+                              <rect width="80" height="50" rx="4" fill="white" />
+                              <rect x="2" y="2" width="76" height="46" rx="2" fill="none" stroke="black" strokeWidth="2" />
+                              <rect x="3" y="3" width="75" height="7" fill="#1a1a1a" opacity=".05" />
+                              <rect x="6" y="5" width="18" height="3" rx="1" fill="#1a1a1a" opacity=".7" />
+                              <rect x="5" y="14" width="44" height="6" rx="0.5" fill="#1a1a1a" />
+                              <rect x="5" y="22" width="28" height="2.5" rx="0.5" fill="#1a1a1a" opacity=".25" />
+                              <line x1="2" y1="28" x2="78" y2="28" stroke="black" strokeWidth="1" />
+                              <rect x="2" y="28" width="15" height="5" fill="black" />
+                              <line x1="17" y1="28" x2="17" y2="33" stroke="black" strokeWidth="0.5" />
+                              <line x1="31.5" y1="28" x2="31.5" y2="33" stroke="black" strokeWidth="0.5" />
+                              <line x1="2" y1="33" x2="78" y2="33" stroke="black" strokeWidth="1" />
+                              <rect x="2" y="33" width="18" height="8" fill="#f0f0f0" />
+                              <rect x="21" y="33" width="18" height="8" fill="#f0f0f0" />
+                              <rect x="40" y="33" width="18" height="8" fill="#f0f0f0" />
+                              <rect x="59" y="33" width="19" height="8" fill="#f0f0f0" />
+                              <line x1="20" y1="33" x2="20" y2="41" stroke="black" strokeWidth="0.5" />
+                              <line x1="39" y1="33" x2="39" y2="41" stroke="black" strokeWidth="0.5" />
+                              <line x1="58" y1="33" x2="58" y2="41" stroke="black" strokeWidth="0.5" />
+                              <line x1="2" y1="41" x2="78" y2="41" stroke="black" strokeWidth="0.3" />
+                              <rect x="2" y="41" width="18" height="7" fill="#f0f0f0" />
+                              <rect x="21" y="41" width="18" height="7" fill="#f0f0f0" />
+                              <rect x="40" y="41" width="18" height="7" fill="#f0f0f0" />
+                              <rect x="59" y="41" width="19" height="7" fill="#f0f0f0" />
+                            </svg>
+                          ),
+                        },
+                        {
+                          id: 'terminal' as const,
+                          name: 'Terminal',
+                          description: 'Tres columnas: formulario, hero, productos',
+                          thumb: (
+                            <svg viewBox="0 0 80 50" className="w-full" aria-hidden>
+                              <rect width="80" height="50" rx="4" fill="white" />
+                              <rect x="3" y="4" width="16" height="3" rx="1" fill="#1a1a1a" opacity=".85" />
+                              <rect x="28" y="4.5" width="8" height="2" rx="1" fill="#999" opacity=".5" />
+                              <rect x="38" y="4.5" width="8" height="2" rx="1" fill="#999" opacity=".4" />
+                              <rect x="62" y="4" width="15" height="3" rx="1" fill="#1a1a1a" opacity=".6" />
+                              <line x1="0" y1="9" x2="80" y2="9" stroke="#e0e0e0" strokeWidth="0.6" />
+                              <line x1="22" y1="9" x2="22" y2="50" stroke="#e8e8e8" strokeWidth="0.6" />
+                              <line x1="52" y1="9" x2="52" y2="50" stroke="#e8e8e8" strokeWidth="0.6" />
+                              <rect x="3" y="13" width="8" height="1.5" rx="0.75" fill="#999" opacity=".45" />
+                              <rect x="3" y="17" width="16" height="3" rx="0.5" fill="#1a1a1a" opacity=".8" />
+                              <rect x="3" y="22" width="13" height="1.5" rx="0.75" fill="#999" opacity=".35" />
+                              <rect x="3" y="31" width="16" height="2.5" rx="0.5" fill="#f0f0f0" />
+                              <rect x="3" y="35.5" width="16" height="2.5" rx="0.5" fill="#f0f0f0" />
+                              <rect x="3" y="40.5" width="16" height="4" rx="0.5" fill="#1a1a1a" opacity=".7" />
+                              <rect x="22" y="9" width="30" height="41" fill="#d5d5d5" />
+                              <rect x="53" y="10" width="12" height="9" fill="#f5f5f5" />
+                              <rect x="66.5" y="10" width="11" height="9" fill="#f5f5f5" />
+                              <rect x="53" y="21" width="12" height="9" fill="#f5f5f5" />
+                              <rect x="66.5" y="21" width="11" height="9" fill="#f5f5f5" />
+                              <rect x="53" y="32" width="12" height="9" fill="#f5f5f5" />
+                              <rect x="66.5" y="32" width="11" height="9" fill="#f5f5f5" />
+                              <line x1="66" y1="10" x2="66" y2="41" stroke="#e0e0e0" strokeWidth="0.5" />
+                              <line x1="53" y1="20" x2="78" y2="20" stroke="#e0e0e0" strokeWidth="0.5" />
+                              <line x1="53" y1="31" x2="78" y2="31" stroke="#e0e0e0" strokeWidth="0.5" />
+                            </svg>
+                          ),
+                        },
+                      ] as const
+                    ).map((tpl) => (
+                      <button
+                        key={tpl.id}
+                        type="button"
+                        onClick={() => setEventForm((current) => ({ ...current, layoutTemplate: tpl.id }))}
+                        className={`group relative rounded-2xl border p-2 text-left transition ${
+                          eventForm.layoutTemplate === tpl.id
+                            ? 'border-purple-400/60 bg-purple-500/10 shadow-[0_0_0_1px_rgba(167,139,250,0.3)]'
+                            : 'border-white/8 bg-white/3 hover:border-white/15 hover:bg-white/5'
+                        }`}
+                      >
+                        <div className="overflow-hidden rounded-lg">{tpl.thumb}</div>
+                        <p className={`mt-2 text-xs font-semibold ${
+                          eventForm.layoutTemplate === tpl.id ? 'text-purple-300' : 'text-white/70'
+                        }`}>{tpl.name}</p>
+                        <p className="mt-0.5 text-[10px] leading-snug text-white/35">{tpl.description}</p>
+                        {eventForm.layoutTemplate === tpl.id && (
+                          <span className="absolute right-2 top-2 flex h-4 w-4 items-center justify-center rounded-full bg-purple-500 text-[9px] text-white">✓</span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
                 </div>
                 <div className="md:col-span-2">
                   <SaveButton saving={isSavingEvent} label="Guardar página del evento" />
@@ -1092,11 +1238,11 @@ function LeadInfo({
 }) {
   return (
     <div className="rounded-xl border border-white/8 bg-white/4 p-3">
-      <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.1em] text-white/40">
+      <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-white/40">
         {icon}
         {label}
       </div>
-      <p className="mt-2 break-words text-sm font-medium text-white">{value}</p>
+      <p className="mt-2 wrap-break-word text-sm font-medium text-white">{value}</p>
     </div>
   );
 }
