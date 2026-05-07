@@ -24,6 +24,7 @@
 .DS_Store
 *.pem
 .local-artifacts/
+chat-session-summaries/
 
 # debug
 npm-debug.log*

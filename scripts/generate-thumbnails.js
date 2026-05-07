@@ -7,7 +7,7 @@
  * 3. Resizes to 300x300 thumbnail
  * 4. Uploads to product-images/thumbnails/ folder
  * 
- * Run with: node generate-thumbnails.js
+ * Run with: node scripts/generate-thumbnails.js
  */
 
 const { createClient } = require('@supabase/supabase-js');

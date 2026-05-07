@@ -59,7 +59,7 @@ INSERT INTO image_prompts (
 
 ### Before:
 - Images generated in Optimizador
-- Manual script run required: `node generate-thumbnails.js`
+- Manual script run required: `node scripts/generate-thumbnails.js`
 - Thumbnails created in batch
 - New images show slowly until thumbnail exists
 
@@ -81,7 +81,7 @@ Reusable utility functions:
 
 Can be used in:
 - API routes (server-side)
-- Node scripts (generate-thumbnails.js)
+- Node scripts (scripts/generate-thumbnails.js)
 - Any server component
 
 ### 2. `/src/app/api/generate-thumbnail/route.ts`
@@ -176,7 +176,7 @@ If thumbnails don't appear:
 4. **Fallback:**
 If automatic generation fails (non-critical), you can still run:
 ```bash
-node generate-thumbnails.js
+node scripts/generate-thumbnails.js
 ```
 
 ---
